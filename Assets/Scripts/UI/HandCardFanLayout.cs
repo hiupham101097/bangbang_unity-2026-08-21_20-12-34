@@ -18,7 +18,6 @@ namespace BangBang.UI
 
         private readonly List<CardUI> _cardUIs = new List<CardUI>();
 
-        public event Action<string, string> OnPlayCardRequested;
         public event Action<CardUI, Vector2> OnCardDragging;
         public event Action<CardUI, Vector2> OnCardDropped;
 

@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using BangBang.UI;
 
 namespace BangBang.Editor
 {
@@ -10,7 +11,7 @@ namespace BangBang.Editor
         [MenuItem("Bang Bang/🚀 Chạy Game Ngay (Setup & Play)", false, 1)]
         public static void SetupAndPlayGame()
         {
-            var bootstrap = Object.FindFirstObjectByType<GameBootstrap>();
+            var bootstrap = Object.FindAnyObjectByType<GameBootstrap>();
             if (bootstrap == null)
             {
                 var go = new GameObject("GameBootstrap", typeof(GameBootstrap));
@@ -26,7 +27,7 @@ namespace BangBang.Editor
         [MenuItem("Bang Bang/🛠️ Tạo GameBootstrap vào Scene", false, 2)]
         public static void CreateBootstrapObject()
         {
-            var bootstrap = Object.FindFirstObjectByType<GameBootstrap>();
+            var bootstrap = Object.FindAnyObjectByType<GameBootstrap>();
             if (bootstrap == null)
             {
                 var go = new GameObject("GameBootstrap", typeof(GameBootstrap));
