@@ -1,0 +1,676 @@
+fileFormatVersion: 2
+guid: 228176983b4a9e24090cfe2683eb9717
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1380294692090051976
+    second: steal_discard_sprite_0
+  - first:
+      213: 1823187156075338712
+    second: steal_discard_sprite_1
+  - first:
+      213: -6479858227316730979
+    second: steal_discard_sprite_2
+  - first:
+      213: 6850893581437346876
+    second: steal_discard_sprite_3
+  - first:
+      213: 5875876255672139421
+    second: steal_discard_sprite_4
+  - first:
+      213: -1325194592288762402
+    second: steal_discard_sprite_5
+  - first:
+      213: -7294668875320510567
+    second: steal_discard_sprite_6
+  - first:
+      213: 5282653381332495121
+    second: steal_discard_sprite_7
+  - first:
+      213: -5011114433179946788
+    second: steal_discard_sprite_8
+  - first:
+      213: -2355254872444856378
+    second: steal_discard_sprite_9
+  - first:
+      213: 520109631495317055
+    second: steal_discard_sprite_10
+  - first:
+      213: -2041979057780840457
+    second: steal_discard_sprite_11
+  - first:
+      213: 8041667857648780205
+    second: steal_discard_sprite_12
+  - first:
+      213: 3356799529550747686
+    second: steal_discard_sprite_13
+  - first:
+      213: 2254134184676867294
+    second: steal_discard_sprite_14
+  - first:
+      213: 2285701403582234524
+    second: steal_discard_sprite_15
+  - first:
+      213: -971659589208267048
+    second: steal_discard_sprite_16
+  - first:
+      213: -7318370423248210072
+    second: steal_discard_sprite_17
+  - first:
+      213: -8481130136312378383
+    second: steal_discard_sprite_18
+  - first:
+      213: -8255094516183109713
+    second: steal_discard_sprite_19
+  - first:
+      213: -3946704139167576344
+    second: steal_discard_sprite_20
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: steal_discard_sprite_0
+      rect:
+        serializedVersion: 2
+        x: 110
+        y: 699
+        width: 467
+        height: 453
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 88d726795bac72310800000000000000
+      internalID: 1380294692090051976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_1
+      rect:
+        serializedVersion: 2
+        x: 691
+        y: 674
+        width: 467
+        height: 465
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8dbdcec0f034d4910800000000000000
+      internalID: 1823187156075338712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_2
+      rect:
+        serializedVersion: 2
+        x: 92
+        y: 123
+        width: 504
+        height: 467
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d93d4e5264be216a0800000000000000
+      internalID: -6479858227316730979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_3
+      rect:
+        serializedVersion: 2
+        x: 741
+        y: 457
+        width: 78
+        height: 81
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c34a39b2a63431f50800000000000000
+      internalID: 6850893581437346876
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_4
+      rect:
+        serializedVersion: 2
+        x: 797
+        y: 518
+        width: 17
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9e7d73a25e4b8150800000000000000
+      internalID: 5875876255672139421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_5
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 308
+        width: 143
+        height: 272
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed51c5c1a86fb9de0800000000000000
+      internalID: -1325194592288762402
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_6
+      rect:
+        serializedVersion: 2
+        x: 728
+        y: 313
+        width: 108
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9973c648e4124ca90800000000000000
+      internalID: -7294668875320510567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_7
+      rect:
+        serializedVersion: 2
+        x: 985
+        y: 394
+        width: 93
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11be6d9f241cf4940800000000000000
+      internalID: 5282653381332495121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_8
+      rect:
+        serializedVersion: 2
+        x: 1087
+        y: 391
+        width: 28
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd0f97919f1f47ab0800000000000000
+      internalID: -5011114433179946788
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_9
+      rect:
+        serializedVersion: 2
+        x: 844
+        y: 273
+        width: 21
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c79a641c24705fd0800000000000000
+      internalID: -2355254872444856378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_10
+      rect:
+        serializedVersion: 2
+        x: 959
+        y: 317
+        width: 15
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f36a98544fcc73700800000000000000
+      internalID: 520109631495317055
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_11
+      rect:
+        serializedVersion: 2
+        x: 968
+        y: 179
+        width: 131
+        height: 199
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f7af26adde69a3e0800000000000000
+      internalID: -2041979057780840457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_12
+      rect:
+        serializedVersion: 2
+        x: 722
+        y: 300
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da305d85f4eb99f60800000000000000
+      internalID: 8041667857648780205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_13
+      rect:
+        serializedVersion: 2
+        x: 742
+        y: 285
+        width: 10
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6281215136fb59e20800000000000000
+      internalID: 3356799529550747686
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_14
+      rect:
+        serializedVersion: 2
+        x: 748
+        y: 160
+        width: 82
+        height: 121
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edcbab9191b484f10800000000000000
+      internalID: 2254134184676867294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_15
+      rect:
+        serializedVersion: 2
+        x: 932
+        y: 273
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9f712ff05178bf10800000000000000
+      internalID: 2285701403582234524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_16
+      rect:
+        serializedVersion: 2
+        x: 830
+        y: 132
+        width: 98
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d6a3ae60c8f382f0800000000000000
+      internalID: -971659589208267048
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_17
+      rect:
+        serializedVersion: 2
+        x: 915
+        y: 243
+        width: 15
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 867b09bdfdcef6a90800000000000000
+      internalID: -7318370423248210072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_18
+      rect:
+        serializedVersion: 2
+        x: 945
+        y: 221
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1fb8d337319fc4a80800000000000000
+      internalID: -8481130136312378383
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_19
+      rect:
+        serializedVersion: 2
+        x: 957
+        y: 176
+        width: 21
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: faf61af5643007d80800000000000000
+      internalID: -8255094516183109713
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: steal_discard_sprite_20
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 148
+        width: 12
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8ee4a57fe7d7a39c0800000000000000
+      internalID: -3946704139167576344
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      steal_discard_sprite_0: 1380294692090051976
+      steal_discard_sprite_1: 1823187156075338712
+      steal_discard_sprite_10: 520109631495317055
+      steal_discard_sprite_11: -2041979057780840457
+      steal_discard_sprite_12: 8041667857648780205
+      steal_discard_sprite_13: 3356799529550747686
+      steal_discard_sprite_14: 2254134184676867294
+      steal_discard_sprite_15: 2285701403582234524
+      steal_discard_sprite_16: -971659589208267048
+      steal_discard_sprite_17: -7318370423248210072
+      steal_discard_sprite_18: -8481130136312378383
+      steal_discard_sprite_19: -8255094516183109713
+      steal_discard_sprite_2: -6479858227316730979
+      steal_discard_sprite_20: -3946704139167576344
+      steal_discard_sprite_3: 6850893581437346876
+      steal_discard_sprite_4: 5875876255672139421
+      steal_discard_sprite_5: -1325194592288762402
+      steal_discard_sprite_6: -7294668875320510567
+      steal_discard_sprite_7: 5282653381332495121
+      steal_discard_sprite_8: -5011114433179946788
+      steal_discard_sprite_9: -2355254872444856378
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

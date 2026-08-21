@@ -1,0 +1,2496 @@
+fileFormatVersion: 2
+guid: fb6fe7dbf21268042a9c26316eb0034a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 5858627420371098742
+    second: dynamite_sprite_0
+  - first:
+      213: -8301429111420325712
+    second: dynamite_sprite_1
+  - first:
+      213: -3682444550285487652
+    second: dynamite_sprite_2
+  - first:
+      213: 6639024425209493561
+    second: dynamite_sprite_3
+  - first:
+      213: 6006836984076023023
+    second: dynamite_sprite_4
+  - first:
+      213: 1127735197706773148
+    second: dynamite_sprite_5
+  - first:
+      213: 717749225014209211
+    second: dynamite_sprite_6
+  - first:
+      213: 4651792019166640463
+    second: dynamite_sprite_7
+  - first:
+      213: 6072997571494954444
+    second: dynamite_sprite_8
+  - first:
+      213: -8473631066468935412
+    second: dynamite_sprite_9
+  - first:
+      213: 2386926584173877367
+    second: dynamite_sprite_10
+  - first:
+      213: -5780218683583804384
+    second: dynamite_sprite_11
+  - first:
+      213: -473843421863015821
+    second: dynamite_sprite_12
+  - first:
+      213: -687842024133082553
+    second: dynamite_sprite_13
+  - first:
+      213: 6512196153576579099
+    second: dynamite_sprite_14
+  - first:
+      213: -7391516602546632872
+    second: dynamite_sprite_15
+  - first:
+      213: -7831813408483538176
+    second: dynamite_sprite_16
+  - first:
+      213: 1858311454443551936
+    second: dynamite_sprite_17
+  - first:
+      213: -6790507627203468562
+    second: dynamite_sprite_18
+  - first:
+      213: -6195178465093954425
+    second: dynamite_sprite_19
+  - first:
+      213: 1877708972655358486
+    second: dynamite_sprite_20
+  - first:
+      213: 7886724643893995372
+    second: dynamite_sprite_21
+  - first:
+      213: -3260578409003933512
+    second: dynamite_sprite_22
+  - first:
+      213: -435465416478986329
+    second: dynamite_sprite_23
+  - first:
+      213: 5127158790107101824
+    second: dynamite_sprite_24
+  - first:
+      213: -3641183015247887203
+    second: dynamite_sprite_25
+  - first:
+      213: -403088376581306962
+    second: dynamite_sprite_26
+  - first:
+      213: 7739363208066134237
+    second: dynamite_sprite_27
+  - first:
+      213: 2394382845461427630
+    second: dynamite_sprite_28
+  - first:
+      213: -1932837268956738083
+    second: dynamite_sprite_29
+  - first:
+      213: -1161983599874415475
+    second: dynamite_sprite_30
+  - first:
+      213: -2014006746070248837
+    second: dynamite_sprite_31
+  - first:
+      213: -5108891804816380369
+    second: dynamite_sprite_32
+  - first:
+      213: -8205769723788961341
+    second: dynamite_sprite_33
+  - first:
+      213: -1714380242336966940
+    second: dynamite_sprite_34
+  - first:
+      213: 3050472071041946289
+    second: dynamite_sprite_35
+  - first:
+      213: 6559991855990188761
+    second: dynamite_sprite_36
+  - first:
+      213: 6179402483851024083
+    second: dynamite_sprite_37
+  - first:
+      213: 2524198177597239850
+    second: dynamite_sprite_38
+  - first:
+      213: -4444437631709190323
+    second: dynamite_sprite_39
+  - first:
+      213: 1635825132257284612
+    second: dynamite_sprite_40
+  - first:
+      213: 757456302903703863
+    second: dynamite_sprite_41
+  - first:
+      213: -1896579737746404289
+    second: dynamite_sprite_42
+  - first:
+      213: 8674888585178216733
+    second: dynamite_sprite_43
+  - first:
+      213: 6647138369600291072
+    second: dynamite_sprite_44
+  - first:
+      213: -3314933984988288309
+    second: dynamite_sprite_45
+  - first:
+      213: -5453640376458485822
+    second: dynamite_sprite_46
+  - first:
+      213: 3406392575504430594
+    second: dynamite_sprite_47
+  - first:
+      213: -2718473938957650764
+    second: dynamite_sprite_48
+  - first:
+      213: -3873287241222407720
+    second: dynamite_sprite_49
+  - first:
+      213: -3957229290412710582
+    second: dynamite_sprite_50
+  - first:
+      213: 6037932857830748244
+    second: dynamite_sprite_51
+  - first:
+      213: 9083176923185676981
+    second: dynamite_sprite_52
+  - first:
+      213: -2032963560217182256
+    second: dynamite_sprite_53
+  - first:
+      213: 603598858737787751
+    second: dynamite_sprite_54
+  - first:
+      213: -6795147472550633541
+    second: dynamite_sprite_55
+  - first:
+      213: -4225331452775424139
+    second: dynamite_sprite_56
+  - first:
+      213: -6455578719189447225
+    second: dynamite_sprite_57
+  - first:
+      213: -2863585595698239759
+    second: dynamite_sprite_58
+  - first:
+      213: 4651502427565442932
+    second: dynamite_sprite_59
+  - first:
+      213: -6066551838198148607
+    second: dynamite_sprite_60
+  - first:
+      213: 4814711202441234148
+    second: dynamite_sprite_61
+  - first:
+      213: 4880942137171756762
+    second: dynamite_sprite_62
+  - first:
+      213: -3978175563036315836
+    second: dynamite_sprite_63
+  - first:
+      213: -4326771578571090577
+    second: dynamite_sprite_64
+  - first:
+      213: 8345538403485277486
+    second: dynamite_sprite_65
+  - first:
+      213: -706089464144558280
+    second: dynamite_sprite_66
+  - first:
+      213: -3102662037333052840
+    second: dynamite_sprite_67
+  - first:
+      213: -312781192544947279
+    second: dynamite_sprite_68
+  - first:
+      213: 2729697865701971391
+    second: dynamite_sprite_69
+  - first:
+      213: 4064907519691175392
+    second: dynamite_sprite_70
+  - first:
+      213: 5497788151383660910
+    second: dynamite_sprite_71
+  - first:
+      213: 1486025797438163568
+    second: dynamite_sprite_72
+  - first:
+      213: -1831999737904792162
+    second: dynamite_sprite_73
+  - first:
+      213: -5845716092729744272
+    second: dynamite_sprite_74
+  - first:
+      213: -8318934032085144719
+    second: dynamite_sprite_75
+  - first:
+      213: 4479945227428134576
+    second: dynamite_sprite_76
+  - first:
+      213: -4811533688401241205
+    second: dynamite_sprite_77
+  - first:
+      213: 4636026206692804571
+    second: dynamite_sprite_78
+  - first:
+      213: 6174631148157215887
+    second: dynamite_sprite_79
+  - first:
+      213: -9120035266382600137
+    second: dynamite_sprite_80
+  - first:
+      213: 4697675597187939654
+    second: dynamite_sprite_81
+  - first:
+      213: 6734970132160932714
+    second: dynamite_sprite_82
+  - first:
+      213: -7474070855591396414
+    second: dynamite_sprite_83
+  - first:
+      213: 7380013540499625963
+    second: dynamite_sprite_84
+  - first:
+      213: -4539117051416655789
+    second: dynamite_sprite_85
+  - first:
+      213: 4160380923519577922
+    second: dynamite_sprite_86
+  - first:
+      213: -3573155515423942783
+    second: dynamite_sprite_87
+  - first:
+      213: -6814818666749544815
+    second: dynamite_sprite_88
+  - first:
+      213: 1066669993248469332
+    second: dynamite_sprite_89
+  - first:
+      213: 380984585909040620
+    second: dynamite_sprite_90
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: dynamite_sprite_0
+      rect:
+        serializedVersion: 2
+        x: 341
+        y: 1173
+        width: 6
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 67c159639960e4150800000000000000
+      internalID: 5858627420371098742
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_1
+      rect:
+        serializedVersion: 2
+        x: 640
+        y: 666
+        width: 549
+        height: 531
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b074bdb4366bcc80800000000000000
+      internalID: -8301429111420325712
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_2
+      rect:
+        serializedVersion: 2
+        x: 1025
+        y: 1180
+        width: 14
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd11923213455ecc0800000000000000
+      internalID: -3682444550285487652
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_3
+      rect:
+        serializedVersion: 2
+        x: 215
+        y: 698
+        width: 220
+        height: 469
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 938f0c72a8d822c50800000000000000
+      internalID: 6639024425209493561
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_4
+      rect:
+        serializedVersion: 2
+        x: 434
+        y: 1111
+        width: 17
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe4b78359629c5350800000000000000
+      internalID: 6006836984076023023
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_5
+      rect:
+        serializedVersion: 2
+        x: 204
+        y: 1024
+        width: 16
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c926404ff2586af00800000000000000
+      internalID: 1127735197706773148
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_6
+      rect:
+        serializedVersion: 2
+        x: 434
+        y: 1024
+        width: 19
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bbaa8ca0e15f5f900800000000000000
+      internalID: 717749225014209211
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_7
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 78
+        width: 494
+        height: 509
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f49bc67f13c7e8040800000000000000
+      internalID: 4651792019166640463
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_8
+      rect:
+        serializedVersion: 2
+        x: 969
+        y: 576
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc544ca7d1f974450800000000000000
+      internalID: 6072997571494954444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_9
+      rect:
+        serializedVersion: 2
+        x: 785
+        y: 495
+        width: 57
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c099765b07d976a80800000000000000
+      internalID: -8473631066468935412
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_10
+      rect:
+        serializedVersion: 2
+        x: 962
+        y: 544
+        width: 10
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 778de92f411102120800000000000000
+      internalID: 2386926584173877367
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_11
+      rect:
+        serializedVersion: 2
+        x: 900
+        y: 499
+        width: 16
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02c49e07bb988cfa0800000000000000
+      internalID: -5780218683583804384
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_12
+      rect:
+        serializedVersion: 2
+        x: 941
+        y: 443
+        width: 95
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37a03b81be19c69f0800000000000000
+      internalID: -473843421863015821
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_13
+      rect:
+        serializedVersion: 2
+        x: 752
+        y: 468
+        width: 16
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74246f9c25b4476f0800000000000000
+      internalID: -687842024133082553
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_14
+      rect:
+        serializedVersion: 2
+        x: 861
+        y: 438
+        width: 50
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b10e89906e7ff5a50800000000000000
+      internalID: 6512196153576579099
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_15
+      rect:
+        serializedVersion: 2
+        x: 1071
+        y: 450
+        width: 32
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8574ec9dfce0c6990800000000000000
+      internalID: -7391516602546632872
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_16
+      rect:
+        serializedVersion: 2
+        x: 688
+        y: 352
+        width: 85
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00b8230233fcf4390800000000000000
+      internalID: -7831813408483538176
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_17
+      rect:
+        serializedVersion: 2
+        x: 810
+        y: 438
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ccb52c0c6c0ac910800000000000000
+      internalID: 1858311454443551936
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_18
+      rect:
+        serializedVersion: 2
+        x: 855
+        y: 431
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee2e4fb6a4543c1a0800000000000000
+      internalID: -6790507627203468562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_19
+      rect:
+        serializedVersion: 2
+        x: 1030
+        y: 436
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 784dceb620e460aa0800000000000000
+      internalID: -6195178465093954425
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_20
+      rect:
+        serializedVersion: 2
+        x: 766
+        y: 423
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 612bfa2bc56fe0a10800000000000000
+      internalID: 1877708972655358486
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_21
+      rect:
+        serializedVersion: 2
+        x: 927
+        y: 423
+        width: 10
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c67ee982746437d60800000000000000
+      internalID: 7886724643893995372
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_22
+      rect:
+        serializedVersion: 2
+        x: 804
+        y: 394
+        width: 32
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b02309563910c2d0800000000000000
+      internalID: -3260578409003933512
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_23
+      rect:
+        serializedVersion: 2
+        x: 996
+        y: 403
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7af6dcac28ae4f9f0800000000000000
+      internalID: -435465416478986329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_24
+      rect:
+        serializedVersion: 2
+        x: 1024
+        y: 401
+        width: 9
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08afa5731c3572740800000000000000
+      internalID: 5127158790107101824
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_25
+      rect:
+        serializedVersion: 2
+        x: 1123
+        y: 390
+        width: 26
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d94c6f5e65be77dc0800000000000000
+      internalID: -3641183015247887203
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_26
+      rect:
+        serializedVersion: 2
+        x: 1157
+        y: 402
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea548c4d141f76af0800000000000000
+      internalID: -403088376581306962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_27
+      rect:
+        serializedVersion: 2
+        x: 927
+        y: 392
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd0728435ddb76b60800000000000000
+      internalID: 7739363208066134237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_28
+      rect:
+        serializedVersion: 2
+        x: 681
+        y: 353
+        width: 19
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea57400138e8a3120800000000000000
+      internalID: 2394382845461427630
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_29
+      rect:
+        serializedVersion: 2
+        x: 821
+        y: 278
+        width: 51
+        height: 106
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ddd82379ebe2d25e0800000000000000
+      internalID: -1932837268956738083
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_30
+      rect:
+        serializedVersion: 2
+        x: 882
+        y: 359
+        width: 14
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d84e7a6821ecfdfe0800000000000000
+      internalID: -1161983599874415475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_31
+      rect:
+        serializedVersion: 2
+        x: 939
+        y: 361
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b721e3df88fcc04e0800000000000000
+      internalID: -2014006746070248837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_32
+      rect:
+        serializedVersion: 2
+        x: 948
+        y: 357
+        width: 18
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2ee30ab8f19919b0800000000000000
+      internalID: -5108891804816380369
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_33
+      rect:
+        serializedVersion: 2
+        x: 1003
+        y: 329
+        width: 114
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3c957e889ef3f1e80800000000000000
+      internalID: -8205769723788961341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_34
+      rect:
+        serializedVersion: 2
+        x: 565
+        y: 346
+        width: 11
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e69e85b04c4538e0800000000000000
+      internalID: -1714380242336966940
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_35
+      rect:
+        serializedVersion: 2
+        x: 914
+        y: 337
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b294bfbf24755a20800000000000000
+      internalID: 3050472071041946289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_36
+      rect:
+        serializedVersion: 2
+        x: 1128
+        y: 294
+        width: 28
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9da20c136d5c90b50800000000000000
+      internalID: 6559991855990188761
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_37
+      rect:
+        serializedVersion: 2
+        x: 934
+        y: 321
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3d65b16b1d5a1c550800000000000000
+      internalID: 6179402483851024083
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_38
+      rect:
+        serializedVersion: 2
+        x: 695
+        y: 274
+        width: 69
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a223f566ed0c70320800000000000000
+      internalID: 2524198177597239850
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_39
+      rect:
+        serializedVersion: 2
+        x: 770
+        y: 306
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d476897858f2252c0800000000000000
+      internalID: -4444437631709190323
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_40
+      rect:
+        serializedVersion: 2
+        x: 905
+        y: 293
+        width: 21
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4021ad27a4e93b610800000000000000
+      internalID: 1635825132257284612
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_41
+      rect:
+        serializedVersion: 2
+        x: 961
+        y: 284
+        width: 22
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 739b47b8e76038a00800000000000000
+      internalID: 757456302903703863
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_42
+      rect:
+        serializedVersion: 2
+        x: 1006
+        y: 281
+        width: 17
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f3c0c6be6cefda5e0800000000000000
+      internalID: -1896579737746404289
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_43
+      rect:
+        serializedVersion: 2
+        x: 1106
+        y: 292
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1973a9e435636870800000000000000
+      internalID: 8674888585178216733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_44
+      rect:
+        serializedVersion: 2
+        x: 677
+        y: 268
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00105ec01216f3c50800000000000000
+      internalID: 6647138369600291072
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_45
+      rect:
+        serializedVersion: 2
+        x: 816
+        y: 211
+        width: 27
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bca27ea9a1dfef1d0800000000000000
+      internalID: -3314933984988288309
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_46
+      rect:
+        serializedVersion: 2
+        x: 849
+        y: 261
+        width: 9
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cfd674e8f6c054b0800000000000000
+      internalID: -5453640376458485822
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_47
+      rect:
+        serializedVersion: 2
+        x: 936
+        y: 230
+        width: 20
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2063874efffe54f20800000000000000
+      internalID: 3406392575504430594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_48
+      rect:
+        serializedVersion: 2
+        x: 1036
+        y: 270
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b4b5490b5a064ad0800000000000000
+      internalID: -2718473938957650764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_49
+      rect:
+        serializedVersion: 2
+        x: 1081
+        y: 262
+        width: 24
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d9b2e196c15f3ac0800000000000000
+      internalID: -3873287241222407720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_50
+      rect:
+        serializedVersion: 2
+        x: 1164
+        y: 264
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a45ed2a3de81519c0800000000000000
+      internalID: -3957229290412710582
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_51
+      rect:
+        serializedVersion: 2
+        x: 904
+        y: 258
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45039a0a1fb0bc350800000000000000
+      internalID: 6037932857830748244
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_52
+      rect:
+        serializedVersion: 2
+        x: 736
+        y: 249
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b20282794ded0e70800000000000000
+      internalID: 9083176923185676981
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_53
+      rect:
+        serializedVersion: 2
+        x: 974
+        y: 132
+        width: 102
+        height: 121
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0dff0ffb96679c3e0800000000000000
+      internalID: -2032963560217182256
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_54
+      rect:
+        serializedVersion: 2
+        x: 1040
+        y: 245
+        width: 9
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 763a5e9c6f9606800800000000000000
+      internalID: 603598858737787751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_55
+      rect:
+        serializedVersion: 2
+        x: 752
+        y: 226
+        width: 21
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bbfd93e3069c2b1a0800000000000000
+      internalID: -6795147472550633541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_56
+      rect:
+        serializedVersion: 2
+        x: 1062
+        y: 235
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57f19033e6b9c55c0800000000000000
+      internalID: -4225331452775424139
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_57
+      rect:
+        serializedVersion: 2
+        x: 1126
+        y: 226
+        width: 24
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7cd4427ab5d2966a0800000000000000
+      internalID: -6455578719189447225
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_58
+      rect:
+        serializedVersion: 2
+        x: 711
+        y: 203
+        width: 29
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f62b7892108248d0800000000000000
+      internalID: -2863585595698239759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_59
+      rect:
+        serializedVersion: 2
+        x: 875
+        y: 193
+        width: 14
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 477c7ea20d47d8040800000000000000
+      internalID: 4651502427565442932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_60
+      rect:
+        serializedVersion: 2
+        x: 956
+        y: 226
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 102d4b0ce374fcba0800000000000000
+      internalID: -6066551838198148607
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_61
+      rect:
+        serializedVersion: 2
+        x: 971
+        y: 192
+        width: 22
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4e68a95445a41d240800000000000000
+      internalID: 4814711202441234148
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_62
+      rect:
+        serializedVersion: 2
+        x: 1083
+        y: 218
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad6cb5f63079cb340800000000000000
+      internalID: 4880942137171756762
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_63
+      rect:
+        serializedVersion: 2
+        x: 795
+        y: 208
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44fa417176eaac8c0800000000000000
+      internalID: -3978175563036315836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_64
+      rect:
+        serializedVersion: 2
+        x: 898
+        y: 206
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f65930b6c2834f3c0800000000000000
+      internalID: -4326771578571090577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_65
+      rect:
+        serializedVersion: 2
+        x: 1094
+        y: 211
+        width: 9
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e2dde1f16fe41d370800000000000000
+      internalID: 8345538403485277486
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_66
+      rect:
+        serializedVersion: 2
+        x: 788
+        y: 175
+        width: 20
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 83784069f577336f0800000000000000
+      internalID: -706089464144558280
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_67
+      rect:
+        serializedVersion: 2
+        x: 862
+        y: 183
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8527caec05121f4d0800000000000000
+      internalID: -3102662037333052840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_68
+      rect:
+        serializedVersion: 2
+        x: 913
+        y: 161
+        width: 22
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b37fed9927c8abf0800000000000000
+      internalID: -312781192544947279
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_69
+      rect:
+        serializedVersion: 2
+        x: 704
+        y: 164
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb5de4d0fb5d1e520800000000000000
+      internalID: 2729697865701971391
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_70
+      rect:
+        serializedVersion: 2
+        x: 833
+        y: 165
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0e5b1043ad3796830800000000000000
+      internalID: 4064907519691175392
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_71
+      rect:
+        serializedVersion: 2
+        x: 851
+        y: 163
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e691395f1311c4c40800000000000000
+      internalID: 5497788151383660910
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_72
+      rect:
+        serializedVersion: 2
+        x: 1097
+        y: 167
+        width: 21
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 07a4e57e69c6f9410800000000000000
+      internalID: 1486025797438163568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_73
+      rect:
+        serializedVersion: 2
+        x: 732
+        y: 111
+        width: 52
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9d7399d1fd6396e0800000000000000
+      internalID: -1831999737904792162
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_74
+      rect:
+        serializedVersion: 2
+        x: 818
+        y: 116
+        width: 18
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0742f038f28dfdea0800000000000000
+      internalID: -5845716092729744272
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_75
+      rect:
+        serializedVersion: 2
+        x: 879
+        y: 115
+        width: 40
+        height: 50
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 17b28abc2953d8c80800000000000000
+      internalID: -8318934032085144719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_76
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 134
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0be7f06d276fb2e30800000000000000
+      internalID: 4479945227428134576
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_77
+      rect:
+        serializedVersion: 2
+        x: 1065
+        y: 116
+        width: 37
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b8bd40e5a9ff93db0800000000000000
+      internalID: -4811533688401241205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_78
+      rect:
+        serializedVersion: 2
+        x: 843
+        y: 98
+        width: 22
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd78353b549765040800000000000000
+      internalID: 4636026206692804571
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_79
+      rect:
+        serializedVersion: 2
+        x: 1017
+        y: 121
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8429fc8052b0b550800000000000000
+      internalID: 6174631148157215887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_80
+      rect:
+        serializedVersion: 2
+        x: 741
+        y: 104
+        width: 12
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 738ea38ce302f6180800000000000000
+      internalID: -9120035266382600137
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_81
+      rect:
+        serializedVersion: 2
+        x: 941
+        y: 79
+        width: 23
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 64d7868f01f713140800000000000000
+      internalID: 4697675597187939654
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_82
+      rect:
+        serializedVersion: 2
+        x: 1028
+        y: 112
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6b615cd6ab677d50800000000000000
+      internalID: 6734970132160932714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_83
+      rect:
+        serializedVersion: 2
+        x: 808
+        y: 82
+        width: 11
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2cbff5af724c64890800000000000000
+      internalID: -7474070855591396414
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_84
+      rect:
+        serializedVersion: 2
+        x: 915
+        y: 82
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be79d0fc6331b6660800000000000000
+      internalID: 7380013540499625963
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_85
+      rect:
+        serializedVersion: 2
+        x: 982
+        y: 74
+        width: 27
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 358446c4711d101c0800000000000000
+      internalID: -4539117051416655789
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_86
+      rect:
+        serializedVersion: 2
+        x: 1052
+        y: 93
+        width: 13
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24f22b44864acb930800000000000000
+      internalID: 4160380923519577922
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_87
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 56
+        width: 14
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1879de77df9996ec0800000000000000
+      internalID: -3573155515423942783
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_88
+      rect:
+        serializedVersion: 2
+        x: 332
+        y: 73
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19631bf6786ec61a0800000000000000
+      internalID: -6814818666749544815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_89
+      rect:
+        serializedVersion: 2
+        x: 870
+        y: 74
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 451b42815b29dce00800000000000000
+      internalID: 1066669993248469332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dynamite_sprite_90
+      rect:
+        serializedVersion: 2
+        x: 908
+        y: 65
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce5f10c5677894500800000000000000
+      internalID: 380984585909040620
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      dynamite_sprite_0: 5858627420371098742
+      dynamite_sprite_1: -8301429111420325712
+      dynamite_sprite_10: 2386926584173877367
+      dynamite_sprite_11: -5780218683583804384
+      dynamite_sprite_12: -473843421863015821
+      dynamite_sprite_13: -687842024133082553
+      dynamite_sprite_14: 6512196153576579099
+      dynamite_sprite_15: -7391516602546632872
+      dynamite_sprite_16: -7831813408483538176
+      dynamite_sprite_17: 1858311454443551936
+      dynamite_sprite_18: -6790507627203468562
+      dynamite_sprite_19: -6195178465093954425
+      dynamite_sprite_2: -3682444550285487652
+      dynamite_sprite_20: 1877708972655358486
+      dynamite_sprite_21: 7886724643893995372
+      dynamite_sprite_22: -3260578409003933512
+      dynamite_sprite_23: -435465416478986329
+      dynamite_sprite_24: 5127158790107101824
+      dynamite_sprite_25: -3641183015247887203
+      dynamite_sprite_26: -403088376581306962
+      dynamite_sprite_27: 7739363208066134237
+      dynamite_sprite_28: 2394382845461427630
+      dynamite_sprite_29: -1932837268956738083
+      dynamite_sprite_3: 6639024425209493561
+      dynamite_sprite_30: -1161983599874415475
+      dynamite_sprite_31: -2014006746070248837
+      dynamite_sprite_32: -5108891804816380369
+      dynamite_sprite_33: -8205769723788961341
+      dynamite_sprite_34: -1714380242336966940
+      dynamite_sprite_35: 3050472071041946289
+      dynamite_sprite_36: 6559991855990188761
+      dynamite_sprite_37: 6179402483851024083
+      dynamite_sprite_38: 2524198177597239850
+      dynamite_sprite_39: -4444437631709190323
+      dynamite_sprite_4: 6006836984076023023
+      dynamite_sprite_40: 1635825132257284612
+      dynamite_sprite_41: 757456302903703863
+      dynamite_sprite_42: -1896579737746404289
+      dynamite_sprite_43: 8674888585178216733
+      dynamite_sprite_44: 6647138369600291072
+      dynamite_sprite_45: -3314933984988288309
+      dynamite_sprite_46: -5453640376458485822
+      dynamite_sprite_47: 3406392575504430594
+      dynamite_sprite_48: -2718473938957650764
+      dynamite_sprite_49: -3873287241222407720
+      dynamite_sprite_5: 1127735197706773148
+      dynamite_sprite_50: -3957229290412710582
+      dynamite_sprite_51: 6037932857830748244
+      dynamite_sprite_52: 9083176923185676981
+      dynamite_sprite_53: -2032963560217182256
+      dynamite_sprite_54: 603598858737787751
+      dynamite_sprite_55: -6795147472550633541
+      dynamite_sprite_56: -4225331452775424139
+      dynamite_sprite_57: -6455578719189447225
+      dynamite_sprite_58: -2863585595698239759
+      dynamite_sprite_59: 4651502427565442932
+      dynamite_sprite_6: 717749225014209211
+      dynamite_sprite_60: -6066551838198148607
+      dynamite_sprite_61: 4814711202441234148
+      dynamite_sprite_62: 4880942137171756762
+      dynamite_sprite_63: -3978175563036315836
+      dynamite_sprite_64: -4326771578571090577
+      dynamite_sprite_65: 8345538403485277486
+      dynamite_sprite_66: -706089464144558280
+      dynamite_sprite_67: -3102662037333052840
+      dynamite_sprite_68: -312781192544947279
+      dynamite_sprite_69: 2729697865701971391
+      dynamite_sprite_7: 4651792019166640463
+      dynamite_sprite_70: 4064907519691175392
+      dynamite_sprite_71: 5497788151383660910
+      dynamite_sprite_72: 1486025797438163568
+      dynamite_sprite_73: -1831999737904792162
+      dynamite_sprite_74: -5845716092729744272
+      dynamite_sprite_75: -8318934032085144719
+      dynamite_sprite_76: 4479945227428134576
+      dynamite_sprite_77: -4811533688401241205
+      dynamite_sprite_78: 4636026206692804571
+      dynamite_sprite_79: 6174631148157215887
+      dynamite_sprite_8: 6072997571494954444
+      dynamite_sprite_80: -9120035266382600137
+      dynamite_sprite_81: 4697675597187939654
+      dynamite_sprite_82: 6734970132160932714
+      dynamite_sprite_83: -7474070855591396414
+      dynamite_sprite_84: 7380013540499625963
+      dynamite_sprite_85: -4539117051416655789
+      dynamite_sprite_86: 4160380923519577922
+      dynamite_sprite_87: -3573155515423942783
+      dynamite_sprite_88: -6814818666749544815
+      dynamite_sprite_89: 1066669993248469332
+      dynamite_sprite_9: -8473631066468935412
+      dynamite_sprite_90: 380984585909040620
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
