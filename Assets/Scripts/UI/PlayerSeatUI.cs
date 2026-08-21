@@ -115,6 +115,11 @@ namespace BangBang.UI
             if (crosshairTargetObj != null) crosshairTargetObj.SetActive(show);
         }
 
+        public void SetTargetHighlight(bool highlight)
+        {
+            SetTargetCrosshair(highlight);
+        }
+
         public Vector2 GetScreenCenterPosition()
         {
             return RectTransformUtility.WorldToScreenPoint(null, transform.position);

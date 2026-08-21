@@ -10,6 +10,7 @@ namespace BangBang.Core.Data
         public string name;
         public string abilityName;
         public string abilityDescription;
+        public string description => abilityDescription;
         public int maxHealth;
         public string resourcePath;
 
