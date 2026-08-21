@@ -1,0 +1,120 @@
+using System;
+using BangBang.Core.Audio;
+using BangBang.Core.Data;
+using BangBang.Core.Network;
+using BangBang.Core.State;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace BangBang.UI.Views
+{
+    public class HomeScreenUI : MonoBehaviour
+    {
+        [Header("Background & Profile")]
+        public Image backgroundImage;
+        public Image logoImage;
+        public Image avatarImage;
+        public Text playerNameText;
+        public Text playerBountyText;
+
+        [Header("3 Main Home Buttons")]
+        public Button startButton; // BẮT ĐẦU -> Chuyển vào Sảnh Chờ (Lobby)
+        public Button questsButton; // NHIỆM VỤ -> Mở Popup Nhiệm vụ
+        public Button guideButton;  // HƯỚNG DẪN -> Mở Popup Hướng dẫn
+
+        [Header("Quests Popup")]
+        public GameObject questsPopup;
+        public Button closeQuestsButton;
+
+        [Header("Guide Popup")]
+        public GameObject guidePopup;
+        public Button closeGuideButton;
+
+        private void Awake()
+        {
+            if (startButton != null)
+            {
+                startButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
+                });
+            }
+
+            if (questsButton != null)
+            {
+                questsButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (questsPopup != null) questsPopup.SetActive(true);
+                });
+            }
+
+            if (closeQuestsButton != null)
+            {
+                closeQuestsButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (questsPopup != null) questsPopup.SetActive(false);
+                });
+            }
+
+            if (guideButton != null)
+            {
+                guideButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (guidePopup != null) guidePopup.SetActive(true);
+                });
+            }
+
+            if (closeGuideButton != null)
+            {
+                closeGuideButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (guidePopup != null) guidePopup.SetActive(false);
+                });
+            }
+        }
+
+        private void Start()
+        {
+            SetupVisuals();
+            if (questsPopup != null) questsPopup.SetActive(false);
+            if (guidePopup != null) guidePopup.SetActive(false);
+        }
+
+        public void SetupVisuals()
+        {
+            if (backgroundImage != null)
+            {
+                var townSprite = CardCatalogDatabase.LoadSprite("wild_west_town");
+                if (townSprite != null)
+                {
+                    backgroundImage.sprite = townSprite;
+                    backgroundImage.color = Color.white;
+                }
+            }
+
+            if (logoImage != null)
+            {
+                var logoSprite = CardCatalogDatabase.LoadSprite("bang_bang_logo");
+                if (logoSprite != null)
+                {
+                    logoImage.sprite = logoSprite;
+                    logoImage.preserveAspect = true;
+                }
+            }
+
+            if (avatarImage != null)
+            {
+                var charSprite = CardCatalogDatabase.LoadSprite("Characters/willy_the_kid");
+                if (charSprite != null) avatarImage.sprite = charSprite;
+            }
+
+            if (playerNameText != null) playerNameText.text = "Cao bồi của bạn";
+            if (playerBountyText != null) playerBountyText.text = "Tiền thưởng: $15,000 🪙";
+        }
+    }
+}

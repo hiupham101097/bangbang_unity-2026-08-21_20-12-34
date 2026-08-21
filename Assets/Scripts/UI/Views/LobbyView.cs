@@ -11,9 +11,10 @@ namespace BangBang.UI.Views
 {
     public class LobbyView : MonoBehaviour
     {
-        [Header("Profile Header")]
-        public Image avatarImage;
-        public Text nameText;
+        [Header("Header & Navigation")]
+        public Image backgroundImage;
+        public Button backToHomeButton;
+        public Text titleText;
         public Text connectionStatusText;
 
         [Header("Room Actions")]
@@ -26,6 +27,8 @@ namespace BangBang.UI.Views
         public GameObject createRoomPopup;
         public InputField roomNameInput;
         public Dropdown maxPlayersDropdown;
+        public Toggle addBotsToggle; // Quyền chọn thêm Bot chơi chung
+        public Dropdown botCountDropdown;
         public Toggle privateRoomToggle;
         public InputField passwordInput;
         public Dropdown turnTimeDropdown;
@@ -39,6 +42,22 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
+            if (backToHomeButton != null)
+            {
+                backToHomeButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
+                    // Hide Lobby to show Home
+                    gameObject.SetActive(false);
+                    if (GameFlowController.Instance?.lobbyView != null)
+                    {
+                        var home = FindFirstObjectByType<HomeScreenUI>();
+                        if (home != null) home.gameObject.SetActive(true);
+                    }
+                });
+            }
+
             if (openCreateRoomPopupButton != null)
                 openCreateRoomPopupButton.onClick.AddListener(() => ShowCreateRoomPopup(true));
 
@@ -57,6 +76,7 @@ namespace BangBang.UI.Views
 
         private void Start()
         {
+            SetupVisuals();
             if (createRoomPopup != null) createRoomPopup.SetActive(false);
 
             if (GameStateStore.Instance?.Gateway != null)
@@ -74,6 +94,19 @@ namespace BangBang.UI.Views
             {
                 GameStateStore.Instance.Gateway.OnRoomListUpdated -= RenderRoomList;
                 GameStateStore.Instance.Gateway.OnConnectionStateChanged -= UpdateConnectionState;
+            }
+        }
+
+        private void SetupVisuals()
+        {
+            if (backgroundImage != null)
+            {
+                var townSprite = CardCatalogDatabase.LoadSprite("wild_west_town");
+                if (townSprite != null)
+                {
+                    backgroundImage.sprite = townSprite;
+                    backgroundImage.color = new Color(0.45f, 0.45f, 0.45f);
+                }
             }
         }
 
@@ -143,7 +176,7 @@ namespace BangBang.UI.Views
         {
             var itemObj = new GameObject("Room_" + room.roomCode, typeof(RectTransform), typeof(Image));
             var rt = itemObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(850, 75);
+            rt.sizeDelta = new Vector2(880, 80);
 
             var img = itemObj.GetComponent<Image>();
             img.color = new Color(0.18f, 0.12f, 0.08f, 0.95f);
@@ -152,8 +185,8 @@ namespace BangBang.UI.Views
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
             nameObj.transform.SetParent(itemObj.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
-            nameRt.anchoredPosition = new Vector2(-220f, 0);
-            nameRt.sizeDelta = new Vector2(320, 40);
+            nameRt.anchoredPosition = new Vector2(-230f, 0);
+            nameRt.sizeDelta = new Vector2(340, 40);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             nameTxt.fontSize = 18;
@@ -167,7 +200,7 @@ namespace BangBang.UI.Views
             infoObj.transform.SetParent(itemObj.transform, false);
             var infoRt = infoObj.GetComponent<RectTransform>();
             infoRt.anchoredPosition = new Vector2(100f, 0);
-            infoRt.sizeDelta = new Vector2(180, 40);
+            infoRt.sizeDelta = new Vector2(200, 40);
             var infoTxt = infoObj.GetComponent<Text>();
             infoTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             infoTxt.fontSize = 15;
@@ -179,8 +212,8 @@ namespace BangBang.UI.Views
             var joinObj = new GameObject("JoinBtn", typeof(RectTransform), typeof(Image), typeof(Button));
             joinObj.transform.SetParent(itemObj.transform, false);
             var joinRt = joinObj.GetComponent<RectTransform>();
-            joinRt.anchoredPosition = new Vector2(320f, 0);
-            joinRt.sizeDelta = new Vector2(130, 48);
+            joinRt.anchoredPosition = new Vector2(330f, 0);
+            joinRt.sizeDelta = new Vector2(140, 50);
             var jImg = joinObj.GetComponent<Image>();
             jImg.color = new Color(0.2f, 0.6f, 0.25f);
 

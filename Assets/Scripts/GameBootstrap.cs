@@ -26,7 +26,8 @@ namespace BangBang.UI
         public BangMockGateway mockGateway;
         public BangLiveGateway liveGateway;
 
-        [Header("6 Dedicated Views")]
+        [Header("Views")]
+        public HomeScreenUI homeScreen;
         public LobbyView lobbyView;
         public WaitingRoomView waitingRoomView;
         public RoleRevealView roleRevealView;
@@ -67,8 +68,19 @@ namespace BangBang.UI
             PlayerPrefs.SetString("bang_device_id", deviceId);
             await activeGateway.InitializeSessionAsync(deviceId, "Cao bồi viễn tây");
 
-            // Enter Lobby
-            flowController?.TransitionToState(ServerGameState.LOBBY);
+            // Show Home Screen initially
+            ShowHomeScreen();
+        }
+
+        public void ShowHomeScreen()
+        {
+            if (homeScreen != null) homeScreen.gameObject.SetActive(true);
+            if (lobbyView != null) lobbyView.gameObject.SetActive(false);
+            if (waitingRoomView != null) waitingRoomView.gameObject.SetActive(false);
+            if (roleRevealView != null) roleRevealView.gameObject.SetActive(false);
+            if (characterSelectionView != null) characterSelectionView.gameObject.SetActive(false);
+            if (gameTableView != null) gameTableView.gameObject.SetActive(false);
+            if (resultView != null) resultView.gameObject.SetActive(false);
         }
 
         private void EnsureUIHierarchy()
@@ -105,27 +117,58 @@ namespace BangBang.UI
                 liveGateway.serverBaseUrl = cloudflareWorkerUrl;
             }
 
-            // Game State Store
-            if (gameStateStore == null)
+            // State Store & Flow
+            if (gameStateStore == null) gameStateStore = gameObject.AddComponent<GameStateStore>();
+            if (flowController == null) flowController = gameObject.AddComponent<GameFlowController>();
+
+            // 0. HOME SCREEN (Trang Chủ)
+            if (homeScreen == null)
             {
-                gameStateStore = FindFirstObjectByType<GameStateStore>();
-                if (gameStateStore == null) gameStateStore = gameObject.AddComponent<GameStateStore>();
+                var homeObj = CreateFullScreenPanel("HomeScreen", canvas.transform);
+                homeScreen = homeObj.AddComponent<HomeScreenUI>();
+                homeScreen.backgroundImage = homeObj.GetComponent<Image>();
+
+                // Logo Banner
+                var logoObj = new GameObject("LogoBanner", typeof(RectTransform), typeof(Image));
+                logoObj.transform.SetParent(homeObj.transform, false);
+                var logoRt = logoObj.GetComponent<RectTransform>();
+                logoRt.anchoredPosition = new Vector2(0, 300f);
+                logoRt.sizeDelta = new Vector2(500, 240);
+                homeScreen.logoImage = logoObj.GetComponent<Image>();
+
+                // 3 Main Buttons
+                homeScreen.startButton = CreateButton("StartBtn", "🤠 BẮT ĐẦU", new Vector2(0, 50f), new Color(0.85f, 0.45f, 0.15f), homeObj.transform, new Vector2(360, 70));
+                homeScreen.questsButton = CreateButton("QuestsBtn", "📜 NHIỆM VỤ", new Vector2(0, -40f), new Color(0.25f, 0.55f, 0.8f), homeObj.transform, new Vector2(360, 65));
+                homeScreen.guideButton = CreateButton("GuideBtn", "📖 HƯỚNG DẪN", new Vector2(0, -125f), new Color(0.45f, 0.3f, 0.2f), homeObj.transform, new Vector2(360, 65));
+
+                // Quests Popup
+                var qPopup = CreatePopupBox("QuestsPopup", "📜 NHIỆM VỤ HẰNG NGÀY", "1. Bắn trúng 3 phát BANG! (Thưởng: 500 Vàng)\n2. Uống 2 chai BIA hồi máu (Thưởng: 300 Vàng)\n3. Thắng 1 trận với vai trò Cảnh Sát Trưởng (Thưởng: 1,000 Vàng)", homeObj.transform);
+                homeScreen.questsPopup = qPopup.Item1;
+                homeScreen.closeQuestsButton = qPopup.Item2;
+
+                // Guide Popup
+                var gPopup = CreatePopupBox("GuidePopup", "📖 HƯỚNG DẪN LUẬT CHƠI BANG!", "• CẢNH SÁT TRƯỞNG: Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội.\n• PHÓ CẢNH SÁT: Bảo vệ Cảnh Sát Trưởng bằng mọi giá.\n• CƯỚP (OUTLAW): Tiêu diệt Cảnh Sát Trưởng.\n• KẺ PHẢN BỘI: Người sống sót cuối cùng và hạ Cảnh Sát Trưởng sau cùng.\n\n• CỰ LY BẮN: Khoảng cách ngắn nhất quanh bàn. Vũ khí tăng tầm bắn.", homeObj.transform);
+                homeScreen.guidePopup = gPopup.Item1;
+                homeScreen.closeGuideButton = gPopup.Item2;
             }
 
-            // Flow Controller
-            if (flowController == null)
-            {
-                flowController = FindFirstObjectByType<GameFlowController>();
-                if (flowController == null) flowController = gameObject.AddComponent<GameFlowController>();
-            }
-
-            // 1. Lobby View
+            // 1. LOBBY VIEW (Sảnh Chờ / Danh Sách Phòng)
             if (lobbyView == null)
             {
                 var lobbyObj = CreateFullScreenPanel("LobbyView", canvas.transform);
                 lobbyView = lobbyObj.AddComponent<LobbyView>();
-                lobbyView.openCreateRoomPopupButton = CreateButton("CreateRoomBtn", "➕ TẠO PHÒNG MỚI", new Vector2(-220f, -380f), new Color(0.85f, 0.45f, 0.15f), lobbyObj.transform);
-                lobbyView.joinByPinButton = CreateButton("JoinPinBtn", "🔑 VÀO BẰNG MÃ PIN", new Vector2(220f, -380f), new Color(0.2f, 0.55f, 0.85f), lobbyObj.transform);
+                lobbyView.backgroundImage = lobbyObj.GetComponent<Image>();
+
+                // Back to Home Button
+                lobbyView.backToHomeButton = CreateButton("BackHomeBtn", "⬅ TRANG CHỦ", new Vector2(-680f, 430f), new Color(0.45f, 0.25f, 0.15f), lobbyObj.transform, new Vector2(180, 50));
+
+                // Header Title
+                var headObj = CreateText("Header", "🤠 SẢNH CHỜ VIỄN TÂY", new Vector2(0, 430f), new Vector2(500, 50), 28, new Color(1f, 0.85f, 0.3f), lobbyObj.transform);
+                lobbyView.titleText = headObj.GetComponent<Text>();
+
+                // Actions Bottom
+                lobbyView.openCreateRoomPopupButton = CreateButton("CreateRoomBtn", "➕ TẠO PHÒNG MỚI", new Vector2(-220f, -390f), new Color(0.85f, 0.45f, 0.15f), lobbyObj.transform, new Vector2(280, 65));
+                lobbyView.joinByPinButton = CreateButton("JoinPinBtn", "🔑 VÀO BẰNG MÃ PIN", new Vector2(220f, -390f), new Color(0.2f, 0.55f, 0.85f), lobbyObj.transform, new Vector2(280, 65));
 
                 // Room List Container
                 var listContainer = new GameObject("RoomListContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
@@ -138,23 +181,27 @@ namespace BangBang.UI
                 vlg.spacing = 15f;
                 lobbyView.roomListContentTransform = listContainer.transform;
 
+                // Create Room Popup (with bot option)
+                var crPopup = CreatePopupBox("CreateRoomPopup", "➕ TẠO PHÒNG MỚI", "Cài đặt phòng chơi Saloon:", lobbyObj.transform, "TẠO PHÒNG");
+                lobbyView.createRoomPopup = crPopup.Item1;
+                lobbyView.confirmCreateRoomButton = crPopup.Item2;
+                lobbyView.closeCreateRoomPopupButton = crPopup.Item3;
+
                 flowController.lobbyView = lobbyView;
             }
 
-            // 2. Waiting Room View
+            // 2. WAITING ROOM VIEW (Phòng Chờ)
             if (waitingRoomView == null)
             {
                 var waitingObj = CreateFullScreenPanel("WaitingRoomView", canvas.transform);
                 waitingRoomView = waitingObj.AddComponent<WaitingRoomView>();
 
-                // Header
                 var codeObj = CreateText("RoomCodeText", "MÃ PHÒNG: SALOON", new Vector2(0, 420f), new Vector2(600, 50), 26, Color.yellow, waitingObj.transform);
                 waitingRoomView.roomCodeText = codeObj.GetComponent<Text>();
 
                 var reasonObj = CreateText("ReasonText", "Đang chờ người chơi sẵn sàng...", new Vector2(0, 360f), new Vector2(800, 30), 14, Color.white, waitingObj.transform);
                 waitingRoomView.startDisabledReasonText = reasonObj.GetComponent<Text>();
 
-                // Seats Container
                 var seatsContainer = new GameObject("SeatsContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
                 seatsContainer.transform.SetParent(waitingObj.transform, false);
                 var sRt = seatsContainer.GetComponent<RectTransform>();
@@ -165,15 +212,16 @@ namespace BangBang.UI
                 hlg.spacing = 15f;
                 waitingRoomView.seatsContainer = seatsContainer.transform;
 
-                // Controls
-                waitingRoomView.startGameButton = CreateButton("StartBtn", "🚀 BẮT ĐẦU TRẬN ĐẤU", new Vector2(240f, -380f), new Color(0.2f, 0.7f, 0.25f), waitingObj.transform, new Vector2(260, 65));
-                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(0f, -380f), new Color(0.85f, 0.5f, 0.15f), waitingObj.transform, new Vector2(200, 65));
-                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "⬅ RỜI PHÒNG", new Vector2(-240f, -380f), new Color(0.45f, 0.25f, 0.15f), waitingObj.transform, new Vector2(200, 65));
+                // Controls: Start, Add Bot, Ready, Leave
+                waitingRoomView.startGameButton = CreateButton("StartBtn", "🚀 BẮT ĐẦU TRẬN ĐẤU", new Vector2(330f, -380f), new Color(0.2f, 0.7f, 0.25f), waitingObj.transform, new Vector2(250, 65));
+                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "🤖 THÊM BOT", new Vector2(100f, -380f), new Color(0.85f, 0.5f, 0.15f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-100f, -380f), new Color(0.2f, 0.55f, 0.85f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "⬅ RỜI PHÒNG", new Vector2(-310f, -380f), new Color(0.45f, 0.25f, 0.15f), waitingObj.transform, new Vector2(180, 65));
 
                 flowController.waitingRoomView = waitingRoomView;
             }
 
-            // 3. Role Reveal View
+            // 3. ROLE REVEAL VIEW
             if (roleRevealView == null)
             {
                 var roleObj = CreateFullScreenPanel("RoleRevealView", canvas.transform);
@@ -195,13 +243,13 @@ namespace BangBang.UI
                 flowController.roleRevealView = roleRevealView;
             }
 
-            // 4. Character Selection View
+            // 4. CHARACTER SELECTION VIEW
             if (characterSelectionView == null)
             {
                 var charObj = CreateFullScreenPanel("CharacterSelectionView", canvas.transform);
                 characterSelectionView = charObj.AddComponent<CharacterSelectionView>();
 
-                var headObj = CreateText("Header", "CHỌN TƯỚNG BẮT ĐẦU TRẬN ĐẤU", new Vector2(0, 420f), new Vector2(800, 50), 26, Color.yellow, charObj.transform);
+                CreateText("Header", "CHỌN TƯỚNG BẮT ĐẦU TRẬN ĐẤU", new Vector2(0, 420f), new Vector2(800, 50), 26, Color.yellow, charObj.transform);
 
                 var candidatesContainer = new GameObject("CandidatesContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
                 candidatesContainer.transform.SetParent(charObj.transform, false);
@@ -218,14 +266,13 @@ namespace BangBang.UI
                 flowController.characterSelectionView = characterSelectionView;
             }
 
-            // 5. Game Table View
+            // 5. GAME TABLE VIEW
             if (gameTableView == null)
             {
                 var tableObj = CreateFullScreenPanel("GameTableView", canvas.transform);
                 gameTableView = tableObj.AddComponent<GameTableView>();
                 gameTableView.tableBackgroundImage = tableObj.GetComponent<Image>();
 
-                // Center Decks
                 var centerZone = new GameObject("CenterZone", typeof(RectTransform));
                 centerZone.transform.SetParent(tableObj.transform, false);
                 var czRt = centerZone.GetComponent<RectTransform>();
@@ -254,22 +301,19 @@ namespace BangBang.UI
                 var discTxtObj = CreateText("Count", "1", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, discObj.transform);
                 gameTableView.discardPileCountText = discTxtObj.GetComponent<Text>();
 
-                // Local Hand Layout
                 var handObj = new GameObject("HandLayout", typeof(RectTransform), typeof(HandCardFanLayout));
                 handObj.transform.SetParent(tableObj.transform, false);
                 gameTableView.handCardLayout = handObj.GetComponent<HandCardFanLayout>();
 
-                // End Turn Button
                 gameTableView.endTurnButton = CreateButton("EndTurnBtn", "End Turn", new Vector2(720f, 80f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 65));
 
-                // Combat Log Text
                 var logObj = CreateText("LogText", "Chào mừng đến bàn đấu Bang!", new Vector2(0, -180f), new Vector2(700, 30), 14, new Color(0.95f, 0.85f, 0.6f), tableObj.transform);
                 gameTableView.combatLogText = logObj.GetComponent<Text>();
 
                 flowController.gameTableView = gameTableView;
             }
 
-            // 6. Result View
+            // 6. RESULT VIEW
             if (resultView == null)
             {
                 var resultObj = CreateFullScreenPanel("ResultView", canvas.transform);
@@ -294,7 +338,7 @@ namespace BangBang.UI
                 flowController.resultView = resultView;
             }
 
-            // Unified Interaction Controller
+            // Interaction Controller
             if (interactionController == null)
             {
                 var interactObj = new GameObject("InteractionController", typeof(RectTransform), typeof(InteractionController));
@@ -331,6 +375,44 @@ namespace BangBang.UI
                 ohlg.spacing = 15f;
                 interactionController.optionsContainer = optContainer.transform;
             }
+        }
+
+        private (GameObject, Button) CreatePopupBox(string name, string title, string content, Transform parent)
+        {
+            var popupRoot = CreateFullScreenPanel(name, parent);
+            popupRoot.GetComponent<Image>().color = new Color(0, 0, 0, 0.8f);
+
+            var boxObj = new GameObject("Box", typeof(RectTransform), typeof(Image));
+            boxObj.transform.SetParent(popupRoot.transform, false);
+            var bRt = boxObj.GetComponent<RectTransform>();
+            bRt.sizeDelta = new Vector2(700, 440);
+            boxObj.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.08f, 0.98f);
+
+            CreateText("Title", title, new Vector2(0, 160f), new Vector2(600, 40), 22, Color.yellow, boxObj.transform);
+            CreateText("Content", content, new Vector2(0, 30f), new Vector2(620, 200), 15, Color.white, boxObj.transform);
+
+            var closeBtn = CreateButton("CloseBtn", "ĐÃ HIỂU / ĐÓNG", new Vector2(0, -150f), new Color(0.85f, 0.45f, 0.15f), boxObj.transform, new Vector2(240, 55));
+            return (popupRoot, closeBtn);
+        }
+
+        private (GameObject, Button, Button) CreatePopupBox(string name, string title, string content, Transform parent, string confirmText)
+        {
+            var popupRoot = CreateFullScreenPanel(name, parent);
+            popupRoot.GetComponent<Image>().color = new Color(0, 0, 0, 0.8f);
+
+            var boxObj = new GameObject("Box", typeof(RectTransform), typeof(Image));
+            boxObj.transform.SetParent(popupRoot.transform, false);
+            var bRt = boxObj.GetComponent<RectTransform>();
+            bRt.sizeDelta = new Vector2(700, 440);
+            boxObj.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.08f, 0.98f);
+
+            CreateText("Title", title, new Vector2(0, 160f), new Vector2(600, 40), 22, Color.yellow, boxObj.transform);
+            CreateText("Content", content, new Vector2(0, 40f), new Vector2(620, 150), 16, Color.white, boxObj.transform);
+
+            var confirmBtn = CreateButton("ConfirmBtn", confirmText, new Vector2(140f, -150f), new Color(0.2f, 0.7f, 0.25f), boxObj.transform, new Vector2(220, 55));
+            var closeBtn = CreateButton("CloseBtn", "HỦY BỎ", new Vector2(-140f, -150f), new Color(0.45f, 0.25f, 0.15f), boxObj.transform, new Vector2(200, 55));
+
+            return (popupRoot, confirmBtn, closeBtn);
         }
 
         private GameObject CreateFullScreenPanel(string name, Transform parent)

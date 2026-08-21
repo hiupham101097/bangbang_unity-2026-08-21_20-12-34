@@ -23,6 +23,7 @@ namespace BangBang.UI.Views
         public Button readyToggleButton;
         public Text readyButtonText;
         public Button startGameButton;
+        public Button addBotButton; // Nút thêm Bot chơi chung
         public Button leaveRoomButton;
         public Text startDisabledReasonText;
 
@@ -41,6 +42,11 @@ namespace BangBang.UI.Views
                         AudioManager.Instance?.PlaySFX("button_tap");
                     }
                 });
+            }
+
+            if (addBotButton != null)
+            {
+                addBotButton.onClick.AddListener(HandleAddBotClicked);
             }
 
             if (readyToggleButton != null)
@@ -185,6 +191,30 @@ namespace BangBang.UI.Views
             statusTxt.text = player != null ? (player.isReady ? "🟢 ĐÃ SẴN SÀNG" : "⏳ ĐANG CHỜ") : "⚪ TRỐNG";
 
             return seatObj;
+        }
+
+        private void HandleAddBotClicked()
+        {
+            var snap = GameStateStore.Instance?.CurrentSnapshot;
+            if (snap == null || snap.players.Count >= 7) return;
+
+            string[] botPool = { "Bill Độc Nhãn", "Apache Jack", "Django Nhanh Nhẹn", "Doc Holliday", "Jesse Râu Đen", "Billy Cao Kều" };
+            int nextIdx = snap.players.Count;
+            string botName = botPool[(nextIdx - 1) % botPool.Length];
+
+            snap.players.Add(new PlayerSnapshotDTO
+            {
+                id = "bot_" + nextIdx,
+                name = botName,
+                seat = nextIdx,
+                isHost = false,
+                isReady = true,
+                currentHealth = 4,
+                maxHealth = 4
+            });
+
+            AudioManager.Instance?.PlaySFX("button_tap");
+            RenderWaitingRoom(snap);
         }
 
         private async void HandleToggleReadyClicked()
