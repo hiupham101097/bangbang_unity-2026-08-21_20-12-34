@@ -60,7 +60,7 @@ namespace BangBang.UI
             // Bind Screen Transitions
             if (homeScreen != null)
             {
-                homeScreen.OnQuickPlayClicked += () => StartMatch(7, "Cao bồi của bạn");
+                homeScreen.OnQuickPlayClicked += () => ScreenManager.Instance?.SwitchToScreen(AppScreenState.RoomLobby);
                 homeScreen.OnOnlineRoomsClicked += () => ScreenManager.Instance?.SwitchToScreen(AppScreenState.RoomList);
             }
 
