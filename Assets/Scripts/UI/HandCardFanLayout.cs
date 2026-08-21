@@ -18,6 +18,7 @@ namespace BangBang.UI
 
         private readonly List<CardUI> _cardUIs = new List<CardUI>();
 
+        public event Action<CardUI> OnCardClicked;
         public event Action<CardUI, Vector2> OnCardDragging;
         public event Action<CardUI, Vector2> OnCardDropped;
 
@@ -166,6 +167,7 @@ namespace BangBang.UI
 
         private void BindCardEvents(CardUI cardUI)
         {
+            cardUI.OnCardClicked += (c) => OnCardClicked?.Invoke(c);
             cardUI.OnCardDragging += (c, screenPos) => OnCardDragging?.Invoke(c, screenPos);
             cardUI.OnCardDropped += (c, screenPos) => OnCardDropped?.Invoke(c, screenPos);
         }

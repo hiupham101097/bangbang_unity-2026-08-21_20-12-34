@@ -28,6 +28,7 @@ namespace BangBang.UI
 
         [Header("Views")]
         public HomeScreenUI homeScreen;
+        public CardGalleryView cardGalleryView;
         public LobbyView lobbyView;
         public WaitingRoomView waitingRoomView;
         public RoleRevealView roleRevealView;
@@ -75,6 +76,7 @@ namespace BangBang.UI
         public void ShowHomeScreen()
         {
             if (homeScreen != null) homeScreen.gameObject.SetActive(true);
+            if (cardGalleryView != null) cardGalleryView.gameObject.SetActive(false);
             if (lobbyView != null) lobbyView.gameObject.SetActive(false);
             if (waitingRoomView != null) waitingRoomView.gameObject.SetActive(false);
             if (roleRevealView != null) roleRevealView.gameObject.SetActive(false);
@@ -136,10 +138,15 @@ namespace BangBang.UI
                 logoRt.sizeDelta = new Vector2(500, 240);
                 homeScreen.logoImage = logoObj.GetComponent<Image>();
 
-                // 3 Main Buttons
-                homeScreen.startButton = CreateButton("StartBtn", "🤠 BẮT ĐẦU", new Vector2(0, 50f), new Color(0.85f, 0.45f, 0.15f), homeObj.transform, new Vector2(360, 70));
-                homeScreen.questsButton = CreateButton("QuestsBtn", "📜 NHIỆM VỤ", new Vector2(0, -40f), new Color(0.25f, 0.55f, 0.8f), homeObj.transform, new Vector2(360, 65));
-                homeScreen.guideButton = CreateButton("GuideBtn", "📖 HƯỚNG DẪN", new Vector2(0, -125f), new Color(0.45f, 0.3f, 0.2f), homeObj.transform, new Vector2(360, 65));
+                // 4 Main Buttons
+                homeScreen.startButton = CreateButton("StartBtn", "🤠 CHƠI ONLINE", new Vector2(0, 70f), new Color(0.85f, 0.45f, 0.15f), homeObj.transform, new Vector2(360, 65));
+                homeScreen.galleryButton = CreateButton("GalleryBtn", "🃏 BỘ SƯU TẬP THẺ", new Vector2(0, -5f), new Color(0.2f, 0.55f, 0.75f), homeObj.transform, new Vector2(360, 60));
+                homeScreen.questsButton = CreateButton("QuestsBtn", "📜 NHIỆM VỤ", new Vector2(0, -75f), new Color(0.25f, 0.55f, 0.8f), homeObj.transform, new Vector2(360, 60));
+                homeScreen.guideButton = CreateButton("GuideBtn", "📖 HƯỚNG DẪN", new Vector2(0, -145f), new Color(0.45f, 0.3f, 0.2f), homeObj.transform, new Vector2(360, 60));
+
+                // Audio Toggle Top Right
+                homeScreen.audioToggleButton = CreateButton("AudioBtn", "🔊 BẬT TIẾNG", new Vector2(680f, 430f), new Color(0.3f, 0.3f, 0.3f, 0.8f), homeObj.transform, new Vector2(180, 48));
+                homeScreen.audioToggleText = homeScreen.audioToggleButton.GetComponentInChildren<Text>();
 
                 // Quests Popup
                 var qPopup = CreatePopupBox("QuestsPopup", "📜 NHIỆM VỤ HẰNG NGÀY", "1. Bắn trúng 3 phát BANG! (Thưởng: 500 Vàng)\n2. Uống 2 chai BIA hồi máu (Thưởng: 300 Vàng)\n3. Thắng 1 trận với vai trò Cảnh Sát Trưởng (Thưởng: 1,000 Vàng)", homeObj.transform);
@@ -150,6 +157,104 @@ namespace BangBang.UI
                 var gPopup = CreatePopupBox("GuidePopup", "📖 HƯỚNG DẪN LUẬT CHƠI BANG!", "• CẢNH SÁT TRƯỞNG: Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội.\n• PHÓ CẢNH SÁT: Bảo vệ Cảnh Sát Trưởng bằng mọi giá.\n• CƯỚP (OUTLAW): Tiêu diệt Cảnh Sát Trưởng.\n• KẺ PHẢN BỘI: Người sống sót cuối cùng và hạ Cảnh Sát Trưởng sau cùng.\n\n• CỰ LY BẮN: Khoảng cách ngắn nhất quanh bàn. Vũ khí tăng tầm bắn.", homeObj.transform);
                 homeScreen.guidePopup = gPopup.Item1;
                 homeScreen.closeGuideButton = gPopup.Item2;
+            }
+
+            // CARD GALLERY VIEW
+            if (cardGalleryView == null)
+            {
+                var galleryObj = CreateFullScreenPanel("CardGalleryView", canvas.transform);
+                cardGalleryView = galleryObj.AddComponent<CardGalleryView>();
+
+                // Header
+                var headObj = CreateText("Header", "🃏 BỘ SƯU TẬP THẺ BÀI", new Vector2(0, 440f), new Vector2(600, 50), 28, new Color(1f, 0.85f, 0.3f), galleryObj.transform);
+                cardGalleryView.titleText = headObj.GetComponent<Text>();
+                cardGalleryView.backButton = CreateButton("BackBtn", "⬅ QUAY LẠI", new Vector2(-680f, 440f), new Color(0.45f, 0.25f, 0.15f), galleryObj.transform, new Vector2(180, 50));
+
+                // Scroll View Container
+                var scrollObj = new GameObject("CardScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
+                scrollObj.transform.SetParent(galleryObj.transform, false);
+                var scrollRt = scrollObj.GetComponent<RectTransform>();
+                scrollRt.anchoredPosition = new Vector2(0, -30f);
+                scrollRt.sizeDelta = new Vector2(1400, 780);
+                var scrollBg = scrollObj.GetComponent<Image>();
+                scrollBg.color = new Color(0, 0, 0, 0.35f);
+
+                var sRect = scrollObj.GetComponent<ScrollRect>();
+                sRect.horizontal = false;
+                sRect.vertical = true;
+
+                // Viewport
+                var viewPort = new GameObject("Viewport", typeof(RectTransform), typeof(Mask), typeof(Image));
+                viewPort.transform.SetParent(scrollObj.transform, false);
+                var vpRt = viewPort.GetComponent<RectTransform>();
+                vpRt.anchorMin = Vector2.zero;
+                vpRt.anchorMax = Vector2.one;
+                vpRt.sizeDelta = Vector2.zero;
+                viewPort.GetComponent<Mask>().showMaskGraphic = false;
+
+                // Content Grid
+                var contentObj = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+                contentObj.transform.SetParent(viewPort.transform, false);
+                var cRt = contentObj.GetComponent<RectTransform>();
+                cRt.anchorMin = new Vector2(0, 1);
+                cRt.anchorMax = new Vector2(1, 1);
+                cRt.pivot = new Vector2(0.5f, 1);
+                cRt.sizeDelta = new Vector2(0, 800);
+
+                var glg = contentObj.GetComponent<GridLayoutGroup>();
+                glg.cellSize = new Vector2(160, 230);
+                glg.spacing = new Vector2(25, 25);
+                glg.padding = new RectOffset(30, 30, 30, 30);
+                glg.childAlignment = TextAnchor.UpperCenter;
+
+                var csf = contentObj.GetComponent<ContentSizeFitter>();
+                csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                sRect.viewport = vpRt;
+                sRect.content = cRt;
+                cardGalleryView.scrollRect = sRect;
+                cardGalleryView.gridContent = contentObj.transform;
+
+                // Detail Modal
+                var modalRoot = CreateFullScreenPanel("DetailModal", galleryObj.transform);
+                modalRoot.GetComponent<Image>().color = new Color(0, 0, 0, 0.75f);
+
+                var boxObj = new GameObject("DetailBox", typeof(RectTransform), typeof(Image));
+                boxObj.transform.SetParent(modalRoot.transform, false);
+                var bRt = boxObj.GetComponent<RectTransform>();
+                bRt.sizeDelta = new Vector2(580, 720);
+                boxObj.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.08f);
+
+                var dCardImgObj = new GameObject("CardArt", typeof(RectTransform), typeof(Image));
+                dCardImgObj.transform.SetParent(boxObj.transform, false);
+                var dArtRt = dCardImgObj.GetComponent<RectTransform>();
+                dArtRt.anchoredPosition = new Vector2(0, 140f);
+                dArtRt.sizeDelta = new Vector2(240, 340);
+                var dCardImg = dCardImgObj.GetComponent<Image>();
+                dCardImg.preserveAspect = true;
+
+                var nameTxtObj = CreateText("Name", "BANG!", new Vector2(0, -60f), new Vector2(500, 45), 26, new Color(1f, 0.85f, 0.3f), boxObj.transform);
+                var typeTxtObj = CreateText("Type", "Hành động", new Vector2(0, -105f), new Vector2(500, 30), 16, new Color(0.9f, 0.6f, 0.2f), boxObj.transform);
+                var rangeTxtObj = CreateText("Range", "Tầm bắn", new Vector2(0, -145f), new Vector2(500, 30), 15, new Color(0.3f, 0.8f, 1f), boxObj.transform);
+                var descTxtObj = CreateText("Desc", "Mô tả", new Vector2(0, -220f), new Vector2(500, 110), 15, Color.white, boxObj.transform);
+                descTxtObj.GetComponent<Text>().alignment = TextAnchor.UpperCenter;
+
+                var closeBtn = CreateButton("CloseBtn", "ĐÓNG", new Vector2(0, -305f), new Color(0.85f, 0.45f, 0.15f), boxObj.transform, new Vector2(200, 50));
+
+                cardGalleryView.detailModal = modalRoot;
+                cardGalleryView.detailCardImage = dCardImg;
+                cardGalleryView.detailCardName = nameTxtObj.GetComponent<Text>();
+                cardGalleryView.detailCardType = typeTxtObj.GetComponent<Text>();
+                cardGalleryView.detailCardRange = rangeTxtObj.GetComponent<Text>();
+                cardGalleryView.detailCardDesc = descTxtObj.GetComponent<Text>();
+                cardGalleryView.closeDetailButton = closeBtn;
+
+                galleryObj.SetActive(false);
+            }
+
+            if (homeScreen != null && cardGalleryView != null)
+            {
+                homeScreen.cardGalleryView = cardGalleryView;
             }
 
             // 1. LOBBY VIEW (Sảnh Chờ / Danh Sách Phòng)
@@ -305,9 +410,37 @@ namespace BangBang.UI
                 handObj.transform.SetParent(tableObj.transform, false);
                 gameTableView.handCardLayout = handObj.GetComponent<HandCardFanLayout>();
 
-                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "End Turn", new Vector2(720f, 80f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 65));
+                // Target Banner Top
+                var tBannerObj = new GameObject("TargetBanner", typeof(RectTransform), typeof(Image));
+                tBannerObj.transform.SetParent(tableObj.transform, false);
+                var tbRt = tBannerObj.GetComponent<RectTransform>();
+                tbRt.anchoredPosition = new Vector2(0, 420f);
+                tbRt.sizeDelta = new Vector2(700, 50);
+                tBannerObj.GetComponent<Image>().color = new Color(0.7f, 0.15f, 0.15f, 0.9f);
+                var tbTxtObj = CreateText("Text", "🎯 HÃY CHỌN MỤC TIÊU TRÊN BÀN ĐẤU", Vector2.zero, new Vector2(680, 45), 18, Color.yellow, tBannerObj.transform);
+                gameTableView.targetBannerObj = tBannerObj;
+                gameTableView.targetBannerText = tbTxtObj.GetComponent<Text>();
 
-                var logObj = CreateText("LogText", "Chào mừng đến bàn đấu Bang!", new Vector2(0, -180f), new Vector2(700, 30), 14, new Color(0.95f, 0.85f, 0.6f), tableObj.transform);
+                // Card Preview Tooltip (Middle-bottom)
+                var ttObj = new GameObject("CardPreviewTooltip", typeof(RectTransform), typeof(Image));
+                ttObj.transform.SetParent(tableObj.transform, false);
+                var ttRt = ttObj.GetComponent<RectTransform>();
+                ttRt.anchoredPosition = new Vector2(0, -180f);
+                ttRt.sizeDelta = new Vector2(760, 46);
+                ttObj.GetComponent<Image>().color = new Color(0.12f, 0.08f, 0.05f, 0.9f);
+                var ttTxtObj = CreateText("Text", "Xem chi tiết bài", Vector2.zero, new Vector2(740, 40), 14, new Color(1f, 0.9f, 0.6f), ttObj.transform);
+                gameTableView.cardPreviewTooltipObj = ttObj;
+                gameTableView.cardPreviewTooltipText = ttTxtObj.GetComponent<Text>();
+
+                // Action Buttons
+                gameTableView.playCardButton = CreateButton("PlayCardBtn", "💥 ĐÁNH BÀI", new Vector2(720f, 150f), new Color(0.85f, 0.45f, 0.15f), tableObj.transform, new Vector2(180, 60));
+                gameTableView.playCardButtonText = gameTableView.playCardButton.GetComponentInChildren<Text>();
+
+                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "❌ HỦY CHỌN", new Vector2(720f, 220f), new Color(0.5f, 0.2f, 0.2f), tableObj.transform, new Vector2(180, 50));
+
+                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "⏭ HẾT LƯỢT", new Vector2(720f, 80f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 60));
+
+                var logObj = CreateText("LogText", "Chào mừng đến bàn đấu Bang!", new Vector2(0, -225f), new Vector2(700, 30), 14, new Color(0.95f, 0.85f, 0.6f), tableObj.transform);
                 gameTableView.combatLogText = logObj.GetComponent<Text>();
 
                 flowController.gameTableView = gameTableView;

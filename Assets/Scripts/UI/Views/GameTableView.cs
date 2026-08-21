@@ -34,12 +34,22 @@ namespace BangBang.UI.Views
         public Transform localEquipmentTray;
         public HandCardFanLayout handCardLayout;
         public Button drawCardButton;
+        public Button playCardButton;
+        public Text playCardButtonText;
         public Button endTurnButton;
+        public Button cancelTargetButton;
+        public GameObject targetBannerObj;
+        public Text targetBannerText;
+        public GameObject cardPreviewTooltipObj;
+        public Text cardPreviewTooltipText;
         public Text timerText;
 
         private readonly List<PlayerSeatUI> _seatUIs = new List<PlayerSeatUI>();
         private readonly List<GameObject> _localEquipCards = new List<GameObject>();
         private readonly List<GameObject> _bulletTokens = new List<GameObject>();
+
+        private CardUI _selectedCardUI;
+        private string _selectedTargetId;
 
         private void Awake()
         {
@@ -69,8 +79,14 @@ namespace BangBang.UI.Views
 
             if (handCardLayout != null)
             {
+                handCardLayout.OnCardClicked += HandleCardSelected;
                 handCardLayout.OnCardDropped += HandleHandCardPlayed;
             }
+
+            if (targetBannerObj != null) targetBannerObj.SetActive(false);
+            if (cardPreviewTooltipObj != null) cardPreviewTooltipObj.SetActive(false);
+            if (playCardButton != null) playCardButton.gameObject.SetActive(false);
+            if (cancelTargetButton != null) cancelTargetButton.gameObject.SetActive(false);
         }
 
         public void BindListeners()
@@ -79,6 +95,18 @@ namespace BangBang.UI.Views
             {
                 drawCardButton.onClick.RemoveAllListeners();
                 drawCardButton.onClick.AddListener(HandleDrawCardClicked);
+            }
+
+            if (playCardButton != null)
+            {
+                playCardButton.onClick.RemoveAllListeners();
+                playCardButton.onClick.AddListener(HandlePlayCardButtonClicked);
+            }
+
+            if (cancelTargetButton != null)
+            {
+                cancelTargetButton.onClick.RemoveAllListeners();
+                cancelTargetButton.onClick.AddListener(CancelCardSelection);
             }
 
             if (endTurnButton != null)
@@ -240,6 +268,10 @@ namespace BangBang.UI.Views
                 _seatUIs[i].SetupSeat(model, p.effectiveDistanceToLocal, false);
                 _seatUIs[i].SetTargetHighlight(p.isTargetable);
 
+                string seatTargetId = p.id;
+                _seatUIs[i].OnSeatClicked -= HandleOpponentSeatClicked;
+                _seatUIs[i].OnSeatClicked += HandleOpponentSeatClicked;
+
                 // Position on horseshoe arc
                 float t = opponents.Count > 1 ? (float)i / (opponents.Count - 1) : 0.5f;
                 float angle = Mathf.Lerp(195f, -15f, t) * Mathf.Deg2Rad;
@@ -248,8 +280,140 @@ namespace BangBang.UI.Views
             }
         }
 
+        private void HandleCardSelected(CardUI card)
+        {
+            if (card == null || GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
+
+            var snapshot = GameStateStore.Instance.CurrentSnapshot;
+            if (snapshot == null || snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId) return;
+
+            AudioManager.Instance?.PlaySFX("button_tap");
+            _selectedCardUI = card;
+            _selectedTargetId = null;
+
+            // Show Card Tooltip Preview
+            if (cardPreviewTooltipObj != null)
+            {
+                cardPreviewTooltipObj.SetActive(true);
+                if (cardPreviewTooltipText != null)
+                {
+                    cardPreviewTooltipText.text = "<b>" + card.info.vietnameseName + "</b>: " + card.info.description;
+                }
+            }
+
+            if (card.info.requiresTarget)
+            {
+                // Enter targeting mode
+                if (targetBannerObj != null)
+                {
+                    targetBannerObj.SetActive(true);
+                    if (targetBannerText != null)
+                    {
+                        targetBannerText.text = "🎯 HÃY CHỌN 1 MỤC TIÊU TRÊN BÀN ĐẤU";
+                    }
+                }
+
+                if (cancelTargetButton != null) cancelTargetButton.gameObject.SetActive(true);
+                if (playCardButton != null) playCardButton.gameObject.SetActive(false);
+            }
+            else
+            {
+                // Instant Action Card (No target required: Beer, Saloon, Gatling, Equipment...)
+                if (targetBannerObj != null) targetBannerObj.SetActive(false);
+                if (cancelTargetButton != null) cancelTargetButton.gameObject.SetActive(true);
+
+                if (playCardButton != null)
+                {
+                    playCardButton.gameObject.SetActive(true);
+                    playCardButton.interactable = true;
+                    if (playCardButtonText != null)
+                    {
+                        playCardButtonText.text = "💥 ĐÁNH BÀI: " + card.info.vietnameseName;
+                    }
+                }
+            }
+        }
+
+        private void HandleOpponentSeatClicked(string targetPlayerId)
+        {
+            if (_selectedCardUI == null || !_selectedCardUI.info.requiresTarget) return;
+
+            var snapshot = GameStateStore.Instance?.CurrentSnapshot;
+            if (snapshot == null) return;
+
+            var targetPlayer = snapshot.players.Find(p => p.id == targetPlayerId);
+            if (targetPlayer == null || !targetPlayer.isAlive) return;
+
+            AudioManager.Instance?.PlaySFX("button_tap");
+            _selectedTargetId = targetPlayerId;
+
+            // Show targeting tracer line
+            if (FXManager.Instance != null)
+            {
+                var targetSeat = _seatUIs.Find(s => s.playerId == targetPlayerId);
+                if (targetSeat != null)
+                {
+                    Vector2 myPos = new Vector2(Screen.width * 0.5f, 100f);
+                    FXManager.Instance.DrawTargetingLine(myPos, targetSeat.GetScreenCenterPosition());
+                }
+            }
+
+            if (targetBannerText != null)
+            {
+                targetBannerText.text = "🎯 ĐÃ CHỌN: <b>" + targetPlayer.name + "</b>";
+            }
+
+            if (playCardButton != null)
+            {
+                playCardButton.gameObject.SetActive(true);
+                playCardButton.interactable = true;
+                if (playCardButtonText != null)
+                {
+                    playCardButtonText.text = "💥 BẮN VÀO: " + targetPlayer.name;
+                }
+            }
+        }
+
+        private async void HandlePlayCardButtonClicked()
+        {
+            if (_selectedCardUI == null || GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
+
+            if (_selectedCardUI.info.requiresTarget && string.IsNullOrEmpty(_selectedTargetId))
+            {
+                return;
+            }
+
+            string cardId = _selectedCardUI.cardId;
+            string targetId = _selectedTargetId;
+            var info = _selectedCardUI.info;
+
+            CancelCardSelection();
+
+            GameStateStore.Instance.SetRequestPending(true);
+            AudioManager.Instance?.PlaySFX(info.id == "bang" ? "bang_shot" : "card_play");
+
+            if (GameStateStore.Instance?.Gateway != null)
+            {
+                var targetList = !string.IsNullOrEmpty(targetId) ? new List<string> { targetId } : null;
+                await GameStateStore.Instance.Gateway.PlayCardAsync(cardId, targetList);
+            }
+        }
+
+        public void CancelCardSelection()
+        {
+            _selectedCardUI = null;
+            _selectedTargetId = null;
+
+            if (FXManager.Instance != null) FXManager.Instance.HideTargetingLine();
+            if (targetBannerObj != null) targetBannerObj.SetActive(false);
+            if (cardPreviewTooltipObj != null) cardPreviewTooltipObj.SetActive(false);
+            if (playCardButton != null) playCardButton.gameObject.SetActive(false);
+            if (cancelTargetButton != null) cancelTargetButton.gameObject.SetActive(false);
+        }
+
         private async void HandleDrawCardClicked()
         {
+            CancelCardSelection();
             AudioManager.Instance?.PlaySFX("card_draw");
             GameStateStore.Instance?.SetRequestPending(true);
             if (GameStateStore.Instance?.Gateway != null)
@@ -260,6 +424,7 @@ namespace BangBang.UI.Views
 
         private async void HandleHandCardPlayed(CardUI card, Vector2 screenPos)
         {
+            // Drag and drop support
             if (GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
 
             var snapshot = GameStateStore.Instance.CurrentSnapshot;
@@ -268,11 +433,11 @@ namespace BangBang.UI.Views
             string targetId = null;
             if (card.info.requiresTarget)
             {
-                // Find closest targetable opponent
                 var targetableOpp = snapshot.players.Find(p => p.id != GameStateStore.Instance.LocalPlayerId && p.isTargetable && p.isAlive);
                 if (targetableOpp != null) targetId = targetableOpp.id;
             }
 
+            CancelCardSelection();
             GameStateStore.Instance.SetRequestPending(true);
             AudioManager.Instance?.PlaySFX(card.info.id == "bang" ? "bang_shot" : "card_play");
 
@@ -285,6 +450,7 @@ namespace BangBang.UI.Views
 
         private async void HandleEndTurnClicked()
         {
+            CancelCardSelection();
             AudioManager.Instance?.PlaySFX("button_tap");
             GameStateStore.Instance?.SetRequestPending(true);
             if (GameStateStore.Instance?.Gateway != null)

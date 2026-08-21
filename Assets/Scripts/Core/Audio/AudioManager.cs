@@ -82,6 +82,15 @@ namespace BangBang.Core.Audio
             }
         }
 
+        public bool IsMuted { get; private set; }
+
+        public void ToggleMute()
+        {
+            IsMuted = !IsMuted;
+            if (_bgmSource != null) _bgmSource.mute = IsMuted;
+            if (_sfxSource != null) _sfxSource.mute = IsMuted;
+        }
+
         public void SetVolume(float bgm, float sfx)
         {
             if (_bgmSource != null) _bgmSource.volume = bgm;

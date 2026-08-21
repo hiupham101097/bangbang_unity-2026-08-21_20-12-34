@@ -82,14 +82,17 @@ namespace BangBang.Core.Data
 
         private static void InitializeRoles()
         {
-            Roles[RoleType.Sheriff] = new RoleInfo(RoleType.Sheriff, "Cảnh Trưởng", "Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội để lập lại hòa bình viễn tây.", "role_sheriff", isRevealed: true);
-            Roles[RoleType.Deputy] = new RoleInfo(RoleType.Deputy, "Phó Cảnh Trưởng", "Bảo vệ Cảnh Trưởng bằng mọi giá và tiêu diệt bọn Cướp.", "role_deputy");
-            Roles[RoleType.Outlaw] = new RoleInfo(RoleType.Outlaw, "Băng Cướp (Raider)", "Tiêu diệt Cảnh Trưởng để thống trị thị trấn!", "role_raider");
-            Roles[RoleType.Renegade] = new RoleInfo(RoleType.Renegade, "Kẻ Phản Bội (Traitor)", "Sống sót đến cuối cùng và hạ gục Cảnh Trưởng trong trận quyết chiến tay đôi!", "role_traitor");
+            Roles[RoleType.Sheriff] = new RoleInfo(RoleType.Sheriff, "Cảnh Trưởng", "Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội để lập lại hòa bình viễn tây.", "role_cards/sheriff_card", isRevealed: true);
+            Roles[RoleType.Deputy] = new RoleInfo(RoleType.Deputy, "Phó Cảnh Trưởng", "Bảo vệ Cảnh Trưởng bằng mọi giá và tiêu diệt bọn Cướp.", "role_cards/deputy_card");
+            Roles[RoleType.Outlaw] = new RoleInfo(RoleType.Outlaw, "Băng Cướp (Raider)", "Tiêu diệt Cảnh Trưởng để thống trị thị trấn!", "role_cards/raider_card");
+            Roles[RoleType.Renegade] = new RoleInfo(RoleType.Renegade, "Kẻ Phản Bội (Traitor)", "Sống sót đến cuối cùng và hạ gục Cảnh Trưởng trong trận quyết chiến tay đôi!", "role_cards/traitor_card");
         }
 
         private static void RegisterCard(CardInfo card) => Cards[card.id] = card;
         private static void RegisterChar(CharacterInfo character) => Characters[character.id] = character;
+
+        public static List<CardInfo> GetAllCards() => new List<CardInfo>(Cards.Values);
+        public static List<CharacterInfo> GetAllCharacters() => new List<CharacterInfo>(Characters.Values);
 
         public static CardInfo GetCardInfo(string cardId)
         {

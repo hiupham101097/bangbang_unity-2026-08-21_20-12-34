@@ -19,8 +19,14 @@ namespace BangBang.UI.Views
 
         [Header("3 Main Home Buttons")]
         public Button startButton; // BẮT ĐẦU -> Chuyển vào Sảnh Chờ (Lobby)
+        public Button galleryButton; // BỘ SƯU TẬP THẺ -> Mở Thư Viện Bài
         public Button questsButton; // NHIỆM VỤ -> Mở Popup Nhiệm vụ
         public Button guideButton;  // HƯỚNG DẪN -> Mở Popup Hướng dẫn
+        public Button audioToggleButton; // Bật/Tắt Âm thanh
+        public Text audioToggleText;
+
+        [Header("Views Reference")]
+        public CardGalleryView cardGalleryView;
 
         [Header("Quests Popup")]
         public GameObject questsPopup;
@@ -40,6 +46,7 @@ namespace BangBang.UI.Views
             SetupVisuals();
             if (questsPopup != null) questsPopup.SetActive(false);
             if (guidePopup != null) guidePopup.SetActive(false);
+            if (cardGalleryView != null) cardGalleryView.gameObject.SetActive(false);
         }
 
         public void BindListeners()
@@ -52,6 +59,42 @@ namespace BangBang.UI.Views
                     AudioManager.Instance?.PlaySFX("button_tap");
                     gameObject.SetActive(false);
                     GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
+                });
+            }
+
+            if (galleryButton != null)
+            {
+                galleryButton.onClick.RemoveAllListeners();
+                galleryButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (cardGalleryView != null)
+                    {
+                        cardGalleryView.PopulateCards();
+                        cardGalleryView.BindListeners(() =>
+                        {
+                            cardGalleryView.gameObject.SetActive(false);
+                            gameObject.SetActive(true);
+                        });
+                        gameObject.SetActive(false);
+                        cardGalleryView.gameObject.SetActive(true);
+                    }
+                });
+            }
+
+            if (audioToggleButton != null)
+            {
+                audioToggleButton.onClick.RemoveAllListeners();
+                audioToggleButton.onClick.AddListener(() =>
+                {
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.ToggleMute();
+                        if (audioToggleText != null)
+                        {
+                            audioToggleText.text = AudioManager.Instance.IsMuted ? "🔇 TẮT TIẾNG" : "🔊 BẬT TIẾNG";
+                        }
+                    }
                 });
             }
 

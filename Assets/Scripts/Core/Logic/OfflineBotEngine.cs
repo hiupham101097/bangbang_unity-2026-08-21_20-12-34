@@ -354,8 +354,9 @@ namespace BangBang.Core.Logic
                 yield return new WaitForSeconds(0.6f);
             }
 
-            // Beer / Saloon
-            if (bot.health < bot.maxHealth)
+            // Beer (Disabled if only 2 players left)
+            int aliveCount = State.players.Count(p => p.isAlive);
+            if (bot.health < bot.maxHealth && aliveCount > 2)
             {
                 var beer = bot.hand.FirstOrDefault(c => CardCatalogDatabase.GetTypeOf(c) == "beer");
                 if (beer != null)
@@ -407,14 +408,48 @@ namespace BangBang.Core.Logic
                 yield return new WaitForSeconds(0.8f);
             }
 
-            // Attack with Bang
+            // Steal / Discard cards: Panico & Cat Balou
+            var stealCard = bot.hand.FirstOrDefault(c => CardCatalogDatabase.GetTypeOf(c) == "panico" || CardCatalogDatabase.GetTypeOf(c) == "cat_balou");
+            if (stealCard != null)
+            {
+                var tType = CardCatalogDatabase.GetTypeOf(stealCard);
+                var validTargets = BangGameRules.GetValidTargets(State, bot.id, tType);
+                var target = SelectSmartTarget(bot, validTargets);
+                if (target != null)
+                {
+                    bot.hand.Remove(stealCard);
+                    State.discard.Add(stealCard);
+                    CheckSuzyLafayette(bot);
+
+                    if (target.equipment.Count > 0)
+                    {
+                        var eq = target.equipment[0];
+                        target.equipment.Remove(eq);
+                        target.ResetModifiers();
+                        if (tType == "panico") { bot.hand.Add(eq); Log(bot.name + " cướp trang bị " + CardCatalogDatabase.GetCardInfo(eq).vietnameseName + " của " + target.name + "!", "steal"); }
+                        else { State.discard.Add(eq); Log(bot.name + " bắn hủy trang bị " + CardCatalogDatabase.GetCardInfo(eq).vietnameseName + " của " + target.name + "!", "discard"); }
+                    }
+                    else if (target.hand.Count > 0)
+                    {
+                        var h = target.hand[0];
+                        target.hand.Remove(h);
+                        target.cardCount = target.hand.Count;
+                        if (tType == "panico") { bot.hand.Add(h); Log(bot.name + " cướp 1 lá trên tay của " + target.name + "!", "steal"); }
+                        else { State.discard.Add(h); Log(bot.name + " hủy 1 lá trên tay của " + target.name + "!", "discard"); }
+                    }
+                    OnStateChanged?.Invoke(State);
+                    yield return new WaitForSeconds(0.6f);
+                }
+            }
+
+            // Attack with Bang (Smart Target)
             var bangCard = bot.hand.FirstOrDefault(c => CardCatalogDatabase.GetTypeOf(c) == "bang" || (bot.characterId == "calamity_janet" && CardCatalogDatabase.GetTypeOf(c) == "dodge"));
             if (bangCard != null && (State.bangUsedThisTurn == 0 || bot.hasVolcanic || bot.characterId == "willy_the_kid"))
             {
                 var targets = BangGameRules.GetValidTargets(State, bot.id, "bang");
-                if (targets.Count > 0)
+                var target = SelectSmartTarget(bot, targets);
+                if (target != null)
                 {
-                    var target = targets[_rnd.Next(targets.Count)];
                     bot.hand.Remove(bangCard);
                     State.discard.Add(bangCard);
                     State.bangUsedThisTurn++;
@@ -427,6 +462,36 @@ namespace BangBang.Core.Logic
             }
 
             yield return new WaitForSeconds(0.4f);
+        }
+
+        private PlayerModel SelectSmartTarget(PlayerModel bot, List<PlayerModel> validTargets)
+        {
+            if (validTargets == null || validTargets.Count == 0) return null;
+
+            var sheriff = State.players.FirstOrDefault(p => p.isAlive && p.role == RoleType.Sheriff);
+
+            switch (bot.role)
+            {
+                case RoleType.Outlaw:
+                    if (sheriff != null && validTargets.Contains(sheriff)) return sheriff;
+                    return validTargets.OrderBy(t => t.health).First();
+
+                case RoleType.Deputy:
+                    var nonSheriff = validTargets.Where(t => t.role != RoleType.Sheriff).ToList();
+                    return nonSheriff.Count > 0 ? nonSheriff.OrderBy(t => t.health).First() : validTargets.First();
+
+                case RoleType.Renegade:
+                    int aliveCount = State.players.Count(p => p.isAlive);
+                    if (aliveCount > 2)
+                    {
+                        var nonSheriffList = validTargets.Where(t => t.role != RoleType.Sheriff).ToList();
+                        if (nonSheriffList.Count > 0) return nonSheriffList.OrderBy(t => t.health).First();
+                    }
+                    return validTargets.OrderBy(t => t.health).First();
+
+                default:
+                    return validTargets.OrderBy(t => t.health).First();
+            }
         }
 
         private IEnumerator ExecuteAreaAttack(PlayerModel attacker, string requiredCardType, string attackName)
@@ -512,13 +577,17 @@ namespace BangBang.Core.Logic
 
             if (target.isBot)
             {
-                var dodge = target.hand.FirstOrDefault(c => CardCatalogDatabase.GetTypeOf(c) == "dodge" || (target.characterId == "calamity_janet" && CardCatalogDatabase.GetTypeOf(c) == "bang"));
-                if (dodge != null && reqDodges <= 1)
+                var availableDodges = target.hand.Where(c => CardCatalogDatabase.GetTypeOf(c) == "dodge" || (target.characterId == "calamity_janet" && CardCatalogDatabase.GetTypeOf(c) == "bang")).ToList();
+                if (availableDodges.Count >= reqDodges)
                 {
-                    target.hand.Remove(dodge);
-                    State.discard.Add(dodge);
+                    for (int d = 0; d < reqDodges; d++)
+                    {
+                        var dodgeCard = availableDodges[d];
+                        target.hand.Remove(dodgeCard);
+                        State.discard.Add(dodgeCard);
+                    }
                     target.cardCount = target.hand.Count;
-                    Log(target.name + " tung người NÉ phát đạn!", "dodge");
+                    Log(target.name + " tung người NÉ phát đạn (" + reqDodges + " lá NÉ)!", "dodge");
                     CheckSuzyLafayette(target);
                     OnStateChanged?.Invoke(State);
                     yield return new WaitForSeconds(0.6f);
