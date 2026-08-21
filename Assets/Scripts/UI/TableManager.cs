@@ -40,7 +40,11 @@ namespace BangBang.UI
             if (tableBackground != null)
             {
                 var tableSprite = CardCatalogDatabase.LoadSprite("room_table");
-                if (tableSprite != null) tableBackground.sprite = tableSprite;
+                if (tableSprite != null)
+                {
+                    tableBackground.sprite = tableSprite;
+                    tableBackground.color = Color.white;
+                }
             }
 
             var players = state.players;
