@@ -43,19 +43,11 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
-            if (drawCardButton != null)
-            {
-                drawCardButton.onClick.AddListener(HandleDrawCardClicked);
-            }
-
-            if (endTurnButton != null)
-            {
-                endTurnButton.onClick.AddListener(HandleEndTurnClicked);
-            }
         }
 
         private void Start()
         {
+            BindListeners();
             if (tableBackgroundImage != null)
             {
                 var tableSprite = CardCatalogDatabase.LoadSprite("room_table");
@@ -78,6 +70,21 @@ namespace BangBang.UI.Views
             if (handCardLayout != null)
             {
                 handCardLayout.OnCardDropped += HandleHandCardPlayed;
+            }
+        }
+
+        public void BindListeners()
+        {
+            if (drawCardButton != null)
+            {
+                drawCardButton.onClick.RemoveAllListeners();
+                drawCardButton.onClick.AddListener(HandleDrawCardClicked);
+            }
+
+            if (endTurnButton != null)
+            {
+                endTurnButton.onClick.RemoveAllListeners();
+                endTurnButton.onClick.AddListener(HandleEndTurnClicked);
             }
         }
 

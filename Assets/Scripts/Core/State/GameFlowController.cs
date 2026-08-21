@@ -33,9 +33,6 @@ namespace BangBang.Core.State
             {
                 GameStateStore.Instance.OnStateSnapshotUpdated += HandleSnapshotUpdated;
             }
-
-            // Default to Lobby
-            TransitionToState(ServerGameState.LOBBY);
         }
 
         private void OnDestroy()
@@ -63,6 +60,11 @@ namespace BangBang.Core.State
         public void TransitionToState(ServerGameState newState)
         {
             CurrentState = newState;
+
+            if (GameBootstrap.Instance != null && GameBootstrap.Instance.homeScreen != null)
+            {
+                GameBootstrap.Instance.homeScreen.gameObject.SetActive(false);
+            }
 
             // Manage View Visibilities
             if (lobbyView != null) lobbyView.gameObject.SetActive(newState == ServerGameState.LOBBY);

@@ -27,22 +27,33 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
+        }
+
+        private void Start()
+        {
+            BindListeners();
+            if (GameStateStore.Instance != null)
+            {
+                GameStateStore.Instance.OnStateSnapshotUpdated += RenderGameResults;
+                if (GameStateStore.Instance.CurrentSnapshot != null && GameStateStore.Instance.CurrentSnapshot.state == ServerGameState.FINISHED)
+                {
+                    RenderGameResults(GameStateStore.Instance.CurrentSnapshot);
+                }
+            }
+        }
+
+        public void BindListeners()
+        {
             if (rematchButton != null)
             {
+                rematchButton.onClick.RemoveAllListeners();
                 rematchButton.onClick.AddListener(HandleRematchClicked);
             }
 
             if (returnToLobbyButton != null)
             {
+                returnToLobbyButton.onClick.RemoveAllListeners();
                 returnToLobbyButton.onClick.AddListener(HandleReturnToLobbyClicked);
-            }
-        }
-
-        private void Start()
-        {
-            if (GameStateStore.Instance != null)
-            {
-                GameStateStore.Instance.OnStateSnapshotUpdated += RenderGameResults;
             }
         }
 

@@ -32,17 +32,32 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
+        }
+
+        private void Start()
+        {
+            BindListeners();
+            SetupVisuals();
+            if (questsPopup != null) questsPopup.SetActive(false);
+            if (guidePopup != null) guidePopup.SetActive(false);
+        }
+
+        public void BindListeners()
+        {
             if (startButton != null)
             {
+                startButton.onClick.RemoveAllListeners();
                 startButton.onClick.AddListener(() =>
                 {
                     AudioManager.Instance?.PlaySFX("button_tap");
+                    gameObject.SetActive(false);
                     GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
                 });
             }
 
             if (questsButton != null)
             {
+                questsButton.onClick.RemoveAllListeners();
                 questsButton.onClick.AddListener(() =>
                 {
                     AudioManager.Instance?.PlaySFX("button_tap");
@@ -52,6 +67,7 @@ namespace BangBang.UI.Views
 
             if (closeQuestsButton != null)
             {
+                closeQuestsButton.onClick.RemoveAllListeners();
                 closeQuestsButton.onClick.AddListener(() =>
                 {
                     AudioManager.Instance?.PlaySFX("button_tap");
@@ -61,6 +77,7 @@ namespace BangBang.UI.Views
 
             if (guideButton != null)
             {
+                guideButton.onClick.RemoveAllListeners();
                 guideButton.onClick.AddListener(() =>
                 {
                     AudioManager.Instance?.PlaySFX("button_tap");
@@ -70,19 +87,13 @@ namespace BangBang.UI.Views
 
             if (closeGuideButton != null)
             {
+                closeGuideButton.onClick.RemoveAllListeners();
                 closeGuideButton.onClick.AddListener(() =>
                 {
                     AudioManager.Instance?.PlaySFX("button_tap");
                     if (guidePopup != null) guidePopup.SetActive(false);
                 });
             }
-        }
-
-        private void Start()
-        {
-            SetupVisuals();
-            if (questsPopup != null) questsPopup.SetActive(false);
-            if (guidePopup != null) guidePopup.SetActive(false);
         }
 
         public void SetupVisuals()

@@ -23,17 +23,27 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
-            if (confirmSelectionButton != null)
-            {
-                confirmSelectionButton.onClick.AddListener(HandleConfirmSelectionClicked);
-            }
         }
 
         private void Start()
         {
+            BindListeners();
             if (GameStateStore.Instance != null)
             {
                 GameStateStore.Instance.OnActiveInteractionChanged += RenderCandidates;
+                if (GameStateStore.Instance.CurrentSnapshot != null && GameStateStore.Instance.CurrentSnapshot.activeInteraction != null)
+                {
+                    RenderCandidates(GameStateStore.Instance.CurrentSnapshot.activeInteraction);
+                }
+            }
+        }
+
+        public void BindListeners()
+        {
+            if (confirmSelectionButton != null)
+            {
+                confirmSelectionButton.onClick.RemoveAllListeners();
+                confirmSelectionButton.onClick.AddListener(HandleConfirmSelectionClicked);
             }
         }
 

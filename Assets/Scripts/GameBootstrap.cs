@@ -375,6 +375,14 @@ namespace BangBang.UI
                 ohlg.spacing = 15f;
                 interactionController.optionsContainer = optContainer.transform;
             }
+
+            // Ensure all button listeners are bound
+            homeScreen?.BindListeners();
+            lobbyView?.BindListeners();
+            waitingRoomView?.BindListeners();
+            characterSelectionView?.BindListeners();
+            gameTableView?.BindListeners();
+            resultView?.BindListeners();
         }
 
         private (GameObject, Button) CreatePopupBox(string name, string title, string content, Transform parent)

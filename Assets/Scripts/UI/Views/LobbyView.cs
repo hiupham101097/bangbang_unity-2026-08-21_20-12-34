@@ -42,40 +42,11 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
-            if (backToHomeButton != null)
-            {
-                backToHomeButton.onClick.AddListener(() =>
-                {
-                    AudioManager.Instance?.PlaySFX("button_tap");
-                    GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
-                    // Hide Lobby to show Home
-                    gameObject.SetActive(false);
-                    if (GameFlowController.Instance?.lobbyView != null)
-                    {
-                        var home = FindFirstObjectByType<HomeScreenUI>();
-                        if (home != null) home.gameObject.SetActive(true);
-                    }
-                });
-            }
-
-            if (openCreateRoomPopupButton != null)
-                openCreateRoomPopupButton.onClick.AddListener(() => ShowCreateRoomPopup(true));
-
-            if (closeCreateRoomPopupButton != null)
-                closeCreateRoomPopupButton.onClick.AddListener(() => ShowCreateRoomPopup(false));
-
-            if (confirmCreateRoomButton != null)
-                confirmCreateRoomButton.onClick.AddListener(HandleCreateRoomConfirmed);
-
-            if (joinByPinButton != null)
-                joinByPinButton.onClick.AddListener(HandleJoinByPinClicked);
-
-            if (refreshRoomsButton != null)
-                refreshRoomsButton.onClick.AddListener(HandleRefreshRoomsClicked);
         }
 
         private void Start()
         {
+            BindListeners();
             SetupVisuals();
             if (createRoomPopup != null) createRoomPopup.SetActive(false);
 
@@ -86,6 +57,53 @@ namespace BangBang.UI.Views
             }
 
             HandleRefreshRoomsClicked();
+        }
+
+        public void BindListeners()
+        {
+            if (backToHomeButton != null)
+            {
+                backToHomeButton.onClick.RemoveAllListeners();
+                backToHomeButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    gameObject.SetActive(false);
+                    if (GameBootstrap.Instance?.homeScreen != null)
+                    {
+                        GameBootstrap.Instance.homeScreen.gameObject.SetActive(true);
+                    }
+                });
+            }
+
+            if (openCreateRoomPopupButton != null)
+            {
+                openCreateRoomPopupButton.onClick.RemoveAllListeners();
+                openCreateRoomPopupButton.onClick.AddListener(() => ShowCreateRoomPopup(true));
+            }
+
+            if (closeCreateRoomPopupButton != null)
+            {
+                closeCreateRoomPopupButton.onClick.RemoveAllListeners();
+                closeCreateRoomPopupButton.onClick.AddListener(() => ShowCreateRoomPopup(false));
+            }
+
+            if (confirmCreateRoomButton != null)
+            {
+                confirmCreateRoomButton.onClick.RemoveAllListeners();
+                confirmCreateRoomButton.onClick.AddListener(HandleCreateRoomConfirmed);
+            }
+
+            if (joinByPinButton != null)
+            {
+                joinByPinButton.onClick.RemoveAllListeners();
+                joinByPinButton.onClick.AddListener(HandleJoinByPinClicked);
+            }
+
+            if (refreshRoomsButton != null)
+            {
+                refreshRoomsButton.onClick.RemoveAllListeners();
+                refreshRoomsButton.onClick.AddListener(HandleRefreshRoomsClicked);
+            }
         }
 
         private void OnDestroy()

@@ -32,8 +32,26 @@ namespace BangBang.UI.Views
 
         private void Awake()
         {
+        }
+
+        private void Start()
+        {
+            BindListeners();
+            if (GameStateStore.Instance != null)
+            {
+                GameStateStore.Instance.OnStateSnapshotUpdated += RenderWaitingRoom;
+                if (GameStateStore.Instance.CurrentSnapshot != null)
+                {
+                    RenderWaitingRoom(GameStateStore.Instance.CurrentSnapshot);
+                }
+            }
+        }
+
+        public void BindListeners()
+        {
             if (copyCodeButton != null)
             {
+                copyCodeButton.onClick.RemoveAllListeners();
                 copyCodeButton.onClick.AddListener(() =>
                 {
                     if (GameStateStore.Instance?.CurrentSnapshot != null)
@@ -46,30 +64,26 @@ namespace BangBang.UI.Views
 
             if (addBotButton != null)
             {
+                addBotButton.onClick.RemoveAllListeners();
                 addBotButton.onClick.AddListener(HandleAddBotClicked);
             }
 
             if (readyToggleButton != null)
             {
+                readyToggleButton.onClick.RemoveAllListeners();
                 readyToggleButton.onClick.AddListener(HandleToggleReadyClicked);
             }
 
             if (startGameButton != null)
             {
+                startGameButton.onClick.RemoveAllListeners();
                 startGameButton.onClick.AddListener(HandleStartGameClicked);
             }
 
             if (leaveRoomButton != null)
             {
+                leaveRoomButton.onClick.RemoveAllListeners();
                 leaveRoomButton.onClick.AddListener(HandleLeaveRoomClicked);
-            }
-        }
-
-        private void Start()
-        {
-            if (GameStateStore.Instance != null)
-            {
-                GameStateStore.Instance.OnStateSnapshotUpdated += RenderWaitingRoom;
             }
         }
 
