@@ -1,5 +1,6 @@
 using System;
 using BangBang.Core.Network;
+using BangBang.UI;
 using BangBang.UI.Views;
 using UnityEngine;
 
