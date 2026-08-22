@@ -88,6 +88,7 @@ namespace BangBang.UI.Views
             if (cardPreviewTooltipObj != null) cardPreviewTooltipObj.SetActive(false);
             if (playCardButton != null) playCardButton.gameObject.SetActive(false);
             if (cancelTargetButton != null) cancelTargetButton.gameObject.SetActive(false);
+            if (combatLogText != null) combatLogText.text = "";
         }
 
         public void BindListeners()

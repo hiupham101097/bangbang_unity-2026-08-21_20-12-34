@@ -152,7 +152,55 @@ namespace BangBang.Core.Data
             }
 
             if (sprite != null) SpriteCache[resourcePath] = sprite;
+
+            // Fallback: generate card back procedurally if no file found
+            if (sprite == null && (resourcePath == "card_back" || cleanPath == "card_back"))
+            {
+                sprite = GenerateCardBackSprite();
+                if (sprite != null) SpriteCache[resourcePath] = sprite;
+            }
+
             return sprite;
+        }
+
+        private static Sprite GenerateCardBackSprite()
+        {
+            int w = 200, h = 300;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            var pixels = new Color[w * h];
+
+            Color bg = new Color(0.25f, 0.12f, 0.06f);       // dark mahogany
+            Color border = new Color(0.78f, 0.62f, 0.18f);   // gold
+            Color center = new Color(0.55f, 0.40f, 0.10f);   // darker gold
+
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                // Border ring
+                bool isBorder = x < 12 || x >= w - 12 || y < 12 || y >= h - 12;
+                // Inner border
+                bool isInnerBorder = !isBorder && (x < 16 || x >= w - 16 || y < 16 || y >= h - 16);
+                // Diamond pattern
+                float cx = (x - w * 0.5f) / (w * 0.5f);
+                float cy = (y - h * 0.5f) / (h * 0.5f);
+                float diamond = Mathf.Abs(cx) + Mathf.Abs(cy);
+                bool isDiamond = diamond > 0.55f && diamond < 0.62f;
+                // Sheriff star (5-point)
+                float angle = Mathf.Atan2(cy, cx);
+                float r = Mathf.Sqrt(cx * cx + cy * cy);
+                float starShape = Mathf.Cos(angle * 5f) * 0.06f + 0.13f;
+                bool isStar = r < starShape && r < 0.22f;
+
+                if (isBorder) pixels[y * w + x] = border;
+                else if (isInnerBorder) pixels[y * w + x] = bg;
+                else if (isStar) pixels[y * w + x] = border;
+                else if (isDiamond) pixels[y * w + x] = border;
+                else pixels[y * w + x] = center;
+            }
+
+            tex.SetPixels(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f));
         }
 
         public static AudioClip LoadAudio(string audioName)

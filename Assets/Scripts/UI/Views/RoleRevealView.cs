@@ -74,15 +74,19 @@ namespace BangBang.UI.Views
                 rt.sizeDelta = new Vector2(200, 300);
 
                 var bgImg = cardObj.GetComponent<Image>();
-                bgImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
-                bgImg.color = new Color(0.6f, 0.4f, 0.2f); // face down tint
+                bgImg.sprite = CardCatalogDatabase.LoadSprite("card_back");
+                bgImg.color = Color.white;
 
                 var frontContainer = new GameObject("FrontContent", typeof(RectTransform), typeof(Image));
                 frontContainer.transform.SetParent(cardObj.transform, false);
                 var fRt = frontContainer.GetComponent<RectTransform>();
                 fRt.anchorMin = Vector2.zero; fRt.anchorMax = Vector2.one; fRt.sizeDelta = Vector2.zero;
+                string roleSpriteKey = roleKey == "outlaw" ? "raider" :
+                                       roleKey == "renegade" ? "traitor" :
+                                       roleKey;
                 var fImg = frontContainer.GetComponent<Image>();
-                fImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/" + roleKey + "_card");
+                fImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/" + roleSpriteKey + "_card");
+                fImg.color = Color.white;
                 frontContainer.SetActive(false);
 
                 Outline outline = null;

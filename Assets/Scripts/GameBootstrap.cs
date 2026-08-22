@@ -428,7 +428,8 @@ namespace BangBang.UI
                 drawRt.anchoredPosition = new Vector2(-150f, 0);
                 drawRt.sizeDelta = new Vector2(85, 125);
                 var drawImg = drawObj.GetComponent<Image>();
-                drawImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+                drawImg.sprite = CardCatalogDatabase.LoadSprite("card_back");
+                drawImg.color = Color.white;
                 gameTableView.drawPileImage = drawImg;
 
                 var drawTxtObj = CreateText("Count", "65", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, drawObj.transform);
