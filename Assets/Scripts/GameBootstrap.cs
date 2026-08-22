@@ -76,6 +76,9 @@ namespace BangBang.UI
                 gameStateStore.BindGateway(activeGateway);
             }
 
+            // Re-bind FlowController after gateway is set up (timing fix)
+            flowController?.BindToStore();
+
             // Start User Session
             string deviceId = PlayerPrefs.GetString("bang_device_id", Guid.NewGuid().ToString("N").Substring(0, 16));
             PlayerPrefs.SetString("bang_device_id", deviceId);

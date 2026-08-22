@@ -30,8 +30,14 @@ namespace BangBang.Core.State
 
         private void Start()
         {
+            BindToStore();
+        }
+
+        public void BindToStore()
+        {
             if (GameStateStore.Instance != null)
             {
+                GameStateStore.Instance.OnStateSnapshotUpdated -= HandleSnapshotUpdated;
                 GameStateStore.Instance.OnStateSnapshotUpdated += HandleSnapshotUpdated;
             }
         }
