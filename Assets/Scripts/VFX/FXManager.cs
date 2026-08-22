@@ -31,7 +31,7 @@ namespace BangBang.VFX
 
         private void InitTracerLine()
         {
-            if (mainCanvas == null) mainCanvas = FindFirstObjectByType<Canvas>();
+            if (mainCanvas == null) mainCanvas = FindAnyObjectByType<Canvas>();
 
             _tracerLineObj = new GameObject("TargetingTracerLine", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             _tracerLineObj.transform.SetParent(mainCanvas != null ? mainCanvas.transform : transform, false);
@@ -73,7 +73,7 @@ namespace BangBang.VFX
 
         private IEnumerator FloatingTextCoroutine(Vector2 startPos, string text, Color color)
         {
-            if (mainCanvas == null) mainCanvas = FindFirstObjectByType<Canvas>();
+            if (mainCanvas == null) mainCanvas = FindAnyObjectByType<Canvas>();
 
             var textObj = new GameObject("FloatingText", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text), typeof(Outline));
             textObj.transform.SetParent(mainCanvas != null ? mainCanvas.transform : transform, false);

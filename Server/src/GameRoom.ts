@@ -13,6 +13,13 @@ export class GameRoom {
     private hostId: string = '';
     private turnNumber: number = 0;
     private sequence: number = 0;
+    
+    // Turn State
+    private currentTurnPlayerId: string = "";
+    private currentPhase: string = "";
+    private activeInteraction: any = null; // InteractionPromptDTO
+    private deck: string[] = [];
+    private discardPile: string[] = [];
 
     constructor(roomId: string, wss: WebSocketServer, config: any) {
         this.roomId = roomId;
@@ -90,6 +97,77 @@ export class GameRoom {
                 this.broadcastSnapshot();
             }
         }
+        else if (type === 'game.action.play') {
+            const p = this.players.get(socketId);
+            if (p && this.state === ServerGameState.PLAYING && this.currentTurnPlayerId === socketId && this.currentPhase === 'PLAY') {
+                const { cardId, targetPlayerIds } = data;
+                
+                // Ensure player has the card
+                const idx = p.hand.findIndex(c => c === cardId);
+                if (idx >= 0) {
+                    p.hand.splice(idx, 1);
+                    p.handCount = p.hand.length;
+                    this.discardPile.push(cardId);
+                    
+                    if (cardId.startsWith('bang')) {
+                        // Requires Missed! from target
+                        if (targetPlayerIds && targetPlayerIds.length > 0) {
+                            const target = targetPlayerIds[0];
+                            this.state = ServerGameState.WAITING_RESPONSE;
+                            this.activeInteraction = {
+                                interactionId: 'bang_' + Date.now(),
+                                type: 'RESPOND',
+                                actorPlayerId: target,
+                                title: 'BANG!',
+                                message: `${p.name} đã bắn bạn! Dùng Missed! hoặc mất 1 máu.`,
+                                validCardIds: ['missed_.*'], 
+                                canCancel: true,
+                                defaultAction: 'take_damage'
+                            };
+                            console.log(`[ROOM] BANG! played on ${target}`);
+                        }
+                    }
+                    this.broadcastSnapshot();
+                }
+            }
+        }
+        else if (type === 'game.action.respond') {
+            if (this.state === ServerGameState.WAITING_RESPONSE && this.activeInteraction && this.activeInteraction.actorPlayerId === socketId) {
+                const { action, selectedCardIds } = data;
+                const p = this.players.get(socketId);
+                
+                if ((action === 'USE_CARDS' || action === 'SUBMIT') && selectedCardIds && selectedCardIds.length > 0) {
+                    // E.g. used Missed!
+                    const cardId = selectedCardIds[0];
+                    const idx = p!.hand.findIndex(c => c === cardId);
+                    if (idx >= 0) {
+                        p!.hand.splice(idx, 1);
+                        p!.handCount = p!.hand.length;
+                        this.discardPile.push(cardId);
+                        console.log(`[ROOM] ${p!.name} used Missed!`);
+                    }
+                } else if (action === 'CANCEL' || action === 'take_damage') {
+                    p!.currentHealth -= 1;
+                    console.log(`[ROOM] ${p!.name} took 1 damage!`);
+                    if (p!.currentHealth <= 0) p!.isAlive = false;
+                }
+                
+                this.activeInteraction = null;
+                this.state = ServerGameState.PLAYING;
+                this.broadcastSnapshot();
+            }
+        }
+        else if (type === 'game.action.endTurn') {
+            if (this.state === ServerGameState.PLAYING && this.currentTurnPlayerId === socketId && this.currentPhase === 'PLAY') {
+                const p = this.players.get(socketId);
+                if (p!.handCount > p!.currentHealth) {
+                    // Need to discard (skipped for now, force discard would be an interaction)
+                }
+                
+                // Next player
+                this.nextTurn();
+            }
+        }
     }
     public handleDisconnect(socketId: string) {
         const p = this.players.get(socketId);
@@ -134,9 +212,12 @@ export class GameRoom {
             hostPlayerId: this.hostId,
             state: this.state,
             turnNumber: this.turnNumber,
+            currentTurnPlayerId: this.currentTurnPlayerId,
+            currentPhase: this.currentPhase,
+            activeInteraction: this.activeInteraction,
             players: Array.from(this.players.values()).map(p => ({ ...p, hand: [] })), 
-            drawPileCount: 80,
-            discardPileCount: 0,
+            drawPileCount: this.deck.length,
+            discardPileCount: this.discardPile.length,
             combatLogs: [],
             serverTime: Date.now(),
             sequence: this.sequence++
@@ -224,20 +305,66 @@ export class GameRoom {
     }
     
     private initializeGame() {
+        // Initialize deck
+        for (let i = 0; i < 80; i++) {
+            const types = ['bang', 'missed', 'beer', 'stagecoach'];
+            this.deck.push(types[Math.floor(Math.random() * types.length)] + '_' + i);
+        }
+        
         // Set health based on character (for now default 4, +1 if Sheriff)
         for (const p of this.players.values()) {
             p.maxHealth = p.role === 'SHERIFF' ? 5 : 4;
             p.currentHealth = p.maxHealth;
-            p.handCount = p.maxHealth;
-            // deal cards (mock)
-            for (let i = 0; i < p.handCount; i++) p.hand.push(`card_${Math.random()}`);
+            p.hand = [];
+            // deal initial hand
+            for (let i = 0; i < p.maxHealth; i++) {
+                p.hand.push(this.deck.pop()!);
+            }
+            p.handCount = p.hand.length;
         }
         this.state = ServerGameState.PLAYING;
         
         // Find Sheriff to start
         const sheriff = Array.from(this.players.values()).find(p => p.role === 'SHERIFF');
-        if (sheriff) this.turnNumber = 1;
+        if (sheriff) {
+            this.turnNumber = 1;
+            this.startTurn(sheriff.id);
+        } else {
+            this.broadcastSnapshot();
+        }
+    }
+
+    private startTurn(playerId: string) {
+        this.currentTurnPlayerId = playerId;
+        this.currentPhase = "DRAW";
         
+        // Draw 2 cards
+        const p = this.players.get(playerId);
+        if (p) {
+            if (this.deck.length < 2) {
+                // shuffle discard pile into deck... (skipping for now)
+            }
+            p.hand.push(this.deck.pop()!);
+            p.hand.push(this.deck.pop()!);
+            p.handCount = p.hand.length;
+        }
+        
+        this.currentPhase = "PLAY";
         this.broadcastSnapshot();
+    }
+    
+    private nextTurn() {
+        this.currentPhase = "DISCARD"; // Skip actual discard phase for prototype simplicity
+        
+        const playerIds = Array.from(this.players.keys());
+        const currentIndex = playerIds.indexOf(this.currentTurnPlayerId);
+        
+        let nextIndex = (currentIndex + 1) % playerIds.length;
+        while (!this.players.get(playerIds[nextIndex])!.isAlive && nextIndex !== currentIndex) {
+            nextIndex = (nextIndex + 1) % playerIds.length;
+        }
+        
+        this.turnNumber++;
+        this.startTurn(playerIds[nextIndex]);
     }
 }

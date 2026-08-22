@@ -9,6 +9,7 @@ using UnityEngine;
 
 namespace BangBang.Core.Network
 {
+#pragma warning disable 0067
     [Serializable]
     public class WsMessage
     {
@@ -233,22 +234,24 @@ namespace BangBang.Core.Network
 
         public Task<bool> RequestDrawAsync()
         {
-            return SendEventAsync("game.action.draw");
+            return SendEventAsync("game.action.draw"); // Note: GameRoom currently auto-draws, but keeping this for manual
         }
 
         public Task<bool> PlayCardAsync(string cardId, List<string> targetPlayerIds = null, List<string> selectedCardIds = null)
         {
-            return SendEventAsync("game.action.playCard", "{\"cardId\":\"" + cardId + "\"}");
+            var req = new ClientActionRequestDTO { cardId = cardId, targetPlayerIds = targetPlayerIds, selectedCardIds = selectedCardIds };
+            return SendEventAsync("game.action.play", JsonUtility.ToJson(req));
         }
 
         public Task<bool> SubmitInteractionAsync(string interactionId, string action, List<string> selectedPlayers = null, List<string> selectedCards = null, int optionIndex = 0)
         {
-            return SendEventAsync("effect.respond", "{\"interactionId\":\"" + interactionId + "\"}");
+            var req = new ClientActionRequestDTO { action = action, targetPlayerIds = selectedPlayers, selectedCardIds = selectedCards };
+            return SendEventAsync("game.action.respond", JsonUtility.ToJson(req));
         }
 
         public Task<bool> EndTurnAsync(List<string> discardCardIds = null)
         {
-            return SendEventAsync("turn.endPlay");
+            return SendEventAsync("game.action.endTurn");
         }
 
         public Task<bool> RequestRematchAsync()

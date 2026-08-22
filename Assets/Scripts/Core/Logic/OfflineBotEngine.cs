@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace BangBang.Core.Logic
 {
+#pragma warning disable 0067
     public class OfflineBotEngine : MonoBehaviour
     {
         public static OfflineBotEngine Instance { get; private set; }

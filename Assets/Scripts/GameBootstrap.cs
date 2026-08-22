@@ -40,11 +40,11 @@ namespace BangBang.UI
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
 
-            Screen.orientation = ScreenOrientation.Portrait;
-            Screen.autorotateToLandscapeLeft = false;
-            Screen.autorotateToLandscapeRight = false;
-            Screen.autorotateToPortrait = true;
-            Screen.autorotateToPortraitUpsideDown = true;
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
         }
 
         private async void Start()
@@ -86,7 +86,7 @@ namespace BangBang.UI
 
         private void EnsureUIHierarchy()
         {
-            var canvas = FindFirstObjectByType<Canvas>();
+            var canvas = FindAnyObjectByType<Canvas>();
             if (canvas == null)
             {
                 var canvasObj = new GameObject("GameCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -98,7 +98,7 @@ namespace BangBang.UI
                 scaler.referenceResolution = new Vector2(1920, 1080);
                 scaler.matchWidthOrHeight = 1.0f; // Landscape: match height
 
-                if (FindFirstObjectByType<Camera>() == null)
+                if (FindAnyObjectByType<Camera>() == null)
                 {
                     var camObj = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
                     camObj.tag = "MainCamera";
@@ -107,15 +107,15 @@ namespace BangBang.UI
                 EnsureEventSystem();
             }
 
-            if (FindFirstObjectByType<AudioManager>() == null) new GameObject("AudioManager", typeof(AudioManager));
-            if (FindFirstObjectByType<FXManager>() == null) new GameObject("FXManager", typeof(FXManager));
+            if (FindAnyObjectByType<AudioManager>() == null) new GameObject("AudioManager", typeof(AudioManager));
+            if (FindAnyObjectByType<FXManager>() == null) new GameObject("FXManager", typeof(FXManager));
 
             // Gateways
             if (liveGateway == null)
             {
                 var gateway = new GameObject("Gateway").AddComponent<BangLiveGateway>();
                 liveGateway = gateway;
-                liveGateway.serverBaseUrl = cloudflareWorkerUrl;
+                liveGateway.serverWsUrl = cloudflareWorkerUrl;
             }
 
             // State Store & Flow
@@ -685,7 +685,7 @@ namespace BangBang.UI
 
         private void EnsureEventSystem()
         {
-            if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
+            if (FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
             {
                 var esObj = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
                 var inputModuleType = Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");

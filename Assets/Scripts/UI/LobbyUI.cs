@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 namespace BangBang.UI
 {
+#pragma warning disable 0067
     public class LobbyUI : MonoBehaviour
     {
         public static LobbyUI Instance { get; private set; }

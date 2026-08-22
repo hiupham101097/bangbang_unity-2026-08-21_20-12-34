@@ -11,6 +11,7 @@ using UnityEngine.Networking;
 
 namespace BangBang.Core.Network
 {
+#pragma warning disable 0067
     [Serializable]
     public class SessionResponse
     {

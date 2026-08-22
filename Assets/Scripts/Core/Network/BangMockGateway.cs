@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace BangBang.Core.Network
 {
+#pragma warning disable 0067
     public class BangMockGateway : MonoBehaviour, IGameGateway
     {
         public ConnectionState CurrentConnectionState { get; private set; } = ConnectionState.Connected;
