@@ -105,6 +105,13 @@ namespace BangBang.UI.Views
                 if (timerCountdownText != null) timerCountdownText.text = "Tự động tiếp tục sau " + sec + "s...";
                 yield return new WaitForSeconds(1.0f);
             }
+
+            // Auto-advance if flow controller hasn't moved on yet
+            if (GameFlowController.Instance != null &&
+                GameFlowController.Instance.CurrentState == ServerGameState.DEALING_ROLES)
+            {
+                GameFlowController.Instance.TransitionToState(ServerGameState.SELECTING_CHARACTER);
+            }
         }
     }
 }

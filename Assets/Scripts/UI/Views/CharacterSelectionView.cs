@@ -25,6 +25,16 @@ namespace BangBang.UI.Views
         {
         }
 
+        private void OnEnable()
+        {
+            // Snapshot may already have an interaction before this view was activated
+            var snapshot = GameStateStore.Instance?.CurrentSnapshot;
+            if (snapshot?.activeInteraction != null)
+            {
+                RenderCandidates(snapshot.activeInteraction);
+            }
+        }
+
         private void Start()
         {
             BindListeners();

@@ -239,11 +239,18 @@ namespace BangBang.UI.Views
         {
             var opponents = snapshot.players.Where(p => p.id != localPlayerId).ToList();
 
+            // Remove excess seats
+            while (_seatUIs.Count > opponents.Count)
+            {
+                var last = _seatUIs[_seatUIs.Count - 1];
+                _seatUIs.RemoveAt(_seatUIs.Count - 1);
+                Destroy(last.gameObject);
+            }
+
+            // Add new seats with proper child UI objects
             while (_seatUIs.Count < opponents.Count)
             {
-                var seatObj = new GameObject("OpponentSeat_" + _seatUIs.Count, typeof(RectTransform), typeof(PlayerSeatUI));
-                seatObj.transform.SetParent(opponentSeatsContainer != null ? opponentSeatsContainer : transform, false);
-                var seatUI = seatObj.GetComponent<PlayerSeatUI>();
+                var seatUI = CreateProperSeatObject();
                 _seatUIs.Add(seatUI);
             }
 
@@ -259,17 +266,23 @@ namespace BangBang.UI.Views
                     health = p.currentHealth,
                     maxHealth = p.maxHealth,
                     characterId = p.characterId,
-                    character = CardCatalogDatabase.GetCharacterInfo(p.characterId),
-                    role = p.isRoleRevealed && p.role == "sheriff" ? RoleType.Sheriff : RoleType.Outlaw,
+                    character = string.IsNullOrEmpty(p.characterId) ? null : CardCatalogDatabase.GetCharacterInfo(p.characterId),
+                    role = p.isRoleRevealed
+                        ? (p.role == "sheriff" ? RoleType.Sheriff
+                            : p.role == "deputy" ? RoleType.Deputy
+                            : p.role == "outlaw" ? RoleType.Outlaw
+                            : RoleType.Renegade)
+                        : RoleType.Unknown,
                     isRoleRevealed = p.isRoleRevealed,
-                    equipment = p.equipment,
-                    hand = new List<string>() // empty for opponent
+                    cardCount = p.handCount,
+                    equipment = p.equipment ?? new List<string>(),
+                    hand = new List<string>()
                 };
 
                 _seatUIs[i].SetupSeat(model, p.effectiveDistanceToLocal, false);
+                _seatUIs[i].SetTurnActive(snapshot.currentTurnPlayerId == p.id);
                 _seatUIs[i].SetTargetHighlight(p.isTargetable);
 
-                string seatTargetId = p.id;
                 _seatUIs[i].OnSeatClicked -= HandleOpponentSeatClicked;
                 _seatUIs[i].OnSeatClicked += HandleOpponentSeatClicked;
 
@@ -277,8 +290,140 @@ namespace BangBang.UI.Views
                 float t = opponents.Count > 1 ? (float)i / (opponents.Count - 1) : 0.5f;
                 float angle = Mathf.Lerp(195f, -15f, t) * Mathf.Deg2Rad;
                 var rt = _seatUIs[i].GetComponent<RectTransform>();
-                rt.anchoredPosition = new Vector2(Mathf.Cos(angle) * 690f, Mathf.Sin(angle) * 270f + 50f);
+                rt.anchoredPosition = new Vector2(Mathf.Cos(angle) * 650f, Mathf.Sin(angle) * 260f + 50f);
             }
+        }
+
+        /// <summary>Creates a fully-built PlayerSeatUI with all child components wired up.</summary>
+        private PlayerSeatUI CreateProperSeatObject()
+        {
+            var parent = opponentSeatsContainer != null ? opponentSeatsContainer : (RectTransform)transform;
+            var seatObj = new GameObject("OpponentSeatUI", typeof(RectTransform), typeof(PlayerSeatUI));
+            seatObj.transform.SetParent(parent, false);
+
+            var rt = seatObj.GetComponent<RectTransform>();
+            rt.sizeDelta = new Vector2(130, 160);
+
+            // ── Wooden Avatar Frame ──
+            var frameObj = new GameObject("AvatarFrame", typeof(RectTransform), typeof(Image));
+            frameObj.transform.SetParent(seatObj.transform, false);
+            var frameRt = frameObj.GetComponent<RectTransform>();
+            frameRt.sizeDelta = new Vector2(90, 90);
+            frameRt.anchoredPosition = new Vector2(0, 15f);
+            var frameImg = frameObj.GetComponent<Image>();
+            frameImg.color = new Color(0.4f, 0.25f, 0.12f);
+
+            // ── Avatar Image (inside frame) ──
+            var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
+            avatarObj.transform.SetParent(frameObj.transform, false);
+            var avatarRt = avatarObj.GetComponent<RectTransform>();
+            avatarRt.sizeDelta = new Vector2(82, 82);
+            var avatarImg = avatarObj.GetComponent<Image>();
+            avatarImg.preserveAspect = true;
+            avatarImg.color = Color.white;
+
+            // ── Sheriff Star ──
+            var starObj = new GameObject("SheriffStar", typeof(RectTransform), typeof(Image));
+            starObj.transform.SetParent(frameObj.transform, false);
+            var starRt = starObj.GetComponent<RectTransform>();
+            starRt.anchoredPosition = new Vector2(-36f, -32f);
+            starRt.sizeDelta = new Vector2(32, 32);
+            var starImg = starObj.GetComponent<Image>();
+            starImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+            starObj.SetActive(false);
+
+            // ── HP Heart Badge ──
+            var heartObj = new GameObject("HeartHp", typeof(RectTransform), typeof(Image));
+            heartObj.transform.SetParent(frameObj.transform, false);
+            var heartRt = heartObj.GetComponent<RectTransform>();
+            heartRt.anchoredPosition = new Vector2(36f, -32f);
+            heartRt.sizeDelta = new Vector2(32, 32);
+            heartObj.GetComponent<Image>().color = new Color(0.85f, 0.15f, 0.15f);
+
+            var hpTxtObj = new GameObject("HpText", typeof(RectTransform), typeof(Text));
+            hpTxtObj.transform.SetParent(heartObj.transform, false);
+            var hpTxtRt = hpTxtObj.GetComponent<RectTransform>();
+            hpTxtRt.anchorMin = Vector2.zero;
+            hpTxtRt.anchorMax = Vector2.one;
+            hpTxtRt.sizeDelta = Vector2.zero;
+            var hpTxt = hpTxtObj.GetComponent<Text>();
+            hpTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            hpTxt.fontSize = 15;
+            hpTxt.fontStyle = FontStyle.Bold;
+            hpTxt.alignment = TextAnchor.MiddleCenter;
+            hpTxt.color = Color.white;
+            hpTxt.text = "4";
+
+            // ── Name Label ──
+            var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
+            nameObj.transform.SetParent(seatObj.transform, false);
+            var nameRt = nameObj.GetComponent<RectTransform>();
+            nameRt.anchoredPosition = new Vector2(0, 68f);
+            nameRt.sizeDelta = new Vector2(160, 22);
+            var nameTxt = nameObj.GetComponent<Text>();
+            nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            nameTxt.fontSize = 13;
+            nameTxt.fontStyle = FontStyle.Bold;
+            nameTxt.alignment = TextAnchor.MiddleCenter;
+            nameTxt.color = Color.white;
+
+            // ── Role Label ──
+            var roleObj = new GameObject("Role", typeof(RectTransform), typeof(Text));
+            roleObj.transform.SetParent(seatObj.transform, false);
+            var roleRt = roleObj.GetComponent<RectTransform>();
+            roleRt.anchoredPosition = new Vector2(0, -45f);
+            roleRt.sizeDelta = new Vector2(140, 20);
+            var roleTxt = roleObj.GetComponent<Text>();
+            roleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            roleTxt.fontSize = 11;
+            roleTxt.alignment = TextAnchor.MiddleCenter;
+            roleTxt.color = new Color(0.9f, 0.8f, 0.4f);
+
+            // ── Equipment Shelf ──
+            var eqObj = new GameObject("EquipmentShelf", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            eqObj.transform.SetParent(seatObj.transform, false);
+            var eqRt = eqObj.GetComponent<RectTransform>();
+            eqRt.anchoredPosition = new Vector2(0, -65f);
+            eqRt.sizeDelta = new Vector2(130, 40);
+            var hlg = eqObj.GetComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 4f;
+
+            // ── Crosshair (tap-to-target) ──
+            var crossObj = new GameObject("Crosshair", typeof(RectTransform), typeof(Image), typeof(Button));
+            crossObj.transform.SetParent(seatObj.transform, false);
+            var crossRt = crossObj.GetComponent<RectTransform>();
+            crossRt.sizeDelta = new Vector2(100, 100);
+            crossRt.anchoredPosition = new Vector2(0, 15f);
+            crossObj.GetComponent<Image>().color = new Color(1f, 0.2f, 0.2f, 0.5f);
+            crossObj.SetActive(false);
+
+            // ── Turn Glow ──
+            var glowObj = new GameObject("TurnGlow", typeof(RectTransform), typeof(Image));
+            glowObj.transform.SetParent(seatObj.transform, false);
+            var glowRt = glowObj.GetComponent<RectTransform>();
+            glowRt.sizeDelta = new Vector2(110, 110);
+            glowRt.anchoredPosition = new Vector2(0, 15f);
+            var glowImg = glowObj.GetComponent<Image>();
+            glowImg.color = new Color(1f, 0.85f, 0.2f, 0.35f);
+            glowObj.SetActive(false);
+            glowObj.transform.SetAsFirstSibling(); // Behind everything
+
+            // ── Wire up PlayerSeatUI ──
+            var seatUI = seatObj.GetComponent<PlayerSeatUI>();
+            seatUI.avatarImage = avatarImg;
+            seatUI.avatarFrameImage = frameImg;
+            seatUI.roleBadgeStar = starImg;
+            seatUI.heartHpBadge = heartObj.GetComponent<Image>();
+            seatUI.hpText = hpTxt;
+            seatUI.nameText = nameTxt;
+            seatUI.roleText = roleTxt;
+            seatUI.equipmentRowTransform = eqObj.transform;
+            seatUI.crosshairTargetObj = crossObj;
+            seatUI.seatSelectButton = crossObj.GetComponent<Button>();
+            seatUI.turnActiveGlow = glowImg;
+
+            return seatUI;
         }
 
         private void HandleCardSelected(CardUI card)

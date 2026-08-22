@@ -97,7 +97,7 @@ namespace BangBang.UI
                 var scaler = canvasObj.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.matchWidthOrHeight = 0.5f;
+                scaler.matchWidthOrHeight = 1.0f; // Landscape: match height
 
                 if (FindFirstObjectByType<Camera>() == null)
                 {
@@ -345,6 +345,9 @@ namespace BangBang.UI
                 var goalObj = CreateText("RoleGoal", "Mục tiêu chiến thắng...", new Vector2(0, -220f), new Vector2(800, 50), 16, Color.white, roleObj.transform);
                 roleRevealView.roleGoalText = goalObj.GetComponent<Text>();
 
+                var timerObj = CreateText("TimerCountdown", "", new Vector2(0, -290f), new Vector2(500, 30), 14, new Color(0.8f, 0.8f, 0.8f), roleObj.transform);
+                roleRevealView.timerCountdownText = timerObj.GetComponent<Text>();
+
                 flowController.roleRevealView = roleRevealView;
             }
 
@@ -378,10 +381,20 @@ namespace BangBang.UI
                 gameTableView = tableObj.AddComponent<GameTableView>();
                 gameTableView.tableBackgroundImage = tableObj.GetComponent<Image>();
 
+                // Opponent Seats Container (full canvas, opponents placed by arc positions)
+                var opponentsContainer = new GameObject("OpponentSeatsContainer", typeof(RectTransform));
+                opponentsContainer.transform.SetParent(tableObj.transform, false);
+                var ocRt = opponentsContainer.GetComponent<RectTransform>();
+                ocRt.anchorMin = Vector2.zero;
+                ocRt.anchorMax = Vector2.one;
+                ocRt.sizeDelta = Vector2.zero;
+                gameTableView.opponentSeatsContainer = ocRt;
+
+                // Center Zone
                 var centerZone = new GameObject("CenterZone", typeof(RectTransform));
                 centerZone.transform.SetParent(tableObj.transform, false);
                 var czRt = centerZone.GetComponent<RectTransform>();
-                czRt.anchoredPosition = new Vector2(0, 30f);
+                czRt.anchoredPosition = new Vector2(0, 60f);
                 czRt.sizeDelta = new Vector2(500, 200);
 
                 var drawObj = new GameObject("DrawPile", typeof(RectTransform), typeof(Image));
@@ -403,14 +416,71 @@ namespace BangBang.UI
                 discRt.sizeDelta = new Vector2(85, 125);
                 gameTableView.discardPileImage = discObj.GetComponent<Image>();
 
-                var discTxtObj = CreateText("Count", "1", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, discObj.transform);
+                var discTxtObj = CreateText("Count", "0", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, discObj.transform);
                 gameTableView.discardPileCountText = discTxtObj.GetComponent<Text>();
 
+                // Turn phase status (top center)
+                var phaseObj = CreateText("TurnPhase", "⏳ LƯỢT ĐỐI THỦ", new Vector2(0, 200f), new Vector2(500, 36), 18, Color.white, tableObj.transform);
+                gameTableView.turnPhaseStatusText = phaseObj.GetComponent<Text>();
+
+                // Combat log (bottom center, above hand)
+                var logObj = CreateText("LogText", "Chào mừng đến bàn đấu Bang!", new Vector2(0, -225f), new Vector2(700, 30), 14, new Color(0.95f, 0.85f, 0.6f), tableObj.transform);
+                gameTableView.combatLogText = logObj.GetComponent<Text>();
+
+                // Local Player Dashboard (bottom-left)
+                var localDashObj = new GameObject("LocalPlayerDash", typeof(RectTransform));
+                localDashObj.transform.SetParent(tableObj.transform, false);
+                var ldRt = localDashObj.GetComponent<RectTransform>();
+                ldRt.anchoredPosition = new Vector2(-750f, -380f);
+                ldRt.sizeDelta = new Vector2(320, 180);
+
+                // Local avatar
+                var localAvatarObj = new GameObject("LocalAvatar", typeof(RectTransform), typeof(Image));
+                localAvatarObj.transform.SetParent(localDashObj.transform, false);
+                var laRt = localAvatarObj.GetComponent<RectTransform>();
+                laRt.anchoredPosition = new Vector2(-100f, 20f);
+                laRt.sizeDelta = new Vector2(90, 90);
+                var laImg = localAvatarObj.GetComponent<Image>();
+                laImg.preserveAspect = true;
+                gameTableView.localAvatarImage = laImg;
+
+                var localNameObj = CreateText("LocalName", "Người chơi", new Vector2(20f, 60f), new Vector2(200, 28), 14, new Color(1f, 0.9f, 0.4f), localDashObj.transform);
+                gameTableView.localNameText = localNameObj.GetComponent<Text>();
+
+                var localRoleObj = CreateText("LocalRole", "⭐ CẢNH SÁT TRƯỞNG", new Vector2(20f, 30f), new Vector2(220, 24), 12, Color.white, localDashObj.transform);
+                gameTableView.localRoleText = localRoleObj.GetComponent<Text>();
+
+                // Bullet/health tokens row
+                var bulletContainer = new GameObject("BulletContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                bulletContainer.transform.SetParent(localDashObj.transform, false);
+                var bcRt = bulletContainer.GetComponent<RectTransform>();
+                bcRt.anchoredPosition = new Vector2(20f, -10f);
+                bcRt.sizeDelta = new Vector2(220, 40);
+                var bhlg = bulletContainer.GetComponent<HorizontalLayoutGroup>();
+                bhlg.childAlignment = TextAnchor.MiddleLeft;
+                bhlg.spacing = 4f;
+                gameTableView.localBulletHealthContainer = bulletContainer.transform;
+
+                // Equipment tray
+                var equipTray = new GameObject("EquipmentTray", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                equipTray.transform.SetParent(localDashObj.transform, false);
+                var etRt = equipTray.GetComponent<RectTransform>();
+                etRt.anchoredPosition = new Vector2(20f, -55f);
+                etRt.sizeDelta = new Vector2(240, 65);
+                var ehlg = equipTray.GetComponent<HorizontalLayoutGroup>();
+                ehlg.childAlignment = TextAnchor.MiddleLeft;
+                ehlg.spacing = 6f;
+                gameTableView.localEquipmentTray = equipTray.transform;
+
+                // Hand layout (bottom center)
                 var handObj = new GameObject("HandLayout", typeof(RectTransform), typeof(HandCardFanLayout));
                 handObj.transform.SetParent(tableObj.transform, false);
+                var handRt = handObj.GetComponent<RectTransform>();
+                handRt.anchoredPosition = new Vector2(0, -400f);
+                handRt.sizeDelta = new Vector2(900, 130);
                 gameTableView.handCardLayout = handObj.GetComponent<HandCardFanLayout>();
 
-                // Target Banner Top
+                // Target Banner (top center)
                 var tBannerObj = new GameObject("TargetBanner", typeof(RectTransform), typeof(Image));
                 tBannerObj.transform.SetParent(tableObj.transform, false);
                 var tbRt = tBannerObj.GetComponent<RectTransform>();
@@ -421,27 +491,23 @@ namespace BangBang.UI
                 gameTableView.targetBannerObj = tBannerObj;
                 gameTableView.targetBannerText = tbTxtObj.GetComponent<Text>();
 
-                // Card Preview Tooltip (Middle-bottom)
+                // Card Preview Tooltip
                 var ttObj = new GameObject("CardPreviewTooltip", typeof(RectTransform), typeof(Image));
                 ttObj.transform.SetParent(tableObj.transform, false);
                 var ttRt = ttObj.GetComponent<RectTransform>();
-                ttRt.anchoredPosition = new Vector2(0, -180f);
+                ttRt.anchoredPosition = new Vector2(0, -260f);
                 ttRt.sizeDelta = new Vector2(760, 46);
                 ttObj.GetComponent<Image>().color = new Color(0.12f, 0.08f, 0.05f, 0.9f);
                 var ttTxtObj = CreateText("Text", "Xem chi tiết bài", Vector2.zero, new Vector2(740, 40), 14, new Color(1f, 0.9f, 0.6f), ttObj.transform);
                 gameTableView.cardPreviewTooltipObj = ttObj;
                 gameTableView.cardPreviewTooltipText = ttTxtObj.GetComponent<Text>();
 
-                // Action Buttons
+                // Action Buttons (right side)
+                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "🃏 RÚT BÀI", new Vector2(720f, 220f), new Color(0.2f, 0.55f, 0.85f), tableObj.transform, new Vector2(180, 60));
                 gameTableView.playCardButton = CreateButton("PlayCardBtn", "💥 ĐÁNH BÀI", new Vector2(720f, 150f), new Color(0.85f, 0.45f, 0.15f), tableObj.transform, new Vector2(180, 60));
                 gameTableView.playCardButtonText = gameTableView.playCardButton.GetComponentInChildren<Text>();
-
-                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "❌ HỦY CHỌN", new Vector2(720f, 220f), new Color(0.5f, 0.2f, 0.2f), tableObj.transform, new Vector2(180, 50));
-
-                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "⏭ HẾT LƯỢT", new Vector2(720f, 80f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 60));
-
-                var logObj = CreateText("LogText", "Chào mừng đến bàn đấu Bang!", new Vector2(0, -225f), new Vector2(700, 30), 14, new Color(0.95f, 0.85f, 0.6f), tableObj.transform);
-                gameTableView.combatLogText = logObj.GetComponent<Text>();
+                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "❌ HỦY CHỌN", new Vector2(720f, 80f), new Color(0.5f, 0.2f, 0.2f), tableObj.transform, new Vector2(180, 50));
+                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "⏭ HẾT LƯỢT", new Vector2(720f, 10f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 60));
 
                 flowController.gameTableView = gameTableView;
             }

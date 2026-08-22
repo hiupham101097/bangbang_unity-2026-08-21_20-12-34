@@ -29,6 +29,7 @@ namespace BangBang.Core.Data
 
     public enum RoleType
     {
+        Unknown = -1, // Unrevealed / not yet assigned
         Sheriff,    // Cảnh Trưởng (Lộ diện, +1 Máu, Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội)
         Deputy,     // Phó Cảnh Trưởng (Ẩn danh, Bảo vệ Cảnh Trưởng)
         Outlaw,     // Cướp / Raider (Ẩn danh, Tiêu diệt Cảnh Trưởng)
