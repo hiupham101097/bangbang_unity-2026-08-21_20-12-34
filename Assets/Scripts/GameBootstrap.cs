@@ -501,8 +501,11 @@ namespace BangBang.UI
                 var handObj = new GameObject("HandLayout", typeof(RectTransform), typeof(HandCardFanLayout));
                 handObj.transform.SetParent(tableObj.transform, false);
                 var handRt = handObj.GetComponent<RectTransform>();
-                handRt.anchoredPosition = new Vector2(0, -400f);
-                handRt.sizeDelta = new Vector2(900, 130);
+                handRt.anchorMin = new Vector2(0f, 0f);
+                handRt.anchorMax = new Vector2(1f, 0f);
+                handRt.pivot = new Vector2(0.5f, 0f);
+                handRt.anchoredPosition = new Vector2(0, 10f);
+                handRt.sizeDelta = new Vector2(0, 200f);
                 gameTableView.handCardLayout = handObj.GetComponent<HandCardFanLayout>();
 
                 // Target Banner (top center)

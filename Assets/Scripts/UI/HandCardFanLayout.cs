@@ -12,8 +12,8 @@ namespace BangBang.UI
         public float cardSpacing = 115f;
         public float maxFanAngle = 12f;
         public float arcHeight = 15f;
-        public float baseCenterX = 120f;
-        public float baseCenterY = -375f;
+        public float baseCenterX = 0f;
+        public float baseCenterY = 0f;
         public GameObject cardPrefab;
 
         private readonly List<CardUI> _cardUIs = new List<CardUI>();
