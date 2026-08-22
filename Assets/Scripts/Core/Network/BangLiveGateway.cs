@@ -55,7 +55,8 @@ namespace BangBang.Core.Network
 
             try
             {
-                await _webSocket.ConnectAsync(new Uri(serverWsUrl), _cts.Token);
+                string wsUrl = serverWsUrl.Replace("https://", "wss://").Replace("http://", "ws://");
+                await _webSocket.ConnectAsync(new Uri(wsUrl), _cts.Token);
                 _ = ReceiveWebSocketLoopAsync();
                 
                 CurrentConnectionState = ConnectionState.Connected;
