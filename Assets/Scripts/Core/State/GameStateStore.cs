@@ -24,6 +24,15 @@ namespace BangBang.Core.State
             }
         }
 
+        public PrivatePlayerState LocalPrivateState
+        {
+            get
+            {
+                if (CurrentSnapshot == null) return null;
+                return CurrentSnapshot.privateState;
+            }
+        }
+
         public event Action<MatchStateSnapshotDTO> OnStateSnapshotUpdated;
         public event Action<InteractionPromptDTO> OnActiveInteractionChanged;
         public event Action<string> OnCombatLogAdded;

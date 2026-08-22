@@ -76,16 +76,19 @@ namespace BangBang.Core.State
             // Manage View Visibilities
             if (lobbyView != null) lobbyView.gameObject.SetActive(newState == ServerGameState.LOBBY);
             if (waitingRoomView != null) waitingRoomView.gameObject.SetActive(newState == ServerGameState.WAITING);
-            if (roleRevealView != null) roleRevealView.gameObject.SetActive(newState == ServerGameState.DEALING_ROLES);
-            if (characterSelectionView != null) characterSelectionView.gameObject.SetActive(newState == ServerGameState.SELECTING_CHARACTER);
+            if (roleRevealView != null) roleRevealView.gameObject.SetActive(newState == ServerGameState.ROLE_DRAFT || newState == ServerGameState.ROLE_LOCK_WAIT);
+            if (characterSelectionView != null) characterSelectionView.gameObject.SetActive(newState == ServerGameState.CHARACTER_DRAFT || newState == ServerGameState.CHARACTER_REVEAL);
             
-            bool isTableState = newState == ServerGameState.INITIALIZING || 
-                                newState == ServerGameState.PLAYING || 
-                                newState == ServerGameState.WAITING_RESPONSE || 
-                                newState == ServerGameState.TURN_ENDING;
+            bool isTableState = newState == ServerGameState.INITIAL_DEAL || 
+                                newState == ServerGameState.TURN_START || 
+                                newState == ServerGameState.JUDGEMENT || 
+                                newState == ServerGameState.DRAW || 
+                                newState == ServerGameState.PLAY || 
+                                newState == ServerGameState.RESPONSE || 
+                                newState == ServerGameState.DISCARD;
             if (gameTableView != null) gameTableView.gameObject.SetActive(isTableState);
 
-            if (resultView != null) resultView.gameObject.SetActive(newState == ServerGameState.FINISHED);
+            if (resultView != null) resultView.gameObject.SetActive(newState == ServerGameState.GAME_OVER);
 
             OnStateChanged?.Invoke(newState);
         }

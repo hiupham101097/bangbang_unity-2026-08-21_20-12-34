@@ -63,7 +63,7 @@ namespace BangBang.UI.Views
 
         public void RenderCandidates(MatchStateSnapshotDTO snapshot)
         {
-            if (snapshot == null || snapshot.state != ServerGameState.SELECTING_CHARACTER) return;
+            if (snapshot == null || (snapshot.state != ServerGameState.CHARACTER_DRAFT && snapshot.state != ServerGameState.CHARACTER_REVEAL)) return;
 
             if (waitingOthersOverlay != null) waitingOthersOverlay.SetActive(false);
             _selectedCharacterId = null;
@@ -73,9 +73,9 @@ namespace BangBang.UI.Views
             _cardObjects.Clear();
 
             string localId = GameStateStore.Instance.LocalPlayerId;
-            var localPlayer = snapshot.players.Find(p => p.id == localId);
-            var candidateIds = localPlayer != null && localPlayer.characterOptions != null && localPlayer.characterOptions.Count > 0 
-                ? localPlayer.characterOptions 
+            var privateState = GameStateStore.Instance.LocalPrivateState;
+            var candidateIds = privateState != null && privateState.draftCharacterOptions != null && privateState.draftCharacterOptions.Count > 0 
+                ? privateState.draftCharacterOptions 
                 : new List<string> { "willy_the_kid", "calamity_janet" };
 
             foreach (var id in candidateIds)

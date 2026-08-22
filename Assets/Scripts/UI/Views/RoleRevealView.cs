@@ -57,8 +57,8 @@ namespace BangBang.UI.Views
             _cardObjects.Clear();
 
             string localId = GameStateStore.Instance.LocalPlayerId;
-            var localPlayer = snapshot.players.Find(p => p.id == localId);
-            string roleKey = localPlayer != null && !string.IsNullOrEmpty(localPlayer.role) ? localPlayer.role.ToLower() : "outlaw";
+            var privateState = GameStateStore.Instance.LocalPrivateState;
+            string roleKey = privateState != null && !string.IsNullOrEmpty(privateState.roleId) ? privateState.roleId.ToLower() : "outlaw";
             bool isSheriff = roleKey == "sheriff";
 
             int playerCount = snapshot.players.Count;

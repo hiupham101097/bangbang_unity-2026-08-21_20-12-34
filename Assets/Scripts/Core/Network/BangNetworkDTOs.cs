@@ -7,13 +7,18 @@ namespace BangBang.Core.Network
     {
         LOBBY,
         WAITING,
-        DEALING_ROLES,
-        SELECTING_CHARACTER,
-        INITIALIZING,
-        PLAYING,
-        WAITING_RESPONSE,
-        TURN_ENDING,
-        FINISHED
+        ROLE_DRAFT,
+        ROLE_LOCK_WAIT,
+        CHARACTER_DRAFT,
+        CHARACTER_REVEAL,
+        INITIAL_DEAL,
+        TURN_START,
+        JUDGEMENT,
+        DRAW,
+        PLAY,
+        RESPONSE,
+        DISCARD,
+        GAME_OVER
     }
 
     public enum InteractionType
@@ -56,6 +61,7 @@ namespace BangBang.Core.Network
         public string id;
         public string name;
         public int seat;
+        public bool isBot;
         public bool isHost;
         public bool isReady;
         public bool isConnected = true;
@@ -63,14 +69,29 @@ namespace BangBang.Core.Network
         public int currentHealth;
         public int maxHealth;
         public string characterId;
-        public List<string> characterOptions = new List<string>();
-        public string role; // Only populated for local player or revealed Sheriff/dead players
+        public string publicRoleId;
         public bool isRoleRevealed;
         public int handCount;
-        public List<string> hand = new List<string>(); // ONLY for local player, empty for opponents
-        public List<string> equipment = new List<string>(); // Public equipment cards
-        public int effectiveDistanceToLocal = 1; // Server-calculated distance
-        public bool isTargetable; // Flagged by server during targeting interactions
+        public List<string> equipment = new List<string>();
+        public int effectiveDistanceToLocal = 1;
+        public bool isTargetable;
+    }
+
+    [Serializable]
+    public class PrivatePlayerState
+    {
+        public string roleId;
+        public List<string> hand = new List<string>();
+        public List<string> draftCharacterOptions = new List<string>();
+    }
+    
+    [Serializable]
+    public class RuleConfig
+    {
+        public int maxPlayers;
+        public int botCount;
+        public int turnTimeSec;
+        public string startingHandMode;
     }
 
     [Serializable]
@@ -80,10 +101,13 @@ namespace BangBang.Core.Network
         public string roomCode;
         public string hostPlayerId;
         public ServerGameState state;
+        public string phaseId;
+        public long deadlineAt;
         public string currentTurnPlayerId;
         public string currentPhase; // "draw", "play", "discard"
         public int turnNumber;
         public List<PlayerSnapshotDTO> players = new List<PlayerSnapshotDTO>();
+        public PrivatePlayerState privateState;
         public int drawPileCount;
         public string topDiscardCardId;
         public int discardPileCount;
@@ -93,6 +117,7 @@ namespace BangBang.Core.Network
         public List<string> combatLogs = new List<string>();
         public long serverTime;
         public int sequence;
+        public RuleConfig rules;
     }
 
     [Serializable]

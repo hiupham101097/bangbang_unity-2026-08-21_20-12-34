@@ -132,6 +132,7 @@ namespace BangBang.UI.Views
 
             string localId = GameStateStore.Instance != null ? GameStateStore.Instance.LocalPlayerId : "";
             var local = snapshot.players.Find(p => p.id == localId);
+            var localPrivate = GameStateStore.Instance != null ? GameStateStore.Instance.LocalPrivateState : null;
 
             // 1. Center Decks & Status
             if (drawPileCountText != null) drawPileCountText.text = snapshot.drawPileCount.ToString();
@@ -167,9 +168,10 @@ namespace BangBang.UI.Views
                 if (localNameText != null) localNameText.text = local.name;
                 if (localRoleText != null)
                 {
-                    localRoleText.text = local.role == "sheriff" ? "⭐ CẢNH SÁT TRƯỞNG" :
-                                         local.role == "deputy" ? "🛡️ PHÓ CẢNH SÁT" :
-                                         local.role == "outlaw" ? "💀 CƯỚP (OUTLAW)" : "🗡️ PHẢN BỘI (RENEGADE)";
+                    string r = localPrivate != null ? localPrivate.roleId : "";
+                    localRoleText.text = r == "sheriff" ? "⭐ CẢNH SÁT TRƯỞNG" :
+                                         r == "deputy" ? "🛡️ PHÓ CẢNH SÁT" :
+                                         r == "outlaw" ? "💀 CƯỚP (OUTLAW)" : "🗡️ PHẢN BỘI (RENEGADE)";
                 }
 
                 if (localAvatarImage != null && !string.IsNullOrEmpty(local.characterId))
@@ -181,9 +183,9 @@ namespace BangBang.UI.Views
                 RenderBulletHealth(local.currentHealth, local.maxHealth);
                 RenderLocalEquipment(local.equipment);
 
-                if (handCardLayout != null)
+                if (handCardLayout != null && localPrivate != null)
                 {
-                    handCardLayout.UpdateHand(local.hand);
+                    handCardLayout.UpdateHand(localPrivate.hand);
                 }
             }
 
@@ -269,9 +271,9 @@ namespace BangBang.UI.Views
                     characterId = p.characterId,
                     character = string.IsNullOrEmpty(p.characterId) ? null : CardCatalogDatabase.GetCharacterInfo(p.characterId),
                     role = p.isRoleRevealed
-                        ? (p.role == "sheriff" ? RoleType.Sheriff
-                            : p.role == "deputy" ? RoleType.Deputy
-                            : p.role == "outlaw" ? RoleType.Outlaw
+                        ? (p.publicRoleId == "sheriff" ? RoleType.Sheriff
+                            : p.publicRoleId == "deputy" ? RoleType.Deputy
+                            : p.publicRoleId == "outlaw" ? RoleType.Outlaw
                             : RoleType.Renegade)
                         : RoleType.Unknown,
                     isRoleRevealed = p.isRoleRevealed,

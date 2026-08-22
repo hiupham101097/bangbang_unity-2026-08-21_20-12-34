@@ -149,7 +149,7 @@ namespace BangBang.UI.Views
             roleTxt.fontStyle = FontStyle.Bold;
             roleTxt.alignment = TextAnchor.MiddleCenter;
             roleTxt.color = new Color(1f, 0.85f, 0.3f);
-            roleTxt.text = "Vai trò: " + (!string.IsNullOrEmpty(player.role) ? player.role.ToUpper() : "OUTLAW");
+            roleTxt.text = "Vai trò: " + (!string.IsNullOrEmpty(player.publicRoleId) ? player.publicRoleId.ToUpper() : "OUTLAW");
 
             // Status (Alive / Dead)
             var statusObj = new GameObject("Status", typeof(RectTransform), typeof(Text));
