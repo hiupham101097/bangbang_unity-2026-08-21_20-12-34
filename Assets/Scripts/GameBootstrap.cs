@@ -332,21 +332,26 @@ namespace BangBang.UI
                 var roleObj = CreateFullScreenPanel("RoleRevealView", canvas.transform);
                 roleRevealView = roleObj.AddComponent<RoleRevealView>();
 
-                var cardImgObj = new GameObject("RoleCardImg", typeof(RectTransform), typeof(Image));
-                cardImgObj.transform.SetParent(roleObj.transform, false);
-                var cRt = cardImgObj.GetComponent<RectTransform>();
-                cRt.anchoredPosition = new Vector2(0, 60f);
-                cRt.sizeDelta = new Vector2(240, 360);
-                roleRevealView.roleCardImage = cardImgObj.GetComponent<Image>();
-
-                var titleObj = CreateText("RoleTitle", "VAI TRÒ CỦA BẠN", new Vector2(0, -160f), new Vector2(600, 40), 22, Color.yellow, roleObj.transform);
+                var titleObj = CreateText("RoleTitle", "VAI TRÒ CỦA BẠN", new Vector2(0, 300f), new Vector2(600, 40), 22, Color.yellow, roleObj.transform);
                 roleRevealView.roleTitleText = titleObj.GetComponent<Text>();
 
-                var goalObj = CreateText("RoleGoal", "Mục tiêu chiến thắng...", new Vector2(0, -220f), new Vector2(800, 50), 16, Color.white, roleObj.transform);
+                var roleCardsContainer = new GameObject("RoleCardsContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                roleCardsContainer.transform.SetParent(roleObj.transform, false);
+                var cRt = roleCardsContainer.GetComponent<RectTransform>();
+                cRt.anchoredPosition = new Vector2(0, 50f);
+                cRt.sizeDelta = new Vector2(1100, 320);
+                var hlg = roleCardsContainer.GetComponent<HorizontalLayoutGroup>();
+                hlg.childAlignment = TextAnchor.MiddleCenter;
+                hlg.spacing = 20f;
+                roleRevealView.roleCardsContainer = roleCardsContainer.transform;
+
+                var goalObj = CreateText("RoleGoal", "Mục tiêu chiến thắng...", new Vector2(0, -180f), new Vector2(800, 50), 16, Color.white, roleObj.transform);
                 roleRevealView.roleGoalText = goalObj.GetComponent<Text>();
 
-                var timerObj = CreateText("TimerCountdown", "", new Vector2(0, -290f), new Vector2(500, 30), 14, new Color(0.8f, 0.8f, 0.8f), roleObj.transform);
+                var timerObj = CreateText("TimerCountdown", "", new Vector2(0, -250f), new Vector2(500, 30), 14, new Color(0.8f, 0.8f, 0.8f), roleObj.transform);
                 roleRevealView.timerCountdownText = timerObj.GetComponent<Text>();
+
+                roleRevealView.continueButton = CreateButton("ContinueBtn", "TIẾP TỤC", new Vector2(0, -320f), new Color(0.2f, 0.7f, 0.25f), roleObj.transform, new Vector2(250, 60));
 
                 flowController.roleRevealView = roleRevealView;
             }

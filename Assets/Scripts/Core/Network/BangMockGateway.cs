@@ -126,9 +126,18 @@ namespace BangBang.Core.Network
             _currentSnapshot.state = ServerGameState.DEALING_ROLES;
             _currentSnapshot.activeInteraction = null;
 
-            // Shuffle roles properly
+            // Shuffle roles properly using Fisher-Yates
             string[] rolePool = { "sheriff", "outlaw", "outlaw", "deputy", "renegade" };
-            var shuffled = rolePool.OrderBy(_ => UnityEngine.Random.value).ToArray();
+            System.Random rng = new System.Random();
+            for (int i = rolePool.Length - 1; i > 0; i--)
+            {
+                int k = rng.Next(i + 1);
+                string temp = rolePool[i];
+                rolePool[i] = rolePool[k];
+                rolePool[k] = temp;
+            }
+            var shuffled = rolePool;
+
             for (int i = 0; i < _currentSnapshot.players.Count; i++)
             {
                 var p = _currentSnapshot.players[i];

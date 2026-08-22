@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using BangBang.Core.Audio;
 using BangBang.Core.Data;
@@ -21,13 +22,8 @@ namespace BangBang.UI.Views
         private string _selectedCharacterId;
         private readonly List<GameObject> _cardObjects = new List<GameObject>();
 
-        private void Awake()
-        {
-        }
-
         private void OnEnable()
         {
-            // Snapshot may already have an interaction before this view was activated
             var snapshot = GameStateStore.Instance?.CurrentSnapshot;
             if (snapshot?.activeInteraction != null)
             {
@@ -86,6 +82,7 @@ namespace BangBang.UI.Views
             }
 
             UpdateConfirmButton();
+            if (confirmSelectionButton != null) confirmSelectionButton.gameObject.SetActive(false);
         }
 
         private GameObject CreateCharacterChoiceCard(string charId)
@@ -97,11 +94,19 @@ namespace BangBang.UI.Views
             rt.sizeDelta = new Vector2(300, 440);
 
             var bgImg = cardObj.GetComponent<Image>();
-            bgImg.color = new Color(0.2f, 0.14f, 0.1f, 0.98f);
+            bgImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card"); 
+            bgImg.color = new Color(0.6f, 0.4f, 0.2f); // Face down color tint
+
+            // Create front container
+            var frontContainer = new GameObject("FrontContent", typeof(RectTransform));
+            frontContainer.transform.SetParent(cardObj.transform, false);
+            var fRt = frontContainer.GetComponent<RectTransform>();
+            fRt.anchorMin = Vector2.zero; fRt.anchorMax = Vector2.one; fRt.sizeDelta = Vector2.zero;
+            frontContainer.SetActive(false);
 
             // Portrait
             var portObj = new GameObject("Portrait", typeof(RectTransform), typeof(Image));
-            portObj.transform.SetParent(cardObj.transform, false);
+            portObj.transform.SetParent(frontContainer.transform, false);
             var portRt = portObj.GetComponent<RectTransform>();
             portRt.anchoredPosition = new Vector2(0, 80f);
             portRt.sizeDelta = new Vector2(200, 200);
@@ -111,7 +116,7 @@ namespace BangBang.UI.Views
 
             // Name
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
-            nameObj.transform.SetParent(cardObj.transform, false);
+            nameObj.transform.SetParent(frontContainer.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
             nameRt.anchoredPosition = new Vector2(0, -45f);
             nameRt.sizeDelta = new Vector2(280, 36);
@@ -125,7 +130,7 @@ namespace BangBang.UI.Views
 
             // Skill Description
             var skillObj = new GameObject("Skill", typeof(RectTransform), typeof(Text));
-            skillObj.transform.SetParent(cardObj.transform, false);
+            skillObj.transform.SetParent(frontContainer.transform, false);
             var skillRt = skillObj.GetComponent<RectTransform>();
             skillRt.anchoredPosition = new Vector2(0, -110f);
             skillRt.sizeDelta = new Vector2(260, 75);
@@ -138,7 +143,7 @@ namespace BangBang.UI.Views
 
             // Bullets / HP
             var hpObj = new GameObject("HP", typeof(RectTransform), typeof(Text));
-            hpObj.transform.SetParent(cardObj.transform, false);
+            hpObj.transform.SetParent(frontContainer.transform, false);
             var hpRt = hpObj.GetComponent<RectTransform>();
             hpRt.anchoredPosition = new Vector2(0, -175f);
             hpRt.sizeDelta = new Vector2(200, 30);
@@ -150,16 +155,63 @@ namespace BangBang.UI.Views
             hpTxt.color = new Color(1f, 0.3f, 0.3f);
             hpTxt.text = "MÁU: " + info.maxHealth + " ♥ (Đạn)";
 
+            // Instruction Text (Face down)
+            var instObj = new GameObject("Instruction", typeof(RectTransform), typeof(Text));
+            instObj.transform.SetParent(cardObj.transform, false);
+            var instRt = instObj.GetComponent<RectTransform>();
+            instRt.anchoredPosition = Vector2.zero;
+            instRt.sizeDelta = new Vector2(280, 50);
+            var instTxt = instObj.GetComponent<Text>();
+            instTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            instTxt.fontSize = 20;
+            instTxt.fontStyle = FontStyle.Bold;
+            instTxt.alignment = TextAnchor.MiddleCenter;
+            instTxt.color = Color.white;
+            instTxt.text = "CHẠM ĐỂ LẬT";
+
+            bool isFlipped = false;
             var btn = cardObj.GetComponent<Button>();
             btn.onClick.AddListener(() =>
             {
                 AudioManager.Instance?.PlaySFX("button_tap");
-                _selectedCharacterId = charId;
-                HighlightSelectedCard();
-                UpdateConfirmButton();
+                if (!isFlipped)
+                {
+                    StartCoroutine(FlipCardCoroutine(cardObj, bgImg, frontContainer, instObj));
+                    isFlipped = true;
+                }
+                else
+                {
+                    _selectedCharacterId = charId;
+                    HighlightSelectedCard();
+                    UpdateConfirmButton();
+                }
             });
 
             return cardObj;
+        }
+
+        private IEnumerator FlipCardCoroutine(GameObject cardObj, Image bgImg, GameObject frontContainer, GameObject instObj)
+        {
+            AudioManager.Instance?.PlaySFX("card_draw");
+            for (float t = 1f; t >= 0f; t -= Time.deltaTime * 6f)
+            {
+                cardObj.transform.localScale = new Vector3(t, 1f, 1f);
+                yield return null;
+            }
+
+            bgImg.sprite = null;
+            bgImg.color = new Color(0.2f, 0.14f, 0.1f, 0.98f);
+            instObj.SetActive(false);
+            frontContainer.SetActive(true);
+
+            for (float t = 0f; t <= 1f; t += Time.deltaTime * 6f)
+            {
+                cardObj.transform.localScale = new Vector3(t, 1f, 1f);
+                yield return null;
+            }
+            cardObj.transform.localScale = Vector3.one;
+
+            if (confirmSelectionButton != null) confirmSelectionButton.gameObject.SetActive(true);
         }
 
         private void HighlightSelectedCard()
@@ -168,7 +220,19 @@ namespace BangBang.UI.Views
             {
                 var img = go.GetComponent<Image>();
                 bool isSelected = go.name == "CharCard_" + _selectedCharacterId;
-                img.color = isSelected ? new Color(0.35f, 0.25f, 0.12f, 1f) : new Color(0.18f, 0.12f, 0.08f, 0.9f);
+                img.color = isSelected ? new Color(0.4f, 0.3f, 0.15f, 1f) : new Color(0.2f, 0.14f, 0.1f, 0.98f);
+                
+                var outline = go.GetComponent<Outline>();
+                if (isSelected)
+                {
+                    if (outline == null) outline = go.AddComponent<Outline>();
+                    outline.effectColor = Color.yellow;
+                    outline.effectDistance = new Vector2(4, -4);
+                }
+                else if (outline != null)
+                {
+                    Destroy(outline);
+                }
             }
         }
 
