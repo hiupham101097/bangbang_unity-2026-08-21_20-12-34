@@ -63,6 +63,7 @@ namespace BangBang.Core.Network
         public int currentHealth;
         public int maxHealth;
         public string characterId;
+        public List<string> characterOptions = new List<string>();
         public string role; // Only populated for local player or revealed Sheriff/dead players
         public bool isRoleRevealed;
         public int handCount;

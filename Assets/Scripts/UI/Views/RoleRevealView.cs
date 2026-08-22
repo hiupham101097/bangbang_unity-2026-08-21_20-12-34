@@ -38,10 +38,10 @@ namespace BangBang.UI.Views
                 continueButton.onClick.AddListener(() =>
                 {
                     AudioManager.Instance?.PlaySFX("button_tap");
-                    if (GameFlowController.Instance != null &&
-                        GameFlowController.Instance.CurrentState == ServerGameState.DEALING_ROLES)
+                    if (continueButton != null)
                     {
-                        GameFlowController.Instance.TransitionToState(ServerGameState.SELECTING_CHARACTER);
+                        continueButton.interactable = false;
+                        continueButton.GetComponentInChildren<Text>().text = "ĐANG CHỜ MÁY CHỦ...";
                     }
                 });
             }
@@ -173,11 +173,7 @@ namespace BangBang.UI.Views
                 yield return new WaitForSeconds(1.0f);
             }
 
-            if (GameFlowController.Instance != null &&
-                GameFlowController.Instance.CurrentState == ServerGameState.DEALING_ROLES)
-            {
-                GameFlowController.Instance.TransitionToState(ServerGameState.SELECTING_CHARACTER);
-            }
+            if (timerCountdownText != null) timerCountdownText.text = "Đang chờ máy chủ...";
         }
     }
 }

@@ -25,9 +25,9 @@ namespace BangBang.UI.Views
         private void OnEnable()
         {
             var snapshot = GameStateStore.Instance?.CurrentSnapshot;
-            if (snapshot?.activeInteraction != null)
+            if (snapshot != null)
             {
-                RenderCandidates(snapshot.activeInteraction);
+                RenderCandidates(snapshot);
             }
         }
 
@@ -36,10 +36,10 @@ namespace BangBang.UI.Views
             BindListeners();
             if (GameStateStore.Instance != null)
             {
-                GameStateStore.Instance.OnActiveInteractionChanged += RenderCandidates;
-                if (GameStateStore.Instance.CurrentSnapshot != null && GameStateStore.Instance.CurrentSnapshot.activeInteraction != null)
+                GameStateStore.Instance.OnStateSnapshotUpdated += RenderCandidates;
+                if (GameStateStore.Instance.CurrentSnapshot != null)
                 {
-                    RenderCandidates(GameStateStore.Instance.CurrentSnapshot.activeInteraction);
+                    RenderCandidates(GameStateStore.Instance.CurrentSnapshot);
                 }
             }
         }
@@ -57,13 +57,13 @@ namespace BangBang.UI.Views
         {
             if (GameStateStore.Instance != null)
             {
-                GameStateStore.Instance.OnActiveInteractionChanged -= RenderCandidates;
+                GameStateStore.Instance.OnStateSnapshotUpdated -= RenderCandidates;
             }
         }
 
-        public void RenderCandidates(InteractionPromptDTO prompt)
+        public void RenderCandidates(MatchStateSnapshotDTO snapshot)
         {
-            if (prompt == null || prompt.type != "CHOOSE_OPTION") return;
+            if (snapshot == null || snapshot.state != ServerGameState.SELECTING_CHARACTER) return;
 
             if (waitingOthersOverlay != null) waitingOthersOverlay.SetActive(false);
             _selectedCharacterId = null;
@@ -72,7 +72,11 @@ namespace BangBang.UI.Views
             foreach (var c in _cardObjects) Destroy(c);
             _cardObjects.Clear();
 
-            var candidateIds = prompt.options != null && prompt.options.Count > 0 ? prompt.options : new List<string> { "willy_the_kid", "calamity_janet" };
+            string localId = GameStateStore.Instance.LocalPlayerId;
+            var localPlayer = snapshot.players.Find(p => p.id == localId);
+            var candidateIds = localPlayer != null && localPlayer.characterOptions != null && localPlayer.characterOptions.Count > 0 
+                ? localPlayer.characterOptions 
+                : new List<string> { "willy_the_kid", "calamity_janet" };
 
             foreach (var id in candidateIds)
             {

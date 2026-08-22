@@ -22,6 +22,7 @@ export interface PlayerSnapshotDTO {
     currentHealth: number;
     maxHealth: number;
     characterId?: string;
+    characterOptions?: string[]; // Used during SELECTING_CHARACTER phase
     role?: string; 
     isRoleRevealed: boolean;
     handCount: number;
