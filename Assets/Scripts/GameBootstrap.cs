@@ -115,7 +115,7 @@ namespace BangBang.UI
             {
                 var gateway = new GameObject("Gateway").AddComponent<BangLiveGateway>();
                 liveGateway = gateway;
-                liveGateway.serverWsUrl = cloudflareWorkerUrl;
+                liveGateway.serverWsUrl = useLiveCloudflareServer ? cloudflareWorkerUrl : "ws://localhost:3000";
             }
 
             // State Store & Flow
