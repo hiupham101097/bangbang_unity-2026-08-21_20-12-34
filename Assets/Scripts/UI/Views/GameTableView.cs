@@ -6,6 +6,7 @@ using BangBang.Core.Data;
 using BangBang.Core.Network;
 using BangBang.Core.State;
 using BangBang.UI.Interaction;
+using BangBang.VFX;
 using UnityEngine;
 using UnityEngine.UI;
 
