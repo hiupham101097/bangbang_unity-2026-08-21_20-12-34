@@ -27,6 +27,12 @@ namespace BangBang.Core.Network
     }
 
     [Serializable]
+    public class RoomCreatedResponseDTO
+    {
+        public string roomId;
+    }
+
+    [Serializable]
     public class InteractionPromptDTO
     {
         public string interactionId;

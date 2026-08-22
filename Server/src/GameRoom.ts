@@ -6,7 +6,7 @@ export class GameRoom {
     public maxPlayers: number;
     
     private wss: WebSocketServer;
-    private state: ServerGameState = ServerGameState.LOBBY;
+    private state: ServerGameState = ServerGameState.WAITING;
     private players: Map<string, PlayerSnapshotDTO> = new Map();
     private sockets: Map<string, WebSocket> = new Map();
     
@@ -22,7 +22,7 @@ export class GameRoom {
 
     public joinPlayer(ws: WebSocket, name: string, isHost: boolean = false): boolean {
         if (this.players.size >= this.maxPlayers) return false;
-        if (this.state !== ServerGameState.LOBBY) return false;
+        if (this.state !== ServerGameState.WAITING) return false;
 
         const socketId = (ws as any).id;
         const player: PlayerSnapshotDTO = {
@@ -58,18 +58,18 @@ export class GameRoom {
         
         if (type === 'room.ready') {
             const p = this.players.get(socketId);
-            if (p && this.state === ServerGameState.LOBBY) {
+            if (p && this.state === ServerGameState.WAITING) {
                 p.isReady = data.isReady;
                 this.broadcastSnapshot();
             }
         }
         else if (type === 'game.start') {
-            if (socketId === this.hostId && this.state === ServerGameState.LOBBY) {
+            if (socketId === this.hostId && this.state === ServerGameState.WAITING) {
                 const allReady = Array.from(this.players.values()).every(p => p.isReady);
                 if (allReady && this.players.size >= 4) { 
                     this.startGame();
                 } else {
-                    ws.send(JSON.stringify({ type: 'game.error', data: 'Not all players ready or not enough players (min 4).' }));
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Not all players ready or not enough players (min 4).') }));
                 }
             }
         }
@@ -81,7 +81,7 @@ export class GameRoom {
             p.isConnected = false;
             this.sockets.delete(socketId);
             
-            if (this.state === ServerGameState.LOBBY) {
+            if (this.state === ServerGameState.WAITING) {
                 this.players.delete(socketId);
                 // Re-assign host if host left
                 if (this.hostId === socketId && this.players.size > 0) {
@@ -129,7 +129,7 @@ export class GameRoom {
 
     private broadcastSnapshot() {
         const snap = this.getSnapshot();
-        const payload = JSON.stringify({ type: 'room.snapshot', data: snap });
+        const payload = JSON.stringify({ type: 'room.snapshot', data: JSON.stringify(snap) });
         
         for (const [id, socket] of this.sockets.entries()) {
             if (socket.readyState === WebSocket.OPEN) {

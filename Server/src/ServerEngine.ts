@@ -54,7 +54,7 @@ export class ServerEngine {
             room.joinPlayer(ws, data?.playerName || 'Player', true);
             
             if (reqId) {
-                ws.send(JSON.stringify({ reqId, type: 'room.created', data: { roomId: roomId, snapshot: room.getSnapshot() } }));
+                ws.send(JSON.stringify({ reqId, type: 'room.created', data: JSON.stringify({ roomId: roomId }) }));
             }
         } 
         else if (type === 'room.join') {
@@ -68,9 +68,9 @@ export class ServerEngine {
 
             const joined = room.joinPlayer(ws, playerName || 'Player');
             if (joined) {
-                if (reqId) ws.send(JSON.stringify({ reqId, type: 'room.joined', data: { success: true, snapshot: room.getSnapshot() } }));
+                if (reqId) ws.send(JSON.stringify({ reqId, type: 'room.joined', data: JSON.stringify({ success: true }) }));
             } else {
-                if (reqId) ws.send(JSON.stringify({ reqId, type: 'error', data: 'Room is full or game already started' }));
+                if (reqId) ws.send(JSON.stringify({ reqId, type: 'error', data: JSON.stringify('Room is full or game already started') }));
             }
         }
         else if (type === 'room.list') {
@@ -80,7 +80,7 @@ export class ServerEngine {
                 maxPlayers: r.maxPlayers,
                 state: r.getState()
             }));
-            if (reqId) ws.send(JSON.stringify({ reqId, type: 'room.listResponse', data: list }));
+            if (reqId) ws.send(JSON.stringify({ reqId, type: 'room.listResponse', data: JSON.stringify(list) }));
         }
         else {
             // Route to room if player is in one

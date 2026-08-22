@@ -189,7 +189,10 @@ namespace BangBang.Core.Network
             var res = await SendRequestAsync("room.create", payload);
             if (res != null)
             {
-                CurrentRoomId = "WAITING..."; // Can parse from res
+                try {
+                    var dict = JsonUtility.FromJson<RoomCreatedResponseDTO>(res);
+                    if (dict != null && !string.IsNullOrEmpty(dict.roomId)) CurrentRoomId = dict.roomId;
+                } catch { CurrentRoomId = "WAITING..."; }
                 return true;
             }
             return false;

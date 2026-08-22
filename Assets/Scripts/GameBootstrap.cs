@@ -40,11 +40,11 @@ namespace BangBang.UI
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
 
-            Screen.orientation = ScreenOrientation.LandscapeLeft;
-            Screen.autorotateToLandscapeLeft = true;
-            Screen.autorotateToLandscapeRight = true;
-            Screen.autorotateToPortrait = false;
-            Screen.autorotateToPortraitUpsideDown = false;
+            Screen.orientation = ScreenOrientation.Portrait;
+            Screen.autorotateToLandscapeLeft = false;
+            Screen.autorotateToLandscapeRight = false;
+            Screen.autorotateToPortrait = true;
+            Screen.autorotateToPortraitUpsideDown = true;
         }
 
         private async void Start()
