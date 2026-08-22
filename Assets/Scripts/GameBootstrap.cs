@@ -18,12 +18,14 @@ namespace BangBang.UI
         [Header("Networking Mode")]
         public bool useLiveCloudflareServer = false;
         public string cloudflareWorkerUrl = "https://blue-frog-fec8.hieupham101097.workers.dev";
+        public string localServerUrl = "ws://localhost:3000";
 
         [Header("Core Architecture Controllers")]
         public GameStateStore gameStateStore;
         public GameFlowController flowController;
         public InteractionController interactionController;
         public BangLiveGateway liveGateway;
+        public BangMockGateway mockGateway;
 
         [Header("Views")]
         public HomeScreenUI homeScreen;
@@ -57,7 +59,18 @@ namespace BangBang.UI
             }
 
             // Initialize Gateways & State Store
-            IGameGateway activeGateway = liveGateway;
+            IGameGateway activeGateway;
+            if (useLiveCloudflareServer)
+            {
+                activeGateway = liveGateway;
+                Debug.Log("[GameBootstrap] Using LiveGateway -> " + liveGateway.serverWsUrl);
+            }
+            else
+            {
+                activeGateway = mockGateway;
+                Debug.Log("[GameBootstrap] Using MockGateway (offline/local mode)");
+            }
+
             if (gameStateStore != null)
             {
                 gameStateStore.BindGateway(activeGateway);
@@ -111,12 +124,17 @@ namespace BangBang.UI
             if (FindAnyObjectByType<FXManager>() == null) new GameObject("FXManager", typeof(FXManager));
 
             // Gateways
+            if (mockGateway == null)
+            {
+                mockGateway = gameObject.AddComponent<BangMockGateway>();
+            }
+
             if (liveGateway == null)
             {
-                var gateway = new GameObject("Gateway").AddComponent<BangLiveGateway>();
+                var gateway = new GameObject("LiveGateway").AddComponent<BangLiveGateway>();
                 liveGateway = gateway;
             }
-            liveGateway.serverWsUrl = useLiveCloudflareServer ? cloudflareWorkerUrl : "ws://localhost:3000";
+            liveGateway.serverWsUrl = useLiveCloudflareServer ? cloudflareWorkerUrl : localServerUrl;
 
             // State Store & Flow
             if (gameStateStore == null) gameStateStore = gameObject.AddComponent<GameStateStore>();
