@@ -55,7 +55,14 @@ namespace BangBang.Core.Network
 
             try
             {
-                string wsUrl = serverWsUrl.Replace("https://", "wss://").Replace("http://", "ws://");
+                string wsUrl = serverWsUrl.Trim();
+                if (wsUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    wsUrl = "wss://" + wsUrl.Substring(8);
+                else if (wsUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                    wsUrl = "ws://" + wsUrl.Substring(7);
+                else if (!wsUrl.StartsWith("ws://", StringComparison.OrdinalIgnoreCase) && !wsUrl.StartsWith("wss://", StringComparison.OrdinalIgnoreCase))
+                    wsUrl = "wss://" + wsUrl; // Default to wss:// if no scheme is provided
+
                 await _webSocket.ConnectAsync(new Uri(wsUrl), _cts.Token);
                 _ = ReceiveWebSocketLoopAsync();
                 
