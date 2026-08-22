@@ -23,7 +23,6 @@ namespace BangBang.UI
         public GameStateStore gameStateStore;
         public GameFlowController flowController;
         public InteractionController interactionController;
-        public BangMockGateway mockGateway;
         public BangLiveGateway liveGateway;
 
         [Header("Views")]
@@ -58,7 +57,7 @@ namespace BangBang.UI
             }
 
             // Initialize Gateways & State Store
-            IGameGateway activeGateway = useLiveCloudflareServer && liveGateway != null ? (IGameGateway)liveGateway : mockGateway;
+            IGameGateway activeGateway = liveGateway;
             if (gameStateStore != null)
             {
                 gameStateStore.BindGateway(activeGateway);
@@ -112,10 +111,10 @@ namespace BangBang.UI
             if (FindFirstObjectByType<FXManager>() == null) new GameObject("FXManager", typeof(FXManager));
 
             // Gateways
-            if (mockGateway == null) mockGateway = gameObject.AddComponent<BangMockGateway>();
             if (liveGateway == null)
             {
-                liveGateway = gameObject.AddComponent<BangLiveGateway>();
+                var gateway = new GameObject("Gateway").AddComponent<BangLiveGateway>();
+                liveGateway = gateway;
                 liveGateway.serverBaseUrl = cloudflareWorkerUrl;
             }
 
