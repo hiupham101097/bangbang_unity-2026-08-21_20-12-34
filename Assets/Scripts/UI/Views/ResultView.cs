@@ -35,7 +35,7 @@ namespace BangBang.UI.Views
             if (GameStateStore.Instance != null)
             {
                 GameStateStore.Instance.OnStateSnapshotUpdated += RenderGameResults;
-                if (GameStateStore.Instance.CurrentSnapshot != null && GameStateStore.Instance.CurrentSnapshot.state == ServerGameState.FINISHED)
+                if (GameStateStore.Instance.CurrentSnapshot != null && GameStateStore.Instance.CurrentSnapshot.state == ServerGameState.GAME_OVER)
                 {
                     RenderGameResults(GameStateStore.Instance.CurrentSnapshot);
                 }
@@ -67,7 +67,7 @@ namespace BangBang.UI.Views
 
         public void RenderGameResults(MatchStateSnapshotDTO snapshot)
         {
-            if (snapshot == null || snapshot.state != ServerGameState.FINISHED) return;
+            if (snapshot == null || snapshot.state != ServerGameState.GAME_OVER) return;
 
             string winTeam = !string.IsNullOrEmpty(snapshot.winnerTeam) ? snapshot.winnerTeam : "Cảnh Sát Trưởng";
             if (winnerTitleText != null)

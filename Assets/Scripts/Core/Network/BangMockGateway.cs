@@ -22,6 +22,7 @@ namespace BangBang.Core.Network
 
         private MatchStateSnapshotDTO _currentSnapshot;
         private Coroutine _mockGameLoopCoroutine;
+        private Dictionary<string, List<string>> _mockHands = new Dictionary<string, List<string>>();
 
         private static readonly string[] _cardPool = {
             "bang_heart_a", "bang_heart_2", "bang_heart_3", "bang_diamond_k", "bang_diamond_q",
@@ -67,7 +68,8 @@ namespace BangBang.Core.Network
                     new PlayerSnapshotDTO { id = LocalPlayerId, name = "Cao bồi của bạn", seat = 0, isHost = true, isReady = true, isAlive = true, currentHealth = 4, maxHealth = 4 }
                 },
                 serverTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                sequence = 1
+                sequence = 1,
+                privateState = new PrivatePlayerState { hand = new List<string>(), draftCharacterOptions = new List<string>() }
             };
 
             string[] botNames = { "Bill Độc Nhãn", "Apache Jack", "Django Nhanh Nhẹn", "Doc Holliday" };
@@ -99,6 +101,7 @@ namespace BangBang.Core.Network
         {
             if (_mockGameLoopCoroutine != null) StopCoroutine(_mockGameLoopCoroutine);
             _currentSnapshot = null;
+            _mockHands.Clear();
             return Task.FromResult(true);
         }
 
@@ -124,7 +127,7 @@ namespace BangBang.Core.Network
         private IEnumerator MockGameLifecycleCoroutine()
         {
             // ── Phase 1: DEALING ROLES ──────────────────────────────
-            _currentSnapshot.state = ServerGameState.DEALING_ROLES;
+            _currentSnapshot.state = ServerGameState.ROLE_DRAFT;
             _currentSnapshot.activeInteraction = null;
 
             // Shuffle roles properly using Fisher-Yates
@@ -143,7 +146,11 @@ namespace BangBang.Core.Network
             {
                 var p = _currentSnapshot.players[i];
                 string r = shuffled[i % shuffled.Length];
-                p.role = r;
+                
+                if (p.id == LocalPlayerId) {
+                    _currentSnapshot.privateState.roleId = r;
+                }
+                p.publicRoleId = r;
                 p.isAlive = true;
                 if (r == "sheriff")
                 {
@@ -166,7 +173,7 @@ namespace BangBang.Core.Network
             yield return new WaitForSeconds(4.5f); // Let role reveal animation play
 
             // ── Phase 2: SELECTING CHARACTER ────────────────────────
-            _currentSnapshot.state = ServerGameState.SELECTING_CHARACTER;
+            _currentSnapshot.state = ServerGameState.CHARACTER_DRAFT;
             _currentSnapshot.activeInteraction = new InteractionPromptDTO
             {
                 interactionId = Guid.NewGuid().ToString(),
@@ -183,13 +190,13 @@ namespace BangBang.Core.Network
 
             // Wait up to 15s for player selection; then auto-select default
             float elapsed = 0f;
-            while (_currentSnapshot.state == ServerGameState.SELECTING_CHARACTER && elapsed < 15f)
+            while (_currentSnapshot.state == ServerGameState.CHARACTER_DRAFT && elapsed < 15f)
             {
                 elapsed += Time.deltaTime;
                 yield return null;
             }
 
-            if (_currentSnapshot.state == ServerGameState.SELECTING_CHARACTER)
+            if (_currentSnapshot.state == ServerGameState.CHARACTER_DRAFT)
             {
                 // Auto-select default character
                 ApplyCharacterSelectionInternal("willy_the_kid");
@@ -229,7 +236,7 @@ namespace BangBang.Core.Network
         private IEnumerator StartBattleAfterSelectionCoroutine()
         {
             // ── Phase 3: INITIALIZING ───────────────────────────────
-            _currentSnapshot.state = ServerGameState.INITIALIZING;
+            _currentSnapshot.state = ServerGameState.INITIAL_DEAL;
             _currentSnapshot.activeInteraction = null;
 
             var deckList = _cardPool.OrderBy(_ => UnityEngine.Random.value).ToList();
@@ -239,11 +246,15 @@ namespace BangBang.Core.Network
             foreach (var p in _currentSnapshot.players)
             {
                 p.isAlive = true;
-                p.hand = new List<string>();
+                
+                var hand = new List<string>();
+                _mockHands[p.id] = hand;
+                if (p.id == LocalPlayerId) _currentSnapshot.privateState.hand = hand;
+
                 p.equipment = new List<string>();
                 for (int c = 0; c < p.maxHealth && deckIdx < deckList.Count; c++, deckIdx++)
-                    p.hand.Add(deckList[deckIdx]);
-                p.handCount = p.hand.Count;
+                    hand.Add(deckList[deckIdx]);
+                p.handCount = hand.Count;
             }
 
             _currentSnapshot.drawPileCount = deckList.Count - deckIdx;
@@ -256,10 +267,10 @@ namespace BangBang.Core.Network
             yield return new WaitForSeconds(1.5f);
 
             // ── Phase 4: PLAYING (Sheriff first, DRAW phase) ────────
-            var sheriff = _currentSnapshot.players.Find(p => p.role == "sheriff");
+            var sheriff = _currentSnapshot.players.Find(p => p.publicRoleId == "sheriff");
             string firstId = sheriff != null ? sheriff.id : LocalPlayerId;
 
-            _currentSnapshot.state = ServerGameState.PLAYING;
+            _currentSnapshot.state = ServerGameState.PLAY;
             _currentSnapshot.currentTurnPlayerId = firstId;
             _currentSnapshot.currentPhase = "draw";   // ← DRAW first!
             _currentSnapshot.turnNumber = 1;
@@ -282,9 +293,9 @@ namespace BangBang.Core.Network
                 return Task.FromResult(false);
 
             // Draw 2 random cards from pool
-            local.hand.Add(_cardPool[UnityEngine.Random.Range(0, _cardPool.Length)]);
-            local.hand.Add(_cardPool[UnityEngine.Random.Range(0, _cardPool.Length)]);
-            local.handCount = local.hand.Count;
+            _mockHands[local.id].Add(_cardPool[UnityEngine.Random.Range(0, _cardPool.Length)]);
+            _mockHands[local.id].Add(_cardPool[UnityEngine.Random.Range(0, _cardPool.Length)]);
+            local.handCount = _mockHands[local.id].Count;
             _currentSnapshot.drawPileCount = Mathf.Max(0, _currentSnapshot.drawPileCount - 2);
             _currentSnapshot.currentPhase = "play";
             _currentSnapshot.combatLogs.Add("🃏 Bạn rút 2 lá bài. Hãy đánh bài hoặc kết thúc lượt.");
@@ -299,8 +310,8 @@ namespace BangBang.Core.Network
             var local = _currentSnapshot?.players.Find(p => p.id == LocalPlayerId);
             if (local == null) return Task.FromResult(false);
 
-            local.hand.Remove(cardId);
-            local.handCount = local.hand.Count;
+            _mockHands[local.id].Remove(cardId);
+            local.handCount = _mockHands[local.id].Count;
             _currentSnapshot.topDiscardCardId = cardId;
             _currentSnapshot.discardPileCount++;
 
@@ -377,8 +388,8 @@ namespace BangBang.Core.Network
             var local = _currentSnapshot?.players.Find(p => p.id == LocalPlayerId);
             if (local != null && discardCardIds != null)
             {
-                foreach (var c in discardCardIds) { local.hand.Remove(c); _currentSnapshot.discardPileCount++; }
-                local.handCount = local.hand.Count;
+                foreach (var c in discardCardIds) { _mockHands[local.id].Remove(c); _currentSnapshot.discardPileCount++; }
+                local.handCount = _mockHands[local.id].Count;
             }
 
             _currentSnapshot.combatLogs.Add("✅ Bạn kết thúc lượt.");
@@ -516,16 +527,16 @@ namespace BangBang.Core.Network
             player.isAlive = false;
             player.isRoleRevealed = true;
             player.currentHealth = 0;
-            _currentSnapshot.combatLogs.Add("💀 " + player.name + " [" + player.role.ToUpper() + "] bị " + (killer?.name ?? "?") + " hạ gục!");
+            _currentSnapshot.combatLogs.Add("💀 " + player.name + " [" + (!string.IsNullOrEmpty(player.publicRoleId) ? player.publicRoleId : "unknown").ToUpper() + "] bị " + (killer?.name ?? "?") + " hạ gục!");
             CheckGameOver();
         }
 
         private void CheckGameOver()
         {
             var alive = _currentSnapshot.players.Where(p => p.isAlive).ToList();
-            bool sheriffAlive = alive.Any(p => p.role == "sheriff");
-            bool outlawAlive = alive.Any(p => p.role == "outlaw");
-            bool renegadeAlive = alive.Any(p => p.role == "renegade");
+            bool sheriffAlive = alive.Any(p => p.publicRoleId == "sheriff");
+            bool outlawAlive = alive.Any(p => p.publicRoleId == "outlaw");
+            bool renegadeAlive = alive.Any(p => p.publicRoleId == "renegade");
 
             if (!sheriffAlive)
                 EndGame(alive.Count == 1 && renegadeAlive ? "renegade" : "outlaw");
@@ -538,7 +549,7 @@ namespace BangBang.Core.Network
             if (_mockGameLoopCoroutine != null) StopCoroutine(_mockGameLoopCoroutine);
             string emoji = winnerRole == "sheriff" ? "⭐" : winnerRole == "outlaw" ? "💀" : "🗡️";
             string team = winnerRole == "sheriff" ? "PHE CẢNH SÁT TRƯỞNG" : winnerRole == "outlaw" ? "PHE CƯỚP" : "KẺ PHẢN BỘI";
-            _currentSnapshot.state = ServerGameState.FINISHED;
+            _currentSnapshot.state = ServerGameState.GAME_OVER;
             _currentSnapshot.winnerRole = winnerRole;
             _currentSnapshot.winnerTeam = team;
             _currentSnapshot.combatLogs.Add(emoji + " TRẬN KẾT THÚC! " + team + " THẮNG!");
