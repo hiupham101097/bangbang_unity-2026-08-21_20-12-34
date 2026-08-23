@@ -122,7 +122,7 @@ namespace BangBang.UI.Views
             bool isMine = slot == ownSlot;
             image.sprite = isMine && assigned
                 ? CardCatalogDatabase.LoadSprite("role_cards/" + RoleSprite(GameStateStore.Instance.LocalPrivateState.roleId) + "_card")
-                : CardCatalogDatabase.LoadSprite("card_back");
+                : CardCatalogDatabase.LoadSprite("UI/Cards/role_card_back_v2");
             image.color = locked && !isMine ? new Color(0.35f, 0.35f, 0.35f, 0.72f) : Color.white;
             if (isMine)
             {

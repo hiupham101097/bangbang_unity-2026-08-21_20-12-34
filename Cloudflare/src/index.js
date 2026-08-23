@@ -1363,7 +1363,7 @@ var BangBangMatch = class extends DurableObject {
       characterDeck: this.setupDeckFor(state.characterDeck, userId),
       players: state.players.map(({ hand, role, characterOptions, characterChosen, ...player }) => ({
         ...player,
-        revealedRole: role === "sheriff" || !player.alive ? role : void 0,
+        revealedRole: role === "sheriff" && state.phase !== "role_selection" || !player.alive ? role : void 0,
         role: player.id === userId ? role : void 0,
         hand: player.id === userId ? hand : void 0,
         characterOptions: player.id === userId ? characterOptions : void 0,

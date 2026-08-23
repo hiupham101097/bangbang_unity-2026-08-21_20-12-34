@@ -270,6 +270,7 @@ namespace BangBang.Core.Network
                 privateState = new PrivatePlayerState
                 {
                     roleId = me?.role, hand = room.hand ?? me?.hand ?? new List<string>(),
+                    draftRoleSlot = FindPickedSlot(room.roleDeck, LocalPlayerId),
                     draftCharacterOptions = me?.characterOptions ?? new List<string>(), selectedCharacterId = me?.characterId
                 },
                 discardPileCount = room.discard?.Count ?? 0,
@@ -388,6 +389,11 @@ namespace BangBang.Core.Network
         private void SetConnection(ConnectionState state) { CurrentConnectionState = state; OnConnectionStateChanged?.Invoke(state); }
         private static string SlotCard(List<WorkerCard> cards, int index) => cards != null && index >= 0 && index < cards.Count ? cards[index].id : string.Empty;
         private static List<int> LockedSlots(List<WorkerCard> cards) { var result = new List<int>(); if (cards != null) for (int i = 0; i < cards.Count; i++) if (!string.IsNullOrEmpty(cards[i].pickedBy)) result.Add(i); return result; }
+        private static int FindPickedSlot(List<WorkerCard> cards, string playerId)
+        {
+            if (cards == null || string.IsNullOrEmpty(playerId)) return -1;
+            return cards.FindIndex(card => card != null && card.pickedBy == playerId);
+        }
         private static string Escape(string value) => (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
         private static string JsonArray(IEnumerable<string> values) => "[" + string.Join(",", (values ?? Array.Empty<string>()).Select(value => "\"" + Escape(value) + "\"")) + "]";
         private static string ExtractError(string json, string fallback) { try { var value = JsonUtility.FromJson<RoomEnvelope>(json); if (!string.IsNullOrEmpty(value?.error)) return value.error; } catch { } return string.IsNullOrEmpty(fallback) ? "Yêu cầu Cloudflare thất bại." : fallback; }
