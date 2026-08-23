@@ -80,7 +80,9 @@ namespace BangBang.UI
 
             if (text.transform.parent != null && text.transform.parent.GetComponent<Button>() != null)
             {
-                text.color = Ink;
+                string buttonName = text.transform.parent.name;
+                bool primary = buttonName.Contains("Start") || buttonName.Contains("Confirm") || buttonName.Contains("CreateRoom");
+                text.color = primary ? Ink : Ivory;
                 text.fontStyle = FontStyle.Bold;
                 text.fontSize = Mathf.Max(text.fontSize, 16);
                 text.raycastTarget = false;

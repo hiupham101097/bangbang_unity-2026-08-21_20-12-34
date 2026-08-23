@@ -34,6 +34,7 @@ namespace BangBang.UI.Views
         public Dropdown turnTimeDropdown;
         public Button confirmCreateRoomButton;
         public Button closeCreateRoomPopupButton;
+        public Text createRoomStatusText;
 
         [Header("Room List Scroll Content")]
         public Transform roomListContentTransform;
@@ -126,6 +127,8 @@ namespace BangBang.UI.Views
                     backgroundImage.color = new Color(0.45f, 0.45f, 0.45f);
                 }
             }
+            if (GameStateStore.Instance?.Gateway != null)
+                UpdateConnectionState(GameStateStore.Instance.Gateway.CurrentConnectionState);
         }
 
         public void ShowCreateRoomPopup(bool show)
@@ -142,14 +145,36 @@ namespace BangBang.UI.Views
             string pass = passwordInput != null ? passwordInput.text : "";
             int turnSec = turnTimeDropdown != null ? (turnTimeDropdown.value + 1) * 15 : 30;
 
-            ShowCreateRoomPopup(false);
+            if (GameStateStore.Instance?.Gateway == null)
+            {
+                SetCreateRoomStatus("Chưa kết nối máy chủ. Hãy kiểm tra lại kết nối.", true);
+                return;
+            }
+
+            SetCreateRoomStatus("Đang tạo phòng…", false);
+            if (confirmCreateRoomButton != null) confirmCreateRoomButton.interactable = false;
             GameStateStore.Instance?.SetRequestPending(true);
 
-            if (GameStateStore.Instance?.Gateway != null)
+            bool ok = await GameStateStore.Instance.Gateway.CreateRoomAsync(rName, maxP, isPriv, pass, turnSec);
+            if (!ok)
             {
-                bool ok = await GameStateStore.Instance.Gateway.CreateRoomAsync(rName, maxP, isPriv, pass, turnSec);
-                if (!ok) GameStateStore.Instance.SetRequestPending(false);
+                GameStateStore.Instance.SetRequestPending(false);
+                SetCreateRoomStatus("Không thể tạo phòng. Kiểm tra server rồi thử lại.", true);
+                if (confirmCreateRoomButton != null) confirmCreateRoomButton.interactable = true;
+                return;
             }
+
+            SetCreateRoomStatus(string.Empty, false);
+            ShowCreateRoomPopup(false);
+            GameFlowController.Instance?.TransitionToState(ServerGameState.WAITING);
+            if (confirmCreateRoomButton != null) confirmCreateRoomButton.interactable = true;
+        }
+
+        private void SetCreateRoomStatus(string message, bool isError)
+        {
+            if (createRoomStatusText == null) return;
+            createRoomStatusText.text = message;
+            createRoomStatusText.color = isError ? BangUITheme.Danger : BangUITheme.Muted;
         }
 
         private async void HandleJoinByPinClicked()
@@ -269,8 +294,8 @@ namespace BangBang.UI.Views
         {
             if (connectionStatusText != null)
             {
-                connectionStatusText.text = state == ConnectionState.Connected ? "🟢 ĐÃ KẾT NỐI SERVER" : "🔴 MẤT KẾT NỐI";
-                connectionStatusText.color = state == ConnectionState.Connected ? new Color(0.3f, 1f, 0.4f) : Color.red;
+                connectionStatusText.text = state == ConnectionState.Connected ? "ONLINE • MÁY CHỦ SẴN SÀNG" : "OFFLINE • KIỂM TRA KẾT NỐI";
+                connectionStatusText.color = state == ConnectionState.Connected ? BangUITheme.Success : BangUITheme.Danger;
             }
         }
     }

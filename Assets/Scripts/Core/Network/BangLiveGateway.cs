@@ -44,6 +44,8 @@ namespace BangBang.Core.Network
         private bool _intentionalDisconnect;
         private bool _reconnectInProgress;
         private bool _permanentConfigurationError;
+        private bool _retriedWithoutResumeToken;
+        private TaskCompletionSource<bool> _sessionReady;
         private const int MaxMessageBytes = 64 * 1024;
         private readonly ConcurrentQueue<string> _incomingMessages = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<ConnectionState> _connectionChanges = new ConcurrentQueue<ConnectionState>();
@@ -57,6 +59,7 @@ namespace BangBang.Core.Network
             _displayName = displayName ?? "Player";
             _deviceId = LocalPlayerId;
             _intentionalDisconnect = false;
+            _retriedWithoutResumeToken = false;
             
             CurrentConnectionState = ConnectionState.Connecting;
             _connectionChanges.Enqueue(CurrentConnectionState);
@@ -87,13 +90,18 @@ namespace BangBang.Core.Network
 
                 await _webSocket.ConnectAsync(new Uri(wsUrl), _cts.Token);
                 _ = ReceiveWebSocketLoopAsync();
+                _sessionReady = new TaskCompletionSource<bool>();
                 await SendEventAsync("session.resume", JsonUtility.ToJson(new SessionResumeRequestDTO
                 {
                     deviceId = LocalPlayerId,
                     clientVersion = Application.version,
                     accessToken = PlayerPrefs.GetString("bang.resumeToken", "")
                 }));
-                
+
+                var handshake = await Task.WhenAny(_sessionReady.Task, Task.Delay(8000));
+                if (handshake != _sessionReady.Task || !await _sessionReady.Task)
+                    throw new InvalidOperationException("Server không xác nhận phiên trong 8 giây.");
+
                 CurrentConnectionState = ConnectionState.Connected;
                 _connectionChanges.Enqueue(CurrentConnectionState);
                 return true;
@@ -184,7 +192,9 @@ namespace BangBang.Core.Network
                 // Handle callbacks
                 if (!string.IsNullOrEmpty(msg.reqId) && _pendingRequests.ContainsKey(msg.reqId))
                 {
-                    _pendingRequests[msg.reqId]?.Invoke(msg.data);
+                    bool failed = msg.type == "error" || msg.type == "game.error" || msg.type == "room.joinRejected";
+                    if (failed) OnErrorMessage?.Invoke(string.IsNullOrEmpty(msg.data) ? "Yêu cầu bị server từ chối." : msg.data);
+                    _pendingRequests[msg.reqId]?.Invoke(failed ? null : msg.data);
                     _pendingRequests.Remove(msg.reqId);
                 }
 
@@ -213,6 +223,30 @@ namespace BangBang.Core.Network
                             PlayerPrefs.SetString("bang.resumeToken", session.accessToken);
                             PlayerPrefs.Save();
                         }
+                    }
+                    _sessionReady?.TrySetResult(true);
+                }
+                else if (msg.type == "session.reject")
+                {
+                    if (!_retriedWithoutResumeToken)
+                    {
+                        _retriedWithoutResumeToken = true;
+                        PlayerPrefs.DeleteKey("bang.resumeToken");
+                        _deviceId = Guid.NewGuid().ToString("N").Substring(0, 16);
+                        LocalPlayerId = _deviceId;
+                        PlayerPrefs.SetString("bang_device_id", _deviceId);
+                        PlayerPrefs.Save();
+                        _ = SendEventAsync("session.resume", JsonUtility.ToJson(new SessionResumeRequestDTO
+                        {
+                            deviceId = _deviceId,
+                            clientVersion = Application.version,
+                            accessToken = string.Empty
+                        }));
+                    }
+                    else
+                    {
+                        OnErrorMessage?.Invoke("Phiên đăng nhập không hợp lệ. Vui lòng thử kết nối lại.");
+                        _sessionReady?.TrySetResult(false);
                     }
                 }
                 else if (msg.type == "chat.message")
@@ -250,6 +284,7 @@ namespace BangBang.Core.Network
             }
             catch
             {
+                _pendingRequests.Remove(reqId);
                 return null;
             }
         }
