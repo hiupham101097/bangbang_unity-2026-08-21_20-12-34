@@ -534,10 +534,43 @@ namespace BangBang.UI
                 hlg.spacing = 20f;
                 roleRevealView.roleCardsContainer = roleCardsContainer.transform;
 
-                var goalObj = CreateText("RoleGoal", "Mục tiêu chiến thắng...", new Vector2(0, -180f), new Vector2(800, 50), 16, Color.white, roleObj.transform);
+                var sheriffReveal = CreateSurface("SheriffReveal", new Vector2(0, 55f), new Vector2(520, 480), roleObj.transform);
+                roleRevealView.sheriffRevealRoot = sheriffReveal;
+                roleRevealView.sheriffRevealCanvasGroup = sheriffReveal.AddComponent<CanvasGroup>();
+
+                var halo = new GameObject("SheriffHalo", typeof(RectTransform), typeof(Image), typeof(Outline));
+                halo.transform.SetParent(sheriffReveal.transform, false);
+                halo.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 55f);
+                halo.GetComponent<RectTransform>().sizeDelta = new Vector2(244, 244);
+                halo.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+                halo.GetComponent<Image>().type = Image.Type.Sliced;
+                halo.GetComponent<Image>().color = new Color(BangUITheme.Brass.r, BangUITheme.Brass.g, BangUITheme.Brass.b, 0.28f);
+                halo.GetComponent<Outline>().effectColor = BangUITheme.Brass;
+                halo.GetComponent<Outline>().effectDistance = new Vector2(4, -4);
+
+                var sheriffAvatar = new GameObject("SheriffAvatar", typeof(RectTransform), typeof(Image));
+                sheriffAvatar.transform.SetParent(sheriffReveal.transform, false);
+                sheriffAvatar.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 55f);
+                sheriffAvatar.GetComponent<RectTransform>().sizeDelta = new Vector2(210, 210);
+                sheriffAvatar.GetComponent<Image>().preserveAspect = true;
+                roleRevealView.sheriffAvatarImage = sheriffAvatar.GetComponent<Image>();
+
+                var sheriffBadge = new GameObject("SheriffBadge", typeof(RectTransform), typeof(Image));
+                sheriffBadge.transform.SetParent(sheriffReveal.transform, false);
+                sheriffBadge.GetComponent<RectTransform>().anchoredPosition = new Vector2(105f, -28f);
+                sheriffBadge.GetComponent<RectTransform>().sizeDelta = new Vector2(82, 112);
+                sheriffBadge.GetComponent<Image>().sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+                sheriffBadge.GetComponent<Image>().preserveAspect = true;
+
+                roleRevealView.sheriffNameText = CreateText("SheriffName", "SHERIFF", new Vector2(0, -92f), new Vector2(440, 46), 28, BangUITheme.Brass, sheriffReveal.transform).GetComponent<Text>();
+                roleRevealView.sheriffNameText.fontStyle = FontStyle.Bold;
+                roleRevealView.sheriffFirstTurnText = CreateText("SheriffRule", "CẢNH SÁT TRƯỞNG  •  +1 MÁU  •  ĐI LƯỢT ĐẦU", new Vector2(0, -142f), new Vector2(460, 34), 15, BangUITheme.Ivory, sheriffReveal.transform).GetComponent<Text>();
+                sheriffReveal.SetActive(false);
+
+                var goalObj = CreateText("RoleGoal", "Mục tiêu chiến thắng...", new Vector2(0, -255f), new Vector2(1100, 58), 16, Color.white, roleObj.transform);
                 roleRevealView.roleGoalText = goalObj.GetComponent<Text>();
 
-                var timerObj = CreateText("TimerCountdown", "", new Vector2(0, -250f), new Vector2(500, 30), 14, new Color(0.8f, 0.8f, 0.8f), roleObj.transform);
+                var timerObj = CreateText("TimerCountdown", "", new Vector2(0, -315f), new Vector2(500, 30), 14, new Color(0.8f, 0.8f, 0.8f), roleObj.transform);
                 roleRevealView.timerCountdownText = timerObj.GetComponent<Text>();
 
                 roleRevealView.continueButton = CreateButton("ContinueBtn", "TIẾP TỤC", new Vector2(0, -320f), new Color(0.2f, 0.7f, 0.25f), roleObj.transform, new Vector2(250, 60));

@@ -1,33 +1,41 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using BangBang.Core.Audio;
 using BangBang.Core.Data;
 using BangBang.Core.Network;
 using BangBang.Core.State;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BangBang.UI.Views
 {
     public sealed class RoleRevealView : MonoBehaviour
     {
         public Transform roleCardsContainer;
-        public UnityEngine.UI.Text roleTitleText;
-        public UnityEngine.UI.Text roleGoalText;
-        public UnityEngine.UI.Button continueButton;
-        public UnityEngine.UI.Text timerCountdownText;
+        public Text roleTitleText;
+        public Text roleGoalText;
+        public Button continueButton;
+        public Text timerCountdownText;
+        [Header("Public Sheriff Reveal")]
+        public GameObject sheriffRevealRoot;
+        public CanvasGroup sheriffRevealCanvasGroup;
+        public Image sheriffAvatarImage;
+        public Text sheriffNameText;
+        public Text sheriffFirstTurnText;
 
         private readonly List<GameObject> _cards = new List<GameObject>();
         private MatchStateSnapshotDTO _snapshot;
+        private string _animatedSheriffId;
 
         private void Start()
         {
             if (continueButton != null) continueButton.gameObject.SetActive(false);
+            if (sheriffRevealRoot != null) sheriffRevealRoot.SetActive(false);
             if (GameStateStore.Instance != null) GameStateStore.Instance.OnStateSnapshotUpdated += Render;
         }
 
-        private void OnEnable()
-        {
-            Render(GameStateStore.Instance != null ? GameStateStore.Instance.CurrentSnapshot : null);
-        }
+        private void OnEnable() => Render(GameStateStore.Instance != null ? GameStateStore.Instance.CurrentSnapshot : null);
 
         private void OnDestroy()
         {
@@ -50,14 +58,20 @@ namespace BangBang.UI.Views
             _snapshot = snapshot;
             var privateState = snapshot.privateState;
             bool assigned = privateState != null && !string.IsNullOrEmpty(privateState.roleId);
-            if (roleTitleText != null)
-                roleTitleText.text = snapshot.state == ServerGameState.ROLE_DRAFT
-                    ? (assigned ? "VAI TRÒ CỦA BẠN" : "BƯỚC 1/3 — CHỌN VAI TRÒ")
-                    : "CẢNH SÁT TRƯỞNG ĐÃ LỘ DIỆN";
-            if (roleGoalText != null)
-                roleGoalText.text = assigned ? GoalFor(privateState.roleId) : "Chọn một lá úp. Máy chủ sẽ khóa lựa chọn và giữ bí mật vai trò.";
+            bool publicReveal = snapshot.state == ServerGameState.ROLE_LOCK_WAIT;
+            var sheriff = snapshot.players?.FirstOrDefault(player => player.publicRoleId == "sheriff");
 
-            if (roleCardsContainer == null) return;
+            if (roleTitleText != null)
+                roleTitleText.text = publicReveal ? "CẢNH SÁT TRƯỞNG ĐÃ LỘ DIỆN" : (assigned ? "VAI TRÒ CỦA BẠN" : "BƯỚC 1/3 — CHỌN VAI TRÒ");
+            if (roleGoalText != null)
+                roleGoalText.text = publicReveal
+                    ? (assigned ? "Vai trò của bạn vẫn bí mật • " + GoalFor(privateState.roleId) : "Các vai trò còn lại vẫn được giữ bí mật.")
+                    : (assigned ? GoalFor(privateState.roleId) : "Chọn một lá úp. Máy chủ sẽ khóa lựa chọn và giữ bí mật vai trò.");
+
+            if (roleCardsContainer != null) roleCardsContainer.gameObject.SetActive(!publicReveal);
+            RenderSheriffReveal(publicReveal, sheriff);
+            if (publicReveal || roleCardsContainer == null) return;
+
             foreach (var card in _cards) Destroy(card);
             _cards.Clear();
             int count = snapshot.draftSlotCount > 0 ? snapshot.draftSlotCount : snapshot.players.Count;
@@ -66,12 +80,45 @@ namespace BangBang.UI.Views
                 CreateSlot(i, ownSlot, assigned, snapshot.lockedDraftSlots != null && snapshot.lockedDraftSlots.Contains(i));
         }
 
+        private void RenderSheriffReveal(bool show, PlayerSnapshotDTO sheriff)
+        {
+            if (sheriffRevealRoot == null) return;
+            sheriffRevealRoot.SetActive(show && sheriff != null);
+            if (!show || sheriff == null) return;
+            if (sheriffAvatarImage != null) sheriffAvatarImage.sprite = AvatarCatalog.Load(sheriff.avatarId, sheriff.id);
+            if (sheriffNameText != null) sheriffNameText.text = sheriff.name.ToUpperInvariant();
+            if (sheriffFirstTurnText != null) sheriffFirstTurnText.text = "CẢNH SÁT TRƯỞNG  •  +1 MÁU  •  ĐI LƯỢT ĐẦU";
+            if (_animatedSheriffId == sheriff.id) return;
+            _animatedSheriffId = sheriff.id;
+            StartCoroutine(AnimateSheriffReveal());
+        }
+
+        private IEnumerator AnimateSheriffReveal()
+        {
+            var rect = sheriffRevealRoot.GetComponent<RectTransform>();
+            if (sheriffRevealCanvasGroup != null) sheriffRevealCanvasGroup.alpha = 0f;
+            rect.localScale = Vector3.one * 0.68f;
+            const float duration = 0.48f;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float eased = 1f - Mathf.Pow(1f - Mathf.Clamp01(elapsed / duration), 3f);
+                rect.localScale = Vector3.one * Mathf.Lerp(0.68f, 1f, eased);
+                if (sheriffRevealCanvasGroup != null) sheriffRevealCanvasGroup.alpha = eased;
+                yield return null;
+            }
+            rect.localScale = Vector3.one;
+            if (sheriffRevealCanvasGroup != null) sheriffRevealCanvasGroup.alpha = 1f;
+            AudioManager.Instance?.PlaySFX("card_play");
+        }
+
         private void CreateSlot(int slot, int ownSlot, bool assigned, bool locked)
         {
-            var card = new GameObject("RoleSlot_" + slot, typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
+            var card = new GameObject("RoleSlot_" + slot, typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(roleCardsContainer, false);
             card.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 225);
-            var image = card.GetComponent<UnityEngine.UI.Image>();
+            var image = card.GetComponent<Image>();
             bool isMine = slot == ownSlot;
             image.sprite = isMine && assigned
                 ? CardCatalogDatabase.LoadSprite("role_cards/" + RoleSprite(GameStateStore.Instance.LocalPrivateState.roleId) + "_card")
@@ -79,12 +126,11 @@ namespace BangBang.UI.Views
             image.color = locked && !isMine ? new Color(0.35f, 0.35f, 0.35f, 0.72f) : Color.white;
             if (isMine)
             {
-                var outline = card.AddComponent<UnityEngine.UI.Outline>();
+                var outline = card.AddComponent<Outline>();
                 outline.effectColor = new Color(1f, 0.78f, 0.2f);
                 outline.effectDistance = new Vector2(4, -4);
             }
-
-            var button = card.GetComponent<UnityEngine.UI.Button>();
+            var button = card.GetComponent<Button>();
             button.interactable = !locked && ownSlot < 0 && _snapshot.state == ServerGameState.ROLE_DRAFT && !GameStateStore.Instance.IsRequestPending;
             int capturedSlot = slot;
             button.onClick.AddListener(async () =>
