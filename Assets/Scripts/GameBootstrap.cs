@@ -193,26 +193,26 @@ namespace BangBang.UI
                 homeScreen = homeObj.AddComponent<HomeScreenUI>();
                 homeScreen.backgroundImage = homeObj.GetComponent<Image>();
 
-                var leftScrim = new GameObject("LeftScrim", typeof(RectTransform), typeof(Image));
-                leftScrim.transform.SetParent(homeObj.transform, false);
-                var scrimRt = leftScrim.GetComponent<RectTransform>();
-                scrimRt.anchorMin = new Vector2(0, 0);
-                scrimRt.anchorMax = new Vector2(0, 1);
-                scrimRt.pivot = new Vector2(0, 0.5f);
-                scrimRt.sizeDelta = new Vector2(860, 0);
-                leftScrim.GetComponent<Image>().color = BangUITheme.Scrim;
-                leftScrim.GetComponent<Image>().raycastTarget = false;
+                var rightScrim = new GameObject("RightScrim", typeof(RectTransform), typeof(Image));
+                rightScrim.transform.SetParent(homeObj.transform, false);
+                var scrimRt = rightScrim.GetComponent<RectTransform>();
+                scrimRt.anchorMin = new Vector2(1, 0);
+                scrimRt.anchorMax = new Vector2(1, 1);
+                scrimRt.pivot = new Vector2(1, 0.5f);
+                scrimRt.sizeDelta = new Vector2(690, 0);
+                rightScrim.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.04f, 0.62f);
+                rightScrim.GetComponent<Image>().raycastTarget = false;
 
                 // Logo Banner
                 var logoObj = new GameObject("LogoBanner", typeof(RectTransform), typeof(Image));
                 logoObj.transform.SetParent(homeObj.transform, false);
                 var logoRt = logoObj.GetComponent<RectTransform>();
-                logoRt.anchoredPosition = new Vector2(-545f, 245f);
-                logoRt.sizeDelta = new Vector2(650, 300);
+                logoRt.anchoredPosition = new Vector2(-475f, 175f);
+                logoRt.sizeDelta = new Vector2(780, 440);
                 homeScreen.logoImage = logoObj.GetComponent<Image>();
                 homeScreen.logoImage.raycastTarget = false;
 
-                var profile = CreateSurface("ProfileSurface", new Vector2(-690f, 468f), new Vector2(410, 74), homeObj.transform);
+                var profile = CreateSurface("ProfileSurface", new Vector2(-705f, 470f), new Vector2(430, 76), homeObj.transform);
                 var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
                 avatarObj.transform.SetParent(profile.transform, false);
                 avatarObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(-164, 0);
@@ -225,24 +225,31 @@ namespace BangBang.UI
                 homeScreen.playerBountyText = CreateText("PlayerBounty", "Tân binh • $0", new Vector2(18, -14), new Vector2(290, 22), 13, BangUITheme.Muted, profile.transform).GetComponent<Text>();
                 homeScreen.playerBountyText.alignment = TextAnchor.MiddleLeft;
 
-                var homeMenu = CreateSurface("MainMenuSurface", new Vector2(-555f, -165f), new Vector2(500, 430), homeObj.transform);
-                CreateText("MenuEyebrow", "MULTIPLAYER • 4–8 NGƯỜI", new Vector2(0, 145f), new Vector2(400, 30), 14, BangUITheme.Muted, homeMenu.transform);
-                homeScreen.startButton = CreateButton("StartBtn", "CHƠI ONLINE", new Vector2(0, 78f), BangUITheme.Brass, homeMenu.transform, new Vector2(420, 72));
-                homeScreen.galleryButton = CreateButton("GalleryBtn", "THƯ VIỆN THẺ", new Vector2(0, -5f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(420, 60));
-                homeScreen.questsButton = CreateButton("QuestsBtn", "NHIỆM VỤ", new Vector2(0, -76f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(420, 60));
-                homeScreen.guideButton = CreateButton("GuideBtn", "HƯỚNG DẪN CHƠI", new Vector2(0, -147f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(420, 60));
+                CreateText("HeroCaption", "MIỀN TÂY KHÔNG CÓ CHỖ CHO KẺ DO DỰ", new Vector2(-470f, -185f), new Vector2(760, 34), 15, BangUITheme.Ivory, homeObj.transform);
+                CreateText("HeroSubcaption", "Lập bàn, chọn vai trò và sống sót đến phát súng cuối cùng.", new Vector2(-470f, -225f), new Vector2(760, 30), 14, BangUITheme.Muted, homeObj.transform);
+
+                var homeMenu = CreateSurface("MainMenuSurface", new Vector2(655f, -10f), new Vector2(520, 760), homeObj.transform);
+                var menuTitle = CreateText("MenuTitle", "SẴN SÀNG VÀO TRẬN?", new Vector2(0, 285f), new Vector2(430, 42), 24, BangUITheme.Ivory, homeMenu.transform).GetComponent<Text>();
+                menuTitle.alignment = TextAnchor.MiddleLeft;
+                var menuEyebrow = CreateText("MenuEyebrow", "MULTIPLAYER TRỰC TUYẾN  •  4–8 NGƯỜI", new Vector2(0, 245f), new Vector2(430, 28), 13, BangUITheme.Muted, homeMenu.transform).GetComponent<Text>();
+                menuEyebrow.alignment = TextAnchor.MiddleLeft;
+                homeScreen.startButton = CreateButton("StartBtn", "CHƠI ONLINE", new Vector2(0, 165f), BangUITheme.Brass, homeMenu.transform, new Vector2(430, 74));
+                homeScreen.galleryButton = CreateButton("GalleryBtn", "THƯ VIỆN THẺ", new Vector2(0, 78f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(430, 62));
+                homeScreen.questsButton = CreateButton("QuestsBtn", "NHIỆM VỤ", new Vector2(0, 5f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(430, 62));
+                homeScreen.guideButton = CreateButton("GuideBtn", "HƯỚNG DẪN CHƠI", new Vector2(0, -68f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(430, 62));
 
                 // Audio Toggle Top Right
-                homeScreen.audioToggleButton = CreateButton("AudioBtn", "ÂM THANH", new Vector2(830f, 490f), BangUITheme.SurfaceRaised, homeObj.transform, new Vector2(190, 48));
+                homeScreen.audioToggleButton = CreateButton("AudioBtn", "ÂM THANH: BẬT", new Vector2(0, -165f), BangUITheme.Ink, homeMenu.transform, new Vector2(430, 54));
                 homeScreen.audioToggleText = homeScreen.audioToggleButton.GetComponentInChildren<Text>();
+                CreateText("BuildInfo", "ONLINE  •  BUILD " + Application.version, new Vector2(0, -320f), new Vector2(430, 26), 12, BangUITheme.Muted, homeMenu.transform);
 
                 // Quests Popup
-                var qPopup = CreatePopupBox("QuestsPopup", "📜 NHIỆM VỤ HẰNG NGÀY", "1. Bắn trúng 3 phát BANG! (Thưởng: 500 Vàng)\n2. Uống 2 chai BIA hồi máu (Thưởng: 300 Vàng)\n3. Thắng 1 trận với vai trò Cảnh Sát Trưởng (Thưởng: 1,000 Vàng)", homeObj.transform);
+                var qPopup = CreatePopupBox("QuestsPopup", "NHIỆM VỤ HẰNG NGÀY", "1. Bắn trúng 3 phát BANG! (Thưởng: 500 Vàng)\n2. Uống 2 chai BIA hồi máu (Thưởng: 300 Vàng)\n3. Thắng 1 trận với vai trò Cảnh Sát Trưởng (Thưởng: 1,000 Vàng)", homeObj.transform);
                 homeScreen.questsPopup = qPopup.Item1;
                 homeScreen.closeQuestsButton = qPopup.Item2;
 
                 // Guide Popup
-                var gPopup = CreatePopupBox("GuidePopup", "📖 HƯỚNG DẪN LUẬT CHƠI BANG!", "• CẢNH SÁT TRƯỞNG: Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội.\n• PHÓ CẢNH SÁT: Bảo vệ Cảnh Sát Trưởng bằng mọi giá.\n• CƯỚP (OUTLAW): Tiêu diệt Cảnh Sát Trưởng.\n• KẺ PHẢN BỘI: Người sống sót cuối cùng và hạ Cảnh Sát Trưởng sau cùng.\n\n• CỰ LY BẮN: Khoảng cách ngắn nhất quanh bàn. Vũ khí tăng tầm bắn.", homeObj.transform);
+                var gPopup = CreatePopupBox("GuidePopup", "HƯỚNG DẪN LUẬT CHƠI", "• CẢNH SÁT TRƯỞNG: Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội.\n• PHÓ CẢNH SÁT: Bảo vệ Cảnh Sát Trưởng bằng mọi giá.\n• CƯỚP (OUTLAW): Tiêu diệt Cảnh Sát Trưởng.\n• KẺ PHẢN BỘI: Người sống sót cuối cùng và hạ Cảnh Sát Trưởng sau cùng.\n\n• CỰ LY BẮN: Khoảng cách ngắn nhất quanh bàn. Vũ khí tăng tầm bắn.", homeObj.transform);
                 homeScreen.guidePopup = gPopup.Item1;
                 homeScreen.closeGuideButton = gPopup.Item2;
             }

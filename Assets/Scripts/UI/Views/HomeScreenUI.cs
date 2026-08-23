@@ -143,7 +143,7 @@ namespace BangBang.UI.Views
         {
             if (backgroundImage != null)
             {
-                var townSprite = CardCatalogDatabase.LoadSprite("UI/western_home_landscape");
+                var townSprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/home_v3");
                 if (townSprite != null)
                 {
                     backgroundImage.sprite = townSprite;
@@ -153,7 +153,7 @@ namespace BangBang.UI.Views
 
             if (logoImage != null)
             {
-                var logoSprite = CardCatalogDatabase.LoadSprite("bang_bang_logo");
+                var logoSprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/logo_v3");
                 if (logoSprite != null)
                 {
                     logoImage.sprite = logoSprite;
