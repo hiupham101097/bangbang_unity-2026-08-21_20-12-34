@@ -41,6 +41,9 @@ const strict_1 = __importDefault(require("node:assert/strict"));
 const node_http_1 = __importDefault(require("node:http"));
 const ws_1 = __importStar(require("ws"));
 const ServerEngine_1 = require("./ServerEngine");
+const node_fs_1 = __importDefault(require("node:fs"));
+const node_os_1 = __importDefault(require("node:os"));
+const node_path_1 = __importDefault(require("node:path"));
 class Peer {
     socket;
     snapshot;
@@ -85,13 +88,16 @@ class Peer {
     }
 }
 (0, node_test_1.default)('real WebSocket flow supports a full 8-player table without leaking hidden roles', { timeout: 25000 }, async () => {
+    const stateFile = node_path_1.default.join(node_os_1.default.tmpdir(), `bang-e2e-${process.pid}-${Date.now()}.json`);
+    process.env.BANG_STATE_FILE = stateFile;
     const server = node_http_1.default.createServer();
     const wss = new ws_1.WebSocketServer({ server });
-    new ServerEngine_1.ServerEngine(wss);
+    const engine = new ServerEngine_1.ServerEngine(wss);
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     strict_1.default.ok(address && typeof address !== 'string');
     const peers = [];
+    const accessTokens = [];
     try {
         for (let i = 0; i < 8; i++) {
             const socket = new ws_1.default(`ws://127.0.0.1:${address.port}`);
@@ -99,7 +105,8 @@ class Peer {
             const peer = new Peer(socket);
             peers.push(peer);
             peer.send('session.resume', { deviceId: `e2e_player_${i}`, clientVersion: 'test' });
-            await peer.waitFor(message => message.type === 'session.ready');
+            const session = await peer.waitFor(message => message.type === 'session.ready');
+            accessTokens.push(session.data.accessToken);
         }
         peers[0].send('room.create', { playerName: 'Host', maxPlayers: 8, turnTimeSec: 10, roleDraftSec: 2, characterDraftSec: 4 }, 'create');
         const created = await peers[0].waitFor(message => message.type === 'room.created');
@@ -138,11 +145,37 @@ class Peer {
             if (!player.isRoleRevealed)
                 strict_1.default.equal(player.publicRoleId, undefined);
         });
+        const reconnectIndex = 7;
+        const previousHand = peers[reconnectIndex].snapshot.privateState.hand.slice();
+        peers[reconnectIndex].socket.close();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const replacementSocket = new ws_1.default(`ws://127.0.0.1:${address.port}`);
+        await new Promise((resolve, reject) => { replacementSocket.once('open', resolve); replacementSocket.once('error', reject); });
+        const replacement = new Peer(replacementSocket);
+        peers[reconnectIndex] = replacement;
+        replacement.send('session.resume', { deviceId: `e2e_player_${reconnectIndex}`, accessToken: accessTokens[reconnectIndex], clientVersion: 'test' });
+        const resumed = await replacement.waitFor(message => message.type === 'session.ready');
+        strict_1.default.equal(resumed.data.resumed, true);
+        const restoredSnapshot = await replacement.waitFor(message => message.type === 'room.snapshot');
+        strict_1.default.deepEqual(restoredSnapshot.data.privateState.hand, previousHand);
+        const attackerSocket = new ws_1.default(`ws://127.0.0.1:${address.port}`);
+        await new Promise((resolve, reject) => { attackerSocket.once('open', resolve); attackerSocket.once('error', reject); });
+        const attacker = new Peer(attackerSocket);
+        attacker.send('session.resume', { deviceId: `e2e_player_${reconnectIndex}`, accessToken: 'invalid-token', clientVersion: 'test' });
+        const rejected = await attacker.waitFor(message => message.type === 'session.reject');
+        strict_1.default.equal(rejected.data.code, 'INVALID_SESSION');
+        attackerSocket.close();
+        replacement.send('chat.send', { message: 'hello table' });
+        const chat = await peers[0].waitFor(message => message.type === 'chat.message' && message.data.message === 'hello table');
+        strict_1.default.equal(chat.data.playerId, `e2e_player_${reconnectIndex}`);
     }
     finally {
         peers.forEach(peer => peer.socket.close());
         await new Promise(resolve => setTimeout(resolve, 100));
+        engine.dispose();
         await new Promise(resolve => wss.close(() => resolve()));
         await new Promise(resolve => server.close(() => resolve()));
+        node_fs_1.default.rmSync(stateFile, { force: true });
+        node_fs_1.default.rmSync(`${stateFile}.tmp`, { force: true });
     }
 });

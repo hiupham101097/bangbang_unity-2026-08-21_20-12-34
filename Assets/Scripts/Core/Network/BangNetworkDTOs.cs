@@ -4,10 +4,20 @@ using System.Collections.Generic;
 namespace BangBang.Core.Network
 {
     [Serializable]
+    public class ChatMessageDTO
+    {
+        public string playerId;
+        public string playerName;
+        public string message;
+        public long sentAt;
+    }
+
+    [Serializable]
     public class SessionResumeRequestDTO
     {
         public string deviceId;
         public string clientVersion;
+        public string accessToken;
     }
 
     [Serializable]
@@ -16,6 +26,7 @@ namespace BangBang.Core.Network
         public string playerId;
         public bool resumed;
         public long serverTime;
+        public string accessToken;
     }
 
     public enum ServerGameState

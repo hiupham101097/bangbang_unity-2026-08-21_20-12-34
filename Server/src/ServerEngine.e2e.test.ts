@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import WebSocket, { WebSocketServer } from 'ws';
 import { ServerEngine } from './ServerEngine';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 type Message = { type: string; reqId?: string; data: any };
 
@@ -50,13 +53,16 @@ class Peer {
 }
 
 test('real WebSocket flow supports a full 8-player table without leaking hidden roles', { timeout: 25000 }, async () => {
+    const stateFile = path.join(os.tmpdir(), `bang-e2e-${process.pid}-${Date.now()}.json`);
+    process.env.BANG_STATE_FILE = stateFile;
     const server = http.createServer();
     const wss = new WebSocketServer({ server });
-    new ServerEngine(wss);
+    const engine = new ServerEngine(wss);
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     assert.ok(address && typeof address !== 'string');
     const peers: Peer[] = [];
+    const accessTokens: string[] = [];
 
     try {
         for (let i = 0; i < 8; i++) {
@@ -65,7 +71,8 @@ test('real WebSocket flow supports a full 8-player table without leaking hidden 
             const peer = new Peer(socket);
             peers.push(peer);
             peer.send('session.resume', { deviceId: `e2e_player_${i}`, clientVersion: 'test' });
-            await peer.waitFor(message => message.type === 'session.ready');
+            const session = await peer.waitFor(message => message.type === 'session.ready');
+            accessTokens.push(session.data.accessToken);
         }
 
         peers[0].send('room.create', { playerName: 'Host', maxPlayers: 8, turnTimeSec: 10, roleDraftSec: 2, characterDraftSec: 4 }, 'create');
@@ -108,10 +115,39 @@ test('real WebSocket flow supports a full 8-player table without leaking hidden 
         playable.data.players.forEach((player: any) => {
             if (!player.isRoleRevealed) assert.equal(player.publicRoleId, undefined);
         });
+
+        const reconnectIndex = 7;
+        const previousHand = peers[reconnectIndex].snapshot.privateState.hand.slice();
+        peers[reconnectIndex].socket.close();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const replacementSocket = new WebSocket(`ws://127.0.0.1:${address.port}`);
+        await new Promise<void>((resolve, reject) => { replacementSocket.once('open', resolve); replacementSocket.once('error', reject); });
+        const replacement = new Peer(replacementSocket);
+        peers[reconnectIndex] = replacement;
+        replacement.send('session.resume', { deviceId: `e2e_player_${reconnectIndex}`, accessToken: accessTokens[reconnectIndex], clientVersion: 'test' });
+        const resumed = await replacement.waitFor(message => message.type === 'session.ready');
+        assert.equal(resumed.data.resumed, true);
+        const restoredSnapshot = await replacement.waitFor(message => message.type === 'room.snapshot');
+        assert.deepEqual(restoredSnapshot.data.privateState.hand, previousHand);
+
+        const attackerSocket = new WebSocket(`ws://127.0.0.1:${address.port}`);
+        await new Promise<void>((resolve, reject) => { attackerSocket.once('open', resolve); attackerSocket.once('error', reject); });
+        const attacker = new Peer(attackerSocket);
+        attacker.send('session.resume', { deviceId: `e2e_player_${reconnectIndex}`, accessToken: 'invalid-token', clientVersion: 'test' });
+        const rejected = await attacker.waitFor(message => message.type === 'session.reject');
+        assert.equal(rejected.data.code, 'INVALID_SESSION');
+        attackerSocket.close();
+
+        replacement.send('chat.send', { message: 'hello table' });
+        const chat = await peers[0].waitFor(message => message.type === 'chat.message' && message.data.message === 'hello table');
+        assert.equal(chat.data.playerId, `e2e_player_${reconnectIndex}`);
     } finally {
         peers.forEach(peer => peer.socket.close());
         await new Promise(resolve => setTimeout(resolve, 100));
+        engine.dispose();
         await new Promise<void>(resolve => wss.close(() => resolve()));
         await new Promise<void>(resolve => server.close(() => resolve()));
+        fs.rmSync(stateFile, { force: true });
+        fs.rmSync(`${stateFile}.tmp`, { force: true });
     }
 });

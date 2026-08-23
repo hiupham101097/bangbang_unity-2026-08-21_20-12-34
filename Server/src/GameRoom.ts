@@ -41,6 +41,10 @@ export class GameRoom {
     private revision: number = 0;
     private processedActionIds: Set<string> = new Set();
     private processedActionOrder: string[] = [];
+    private disconnectedAt: Map<string, number> = new Map();
+    private combatLogs: string[] = [];
+    private rematchVotes: Set<string> = new Set();
+    private static readonly RECONNECT_GRACE_MS = 90_000;
     private bangCardsPlayedThisTurn: number = 0;
     
     // Turn State
@@ -74,12 +78,19 @@ export class GameRoom {
     private judgementCard: string = '';
     private judgementEffect: string = '';
     private judgementResult: string = '';
+    private pendingDrawCards: string[] = [];
+    private pendingJudgementCards: string[] = [];
+    private pendingJudgementKind: 'dynamite' | 'jail' | '' = '';
 
     private rules: RuleConfig;
+    private onChanged?: () => void;
+    private onGameEnded?: (players: ServerPlayerState[], winnerTeam: string) => void;
 
-    constructor(roomId: string, wss: WebSocketServer, config: any) {
+    constructor(roomId: string, wss: WebSocketServer, config: any, onChanged?: () => void, onGameEnded?: (players: ServerPlayerState[], winnerTeam: string) => void) {
         this.roomId = roomId;
         this.wss = wss;
+        this.onChanged = onChanged;
+        this.onGameEnded = onGameEnded;
         const clampInt = (value: unknown, fallback: number, min: number, max: number) =>
             Math.max(min, Math.min(max, Math.trunc(Number(value) || fallback)));
         this.rules = {
@@ -96,6 +107,65 @@ export class GameRoom {
     public get maxPlayers(): number { return this.rules.maxPlayers; }
     public getPlayers(): ServerPlayerState[] { return Array.from(this.players.values()); }
     public getState(): ServerGameState { return this.state; }
+
+    public exportState(): any {
+        return {
+            roomId: this.roomId, state: this.state, players: Array.from(this.players.entries()), hostId: this.hostId,
+            turnNumber: this.turnNumber, sequence: this.sequence, revision: this.revision,
+            currentTurnPlayerId: this.currentTurnPlayerId, currentPhase: this.currentPhase,
+            activeInteraction: this.activeInteraction, winnerRole: this.winnerRole, winnerTeam: this.winnerTeam,
+            deck: this.deck, discardPile: this.discardPile, phaseId: this.phaseId, deadlineAt: this.deadlineAt,
+            roleSlotLocks: Array.from(this.roleSlotLocks.entries()), characterSlotLocks: Array.from(this.characterSlotLocks.entries()),
+            rolePool: this.rolePool, characterPool: this.characterPool, pendingMultiTargets: this.pendingMultiTargets,
+            pendingEffectType: this.pendingEffectType, pendingEffectActorId: this.pendingEffectActorId,
+            generalStoreCards: this.generalStoreCards, generalStoreOrder: this.generalStoreOrder, generalStoreIndex: this.generalStoreIndex,
+            duelParticipants: this.duelParticipants, duelResponderIndex: this.duelResponderIndex,
+            effectBeforeLethal: this.effectBeforeLethal, actorBeforeLethal: this.actorBeforeLethal,
+            judgementCard: this.judgementCard, judgementEffect: this.judgementEffect, judgementResult: this.judgementResult,
+            pendingDrawCards: this.pendingDrawCards, pendingJudgementCards: this.pendingJudgementCards, pendingJudgementKind: this.pendingJudgementKind,
+            rules: this.rules, combatLogs: this.combatLogs, rematchVotes: Array.from(this.rematchVotes),
+            disconnectedAt: Array.from(this.disconnectedAt.entries()), bangCardsPlayedThisTurn: this.bangCardsPlayedThisTurn
+        };
+    }
+
+    public static restore(data: any, wss: WebSocketServer, onChanged?: () => void, onGameEnded?: (players: ServerPlayerState[], winnerTeam: string) => void): GameRoom {
+        const room = new GameRoom(data.roomId, wss, data.rules || {}, onChanged, onGameEnded);
+        room.state = data.state || ServerGameState.WAITING;
+        room.players = new Map(data.players || []);
+        room.hostId = data.hostId || '';
+        room.turnNumber = data.turnNumber || 0; room.sequence = data.sequence || 0; room.revision = data.revision || 0;
+        room.currentTurnPlayerId = data.currentTurnPlayerId || ''; room.currentPhase = data.currentPhase || '';
+        room.activeInteraction = data.activeInteraction || null; room.winnerRole = data.winnerRole; room.winnerTeam = data.winnerTeam;
+        room.deck = data.deck || []; room.discardPile = data.discardPile || []; room.phaseId = data.phaseId || ''; room.deadlineAt = data.deadlineAt || 0;
+        room.roleSlotLocks = new Map(data.roleSlotLocks || []); room.characterSlotLocks = new Map(data.characterSlotLocks || []);
+        room.rolePool = data.rolePool || []; room.characterPool = data.characterPool || []; room.pendingMultiTargets = data.pendingMultiTargets || [];
+        room.pendingEffectType = data.pendingEffectType || ''; room.pendingEffectActorId = data.pendingEffectActorId || '';
+        room.generalStoreCards = data.generalStoreCards || []; room.generalStoreOrder = data.generalStoreOrder || []; room.generalStoreIndex = data.generalStoreIndex || 0;
+        room.duelParticipants = data.duelParticipants || []; room.duelResponderIndex = data.duelResponderIndex || 0;
+        room.effectBeforeLethal = data.effectBeforeLethal || ''; room.actorBeforeLethal = data.actorBeforeLethal || '';
+        room.judgementCard = data.judgementCard || ''; room.judgementEffect = data.judgementEffect || ''; room.judgementResult = data.judgementResult || '';
+        room.pendingDrawCards = data.pendingDrawCards || []; room.pendingJudgementCards = data.pendingJudgementCards || []; room.pendingJudgementKind = data.pendingJudgementKind || '';
+        room.combatLogs = data.combatLogs || []; room.rematchVotes = new Set(data.rematchVotes || []);
+        room.disconnectedAt = new Map(data.disconnectedAt || []); room.bangCardsPlayedThisTurn = data.bangCardsPlayedThisTurn || 0;
+        for (const player of room.players.values()) player.isConnected = false;
+        room.rearmRestoredTimer();
+        return room;
+    }
+
+    private rearmRestoredTimer() {
+        if ([ServerGameState.WAITING, ServerGameState.GAME_OVER].includes(this.state)) return;
+        const delay = Math.max(50, this.deadlineAt - Date.now());
+        if (this.state === ServerGameState.ROLE_DRAFT) this.timerHandle = setTimeout(() => this.handleRoleDraftTimeout(), delay);
+        else if (this.state === ServerGameState.ROLE_LOCK_WAIT) this.timerHandle = setTimeout(() => this.startCharacterDraft(), delay);
+        else if (this.state === ServerGameState.CHARACTER_DRAFT) this.timerHandle = setTimeout(() => this.handleCharacterDraftTimeout(), delay);
+        else if (this.state === ServerGameState.RESPONSE && this.currentPhase === 'ABILITY_DRAW')
+            this.timerHandle = setTimeout(() => this.resolveDrawAbility(this.currentTurnPlayerId, { action: 'AUTO' }), delay);
+        else if (this.state === ServerGameState.RESPONSE && this.currentPhase === 'JUDGEMENT_CHOICE')
+            this.timerHandle = setTimeout(() => this.resolveLuckyJudgement(this.currentTurnPlayerId, []), delay);
+        else if (this.state === ServerGameState.RESPONSE) this.timerHandle = setTimeout(() => this.resolveResponseTimeout(), delay);
+        else if (this.state === ServerGameState.DISCARD) this.timerHandle = setTimeout(() => this.autoDiscardAndAdvance(), delay);
+        else this.timerHandle = setTimeout(() => this.startTurn(this.currentTurnPlayerId || this.hostId), delay);
+    }
 
     public dispose() {
         if (this.timerHandle) clearTimeout(this.timerHandle);
@@ -165,6 +235,7 @@ export class GameRoom {
         const player = this.players.get(playerId);
         if (!player || player.isBot) return false;
         player.isConnected = true;
+        this.disconnectedAt.delete(playerId);
         this.sockets.set(playerId, ws);
         (ws as any).id = playerId;
         this.sendSnapshotTo(playerId);
@@ -255,6 +326,18 @@ export class GameRoom {
         else if (type === 'game.resync') {
             this.sendSnapshotTo(socketId);
         }
+        else if (type === 'room.rematch') {
+            this.handleRematchVote(socketId);
+        }
+        else if (type === 'chat.send') {
+            const player = this.players.get(socketId);
+            const message = String(data.message || '').trim().slice(0, 240);
+            if (player && message) this.broadcastMessage('chat.message', { playerId: player.id, playerName: player.name, message, sentAt: Date.now() });
+        }
+        else if (type === 'voice.signal') {
+            const targetId = String(data.targetPlayerId || '');
+            if (this.players.has(targetId)) this.sendPrivateMessage(targetId, 'voice.signal', { fromPlayerId: socketId, signal: data.signal });
+        }
     }
 
     public handleDisconnect(socketId: string) {
@@ -272,6 +355,8 @@ export class GameRoom {
                     nextHost.isReady = true;
                     this.hostId = nextHost.id;
                 }
+            } else {
+                this.disconnectedAt.set(socketId, Date.now());
             }
             this.broadcastSnapshot();
         }
@@ -282,7 +367,17 @@ export class GameRoom {
     }
 
     public isEmpty(): boolean {
-        return this.players.size === 0 || Array.from(this.players.values()).every(p => !p.isConnected);
+        return this.players.size === 0;
+    }
+
+    public pruneExpiredDisconnected(now = Date.now()) {
+        for (const [playerId, disconnectedAt] of this.disconnectedAt.entries()) {
+            if (now - disconnectedAt < GameRoom.RECONNECT_GRACE_MS) continue;
+            this.disconnectedAt.delete(playerId);
+            const player = this.players.get(playerId);
+            if (!player || player.isConnected) continue;
+            if (this.state === ServerGameState.GAME_OVER) this.players.delete(playerId);
+        }
     }
 
     private reseatPlayers() {
@@ -354,7 +449,7 @@ export class GameRoom {
             drawPileCount: this.deck.length,
             topDiscardCardId: this.discardPile.length > 0 ? this.discardPile[this.discardPile.length - 1] : undefined,
             discardPileCount: this.discardPile.length,
-            combatLogs: [],
+            combatLogs: [...this.combatLogs],
             serverTime: Date.now(),
             sequence: this.sequence,
             revision: this.revision,
@@ -383,6 +478,7 @@ export class GameRoom {
                 socket.send(JSON.stringify({ type: 'room.snapshot', data: JSON.stringify(snap) }));
             }
         }
+        this.onChanged?.();
     }
 
     private broadcastMessage(type: string, data: any) {
@@ -392,6 +488,11 @@ export class GameRoom {
                 socket.send(payload);
             }
         }
+    }
+
+    private addCombatLog(message: string) {
+        this.combatLogs.push(message);
+        if (this.combatLogs.length > 40) this.combatLogs.splice(0, this.combatLogs.length - 40);
     }
     
     private sendPrivateMessage(socketId: string, type: string, data: any) {
@@ -444,9 +545,20 @@ export class GameRoom {
     }
 
     private startGame() {
+        this.rematchVotes.clear();
+        this.combatLogs = [];
+        this.deck = [];
+        this.discardPile = [];
+        this.activeInteraction = null;
+        this.winnerRole = undefined;
+        this.winnerTeam = undefined;
+        this.turnNumber = 0;
+        this.currentTurnPlayerId = '';
+        this.currentPhase = '';
         this.phaseId = uuidv4();
         this.state = ServerGameState.ROLE_DRAFT;
         console.log(`[ROOM ${this.roomId}] Starting game, ROLE_DRAFT`);
+        this.addCombatLog('Trận đấu mới bắt đầu. Đang chọn vai trò.');
         
         // Setup Role Pool
         const numPlayers = this.players.size;
@@ -779,6 +891,8 @@ export class GameRoom {
         this.judgementEffect = '';
         this.judgementResult = '';
         this.deadlineAt = Date.now() + 600;
+        const player = this.players.get(playerId);
+        if (player) this.addCombatLog(`Lượt ${this.turnNumber + 1}: ${player.name}.`);
         this.broadcastSnapshot();
         this.timerHandle = setTimeout(() => this.startJudgementPhase(), 600);
     }
@@ -793,6 +907,7 @@ export class GameRoom {
 
         const dynamite = player.equipment.find(c => this.cardType(c) === 'dynamite');
         if (dynamite) {
+            if (this.beginLuckyJudgement(player, 'dynamite')) return;
             const judgement = this.drawJudgement(player, card => !(this.cardSuit(card) === 'spades' && this.isRankBetween(card, 2, 9)));
             this.judgementCard = judgement.card;
             this.judgementEffect = 'DYNAMITE';
@@ -813,6 +928,7 @@ export class GameRoom {
 
         const jail = player.equipment.find(c => this.cardType(c) === 'jail');
         if (jail && player.isAlive) {
+            if (this.beginLuckyJudgement(player, 'jail')) return;
             const judgement = this.drawJudgement(player, card => this.cardSuit(card) === 'hearts');
             this.judgementCard = judgement.card;
             this.judgementEffect = 'JAIL';
@@ -833,7 +949,7 @@ export class GameRoom {
     }
 
     private drawJudgement(player: ServerPlayerState, predicate: (card: string) => boolean): { card: string, matched: boolean } {
-        const count = player.characterId === 'lucky_duke' ? 2 : 1;
+        const count = player.characterId === 'lucky_duke' && player.isBot ? 2 : 1;
         const cards: string[] = [];
         this.ensureDeck(count);
         for (let i = 0; i < count; i++) {
@@ -843,6 +959,68 @@ export class GameRoom {
         const chosen = cards.find(predicate) || cards[0] || '';
         for (const card of cards) this.discardPile.push(card);
         return { card: chosen, matched: predicate(chosen) };
+    }
+
+    private beginLuckyJudgement(player: ServerPlayerState, kind: 'dynamite' | 'jail'): boolean {
+        if (player.characterId !== 'lucky_duke' || player.isBot) return false;
+        this.ensureDeck(2);
+        this.pendingJudgementCards = [this.deck.pop(), this.deck.pop()].filter(Boolean) as string[];
+        this.pendingJudgementKind = kind;
+        this.state = ServerGameState.RESPONSE;
+        this.currentPhase = 'JUDGEMENT_CHOICE';
+        this.deadlineAt = Date.now() + this.rules.responseTimeSec * 1000;
+        this.activeInteraction = {
+            interactionId: `judgement_${kind}_${Date.now()}`, type: 'SELECT_CARDS', actorPlayerId: player.id,
+            title: 'LUCKY DUKE', message: 'Chọn 1 trong 2 lá phán xét.', minSelections: 1, maxSelections: 1,
+            validPlayerIds: [], validCardIds: [...this.pendingJudgementCards], options: [], canCancel: false,
+            defaultAction: 'AUTO', expiresAt: this.deadlineAt
+        };
+        this.broadcastSnapshot();
+        this.timerHandle = setTimeout(() => this.resolveLuckyJudgement(player.id, []), this.rules.responseTimeSec * 1000);
+        return true;
+    }
+
+    private resolveLuckyJudgement(playerId: string, selected: string[]) {
+        const player = this.players.get(playerId);
+        if (!player || this.currentPhase !== 'JUDGEMENT_CHOICE') return;
+        if (this.timerHandle) clearTimeout(this.timerHandle);
+        const chosen = selected.length === 1 && this.pendingJudgementCards.includes(selected[0]) ? selected[0] : this.pendingJudgementCards[0];
+        this.discardPile.push(...this.pendingJudgementCards);
+        const kind = this.pendingJudgementKind;
+        this.pendingJudgementCards = []; this.pendingJudgementKind = ''; this.activeInteraction = null;
+        this.state = ServerGameState.JUDGEMENT; this.currentPhase = 'JUDGEMENT';
+        if (kind === 'dynamite') {
+            const dynamite = player.equipment.find(c => this.cardType(c) === 'dynamite');
+            if (dynamite) this.applyChosenDynamite(player, dynamite, chosen);
+            if (this.getState() === ServerGameState.GAME_OVER || this.getState() === ServerGameState.RESPONSE) return;
+            const jail = player.equipment.find(c => this.cardType(c) === 'jail');
+            if (jail) {
+                if (this.beginLuckyJudgement(player, 'jail')) return;
+            }
+            this.timerHandle = setTimeout(() => this.startDrawPhase(), 900);
+        } else {
+            const jail = player.equipment.find(c => this.cardType(c) === 'jail');
+            if (!jail || this.applyChosenJail(player, jail, chosen)) this.timerHandle = setTimeout(() => this.startDrawPhase(), 900);
+        }
+    }
+
+    private applyChosenDynamite(player: ServerPlayerState, dynamite: string, card: string) {
+        const safe = !(this.cardSuit(card) === 'spades' && this.isRankBetween(card, 2, 9));
+        this.judgementCard = card; this.judgementEffect = 'DYNAMITE'; this.judgementResult = safe ? 'CHUYỂN TIẾP' : 'PHÁT NỔ: -3 HP';
+        this.broadcastMessage('judgement.cardRevealed', { playerId: player.id, effect: 'dynamite', card });
+        if (safe) this.passDynamite(player, dynamite);
+        else { player.equipment.splice(player.equipment.indexOf(dynamite), 1); this.discardPile.push(dynamite); this.applyDamage(player, 3); }
+        this.broadcastSnapshot();
+    }
+
+    private applyChosenJail(player: ServerPlayerState, jail: string, card: string): boolean {
+        const escaped = this.cardSuit(card) === 'hearts';
+        this.judgementCard = card; this.judgementEffect = 'JAIL'; this.judgementResult = escaped ? 'THOÁT TÙ' : 'MẤT LƯỢT';
+        player.equipment.splice(player.equipment.indexOf(jail), 1); this.discardPile.push(jail);
+        this.broadcastMessage('judgement.cardRevealed', { playerId: player.id, effect: 'jail', card });
+        this.broadcastSnapshot();
+        if (!escaped) { this.timerHandle = setTimeout(() => this.nextTurn(), 900); return false; }
+        return true;
     }
 
     private isRankBetween(card: string, min: number, max: number): boolean {
@@ -878,6 +1056,10 @@ export class GameRoom {
         this.currentPhase = "DRAW";
         const p = this.players.get(this.currentTurnPlayerId);
         if (p) {
+            if (!p.isBot && ['pedro_ramirez', 'jesse_jones', 'kit_carlson'].includes(p.characterId || '')) {
+                this.openDrawAbilityChoice(p);
+                return;
+            }
             if (p.isBot && p.characterId === 'pedro_ramirez' && this.discardPile.length > 0) p.hand.push(this.discardPile.pop()!);
             else if (p.isBot && p.characterId === 'jesse_jones') {
                 const victim = this.alivePlayers().find(other => other.id !== p.id && other.hand.length > 0);
@@ -896,6 +1078,70 @@ export class GameRoom {
                 }
             }
         }
+        this.broadcastSnapshot();
+        this.timerHandle = setTimeout(() => this.startPlayPhase(), 450);
+    }
+
+    private openDrawAbilityChoice(player: ServerPlayerState) {
+        this.state = ServerGameState.RESPONSE;
+        this.currentPhase = 'ABILITY_DRAW';
+        this.deadlineAt = Date.now() + this.rules.responseTimeSec * 1000;
+        if (player.characterId === 'kit_carlson') {
+            this.ensureDeck(3);
+            this.pendingDrawCards = [this.deck.pop(), this.deck.pop(), this.deck.pop()].filter(Boolean) as string[];
+            this.activeInteraction = {
+                interactionId: `draw_kit_${Date.now()}`, type: 'SELECT_CARDS', actorPlayerId: player.id,
+                title: 'KIT CARLSON', message: 'Chọn 2 trong 3 lá. Lá còn lại được đặt lại lên bộ bài.',
+                minSelections: Math.min(2, this.pendingDrawCards.length), maxSelections: Math.min(2, this.pendingDrawCards.length),
+                validPlayerIds: [], validCardIds: [...this.pendingDrawCards], options: [], canCancel: false,
+                defaultAction: 'AUTO', expiresAt: this.deadlineAt
+            };
+        } else if (player.characterId === 'jesse_jones') {
+            this.activeInteraction = {
+                interactionId: `draw_jesse_${Date.now()}`, type: 'SELECT_TARGET', actorPlayerId: player.id,
+                title: 'JESSE JONES', message: 'Chọn người để lấy ngẫu nhiên 1 lá, hoặc rút 2 lá từ bộ bài.',
+                minSelections: 0, maxSelections: 1,
+                validPlayerIds: this.alivePlayers().filter(p => p.id !== player.id && p.hand.length > 0).map(p => p.id),
+                validCardIds: [], options: ['DRAW_DECK'], canCancel: true, defaultAction: 'AUTO', expiresAt: this.deadlineAt
+            };
+        } else {
+            this.activeInteraction = {
+                interactionId: `draw_pedro_${Date.now()}`, type: 'CHOOSE_OPTION', actorPlayerId: player.id,
+                title: 'PEDRO RAMIREZ', message: 'Chọn nguồn cho lá rút đầu tiên.', minSelections: 0, maxSelections: 0,
+                validPlayerIds: [], validCardIds: [], options: this.discardPile.length ? ['DRAW_DECK', 'TAKE_DISCARD'] : ['DRAW_DECK'],
+                canCancel: false, defaultAction: 'AUTO', expiresAt: this.deadlineAt
+            };
+        }
+        this.broadcastSnapshot();
+        this.timerHandle = setTimeout(() => this.resolveDrawAbility(player.id, { action: 'AUTO' }), this.rules.responseTimeSec * 1000);
+    }
+
+    private resolveDrawAbility(playerId: string, data: any) {
+        const player = this.players.get(playerId);
+        if (!player || this.currentPhase !== 'ABILITY_DRAW' || this.activeInteraction?.actorPlayerId !== playerId) return;
+        if (this.timerHandle) clearTimeout(this.timerHandle);
+        if (player.characterId === 'kit_carlson') {
+            let selected: string[] = data.selectedCardIds || [];
+            if (selected.length !== Math.min(2, this.pendingDrawCards.length) || selected.some(card => !this.pendingDrawCards.includes(card))) {
+                selected = this.pendingDrawCards.slice(0, 2);
+            }
+            player.hand.push(...selected);
+            for (const card of this.pendingDrawCards.filter(card => !selected.includes(card))) this.deck.push(card);
+            this.pendingDrawCards = [];
+        } else if (player.characterId === 'jesse_jones') {
+            const target = this.players.get((data.targetPlayerIds || [])[0]);
+            if (target && target.id !== player.id && target.hand.length > 0) {
+                this.stealRandomCard(player, target);
+                this.drawCards(player, 1);
+            } else this.drawCards(player, 2);
+        } else {
+            if (data.optionIndex === 1 && this.discardPile.length > 0) player.hand.push(this.discardPile.pop()!);
+            else this.drawCards(player, 1);
+            this.drawCards(player, 1);
+        }
+        this.activeInteraction = null;
+        this.state = ServerGameState.DRAW;
+        this.currentPhase = 'DRAW';
         this.broadcastSnapshot();
         this.timerHandle = setTimeout(() => this.startPlayPhase(), 450);
     }
@@ -926,7 +1172,7 @@ export class GameRoom {
         if (equipment) this.handlePlayCard(bot.id, { cardId: equipment, targetPlayerIds: [] });
         if (this.state !== ServerGameState.PLAY) return;
 
-        const target = this.alivePlayers().find(p => p.id !== bot.id && this.isTargetable(bot, p));
+        const target = this.chooseBotTarget(bot);
         const bang = bot.hand.find(c => this.cardType(c) === 'bang');
         if (bang && target) this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
         if (this.state !== ServerGameState.PLAY) return;
@@ -934,6 +1180,24 @@ export class GameRoom {
         const globalAction = bot.hand.find(c => ['general_store', 'indiani', 'gatling', 'saloon', 'dilizenza', 'wells_fargo'].includes(this.cardType(c)));
         if (globalAction) this.handlePlayCard(bot.id, { cardId: globalAction, targetPlayerIds: [] });
         if (this.state === ServerGameState.PLAY) this.finishOrDiscardCurrentTurn();
+    }
+
+    private chooseBotTarget(bot: ServerPlayerState): ServerPlayerState | undefined {
+        const candidates = this.alivePlayers().filter(player => player.id !== bot.id && this.isTargetable(bot, player));
+        const score = (target: ServerPlayerState) => {
+            let value = (target.maxHealth - target.currentHealth) * 2;
+            if (bot.roleId === 'outlaw') value += target.roleId === 'sheriff' ? 100 : 0;
+            else if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') {
+                if (target.isRoleRevealed && target.roleId === 'outlaw') value += 100;
+                if (target.isRoleRevealed && target.roleId === 'deputy') value -= 100;
+            } else if (bot.roleId === 'renegade') {
+                const alive = this.alivePlayers();
+                if (alive.length === 2 && target.roleId === 'sheriff') value += 100;
+                else if (target.roleId !== 'sheriff') value += 20;
+            }
+            return value;
+        };
+        return candidates.sort((a, b) => score(b) - score(a))[0];
     }
 
     private drawCards(player: ServerPlayerState, count: number) {
@@ -990,6 +1254,7 @@ export class GameRoom {
         }
 
         p.hand.splice(idx, 1);
+        this.addCombatLog(`${p.name} dùng ${type}${target ? ` lên ${target.name}` : ''}.`);
         if (this.isEquipment(type)) this.equipCard(p, target, cardId, type);
         else this.discardPile.push(cardId);
         this.triggerEmptyHandAbility(p);
@@ -1196,6 +1461,14 @@ export class GameRoom {
     }
 
     private handleRespond(socketId: string, data: any) {
+        if (this.currentPhase === 'JUDGEMENT_CHOICE' && this.activeInteraction?.actorPlayerId === socketId) {
+            this.resolveLuckyJudgement(socketId, data.selectedCardIds || []);
+            return;
+        }
+        if (this.currentPhase === 'ABILITY_DRAW' && this.activeInteraction?.actorPlayerId === socketId) {
+            this.resolveDrawAbility(socketId, data);
+            return;
+        }
         if (this.state === ServerGameState.RESPONSE && this.currentPhase === 'GENERAL_STORE' && this.activeInteraction?.actorPlayerId === socketId) {
             const card = (data.selectedCardIds || [])[0];
             if (card) this.handleGeneralStorePick(socketId, card);
@@ -1384,6 +1657,7 @@ export class GameRoom {
         if (vulture) vulture.hand.push(...loot); else this.discardPile.push(...loot);
         target.hand = [];
         target.equipment = [];
+        this.addCombatLog(`${target.name} bị loại${killer ? ` bởi ${killer.name}` : ''}.`);
 
         if (killer && target.roleId === 'outlaw') this.drawCards(killer, 3);
         if (killer && killer.roleId === 'sheriff' && target.roleId === 'deputy') {
@@ -1407,7 +1681,7 @@ export class GameRoom {
     private handleActivateAbility(playerId: string, data: any) {
         const player = this.players.get(playerId);
         if (!player || !player.isAlive || player.characterId !== 'sid_ketchum') return;
-        const cards: string[] = data.cardIds || [];
+        const cards: string[] = data.cardIds || data.selectedCardIds || [];
         if (cards.length !== 2 || new Set(cards).size !== 2 || cards.some(c => !player.hand.includes(c)) || player.currentHealth >= player.maxHealth) {
             this.reject(playerId, 'INVALID_ABILITY_ACTION');
             return;
@@ -1445,11 +1719,34 @@ export class GameRoom {
         this.state = ServerGameState.GAME_OVER;
         this.winnerRole = winnerRole;
         this.winnerTeam = winnerTeam;
+        this.addCombatLog(`Kết thúc trận: ${winnerTeam} chiến thắng.`);
         this.currentPhase = 'GAME_OVER';
         this.deadlineAt = 0;
         for (const p of this.players.values()) p.isRoleRevealed = true;
         this.broadcastMessage('game.ended', { winnerType: winnerTeam, winnerRole, reason: 'WIN_CONDITION' });
+        this.onGameEnded?.(Array.from(this.players.values()), winnerTeam);
         this.broadcastSnapshot();
         return true;
+    }
+
+    private handleRematchVote(playerId: string) {
+        if (this.state !== ServerGameState.GAME_OVER) return;
+        const player = this.players.get(playerId);
+        if (!player || player.isBot) return;
+        this.rematchVotes.add(playerId);
+        const connectedHumans = Array.from(this.players.values()).filter(p => !p.isBot && p.isConnected);
+        this.broadcastMessage('room.rematchVoteUpdated', { votes: this.rematchVotes.size, required: connectedHumans.length });
+        if (connectedHumans.length > 0 && connectedHumans.every(p => this.rematchVotes.has(p.id))) {
+            for (const p of this.players.values()) {
+                p.isAlive = true;
+                p.currentHealth = 4;
+                p.maxHealth = 4;
+                p.hand = [];
+                p.equipment = [];
+                p.isReady = true;
+                p.bangCardsPlayedThisTurn = 0;
+            }
+            this.startGame();
+        }
     }
 }

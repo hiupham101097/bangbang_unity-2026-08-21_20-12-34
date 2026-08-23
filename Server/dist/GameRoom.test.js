@@ -180,3 +180,56 @@ for (const count of [4, 5, 6, 7, 8]) {
     clearTimeout(room.timerHandle);
     strict_1.default.equal(players[0].hand.includes(offered[0]), true);
 });
+(0, node_test_1.default)('room state restores private hands and hidden roles without exposing them', () => {
+    const { room, players } = createRoom();
+    players[0].roleId = 'sheriff';
+    players[1].roleId = 'outlaw';
+    players[1].hand = ['bang__restore__clubs__7'];
+    room.state = GameState_1.ServerGameState.PLAY;
+    const restored = GameRoom_1.GameRoom.restore(room.exportState(), {});
+    const ownerView = restored.getSnapshotFor(players[1].id);
+    const otherView = restored.getSnapshotFor(players[0].id);
+    clearTimeout(restored.timerHandle);
+    strict_1.default.deepEqual(ownerView.privateState?.hand, ['bang__restore__clubs__7']);
+    strict_1.default.equal(otherView.players.find(player => player.id === players[1].id)?.publicRoleId, undefined);
+});
+(0, node_test_1.default)('all connected humans voting rematch starts a fresh role draft', () => {
+    const { room, players } = createRoom();
+    room.state = GameState_1.ServerGameState.GAME_OVER;
+    for (const player of players)
+        room.handleRematchVote(player.id);
+    clearTimeout(room.timerHandle);
+    strict_1.default.equal(room.getState(), GameState_1.ServerGameState.ROLE_DRAFT);
+    strict_1.default.equal(players.every(player => player.hand.length === 0 && player.isAlive), true);
+});
+(0, node_test_1.default)('Kit Carlson receives a private choose-two draw interaction', () => {
+    const { room, players } = createRoom();
+    const kit = players[0];
+    kit.characterId = 'kit_carlson';
+    room.deck = room.createDeck();
+    room.currentTurnPlayerId = kit.id;
+    room.startDrawPhase();
+    clearTimeout(room.timerHandle);
+    const prompt = room.getSnapshotFor(kit.id).activeInteraction;
+    strict_1.default.equal(prompt?.type, 'SELECT_CARDS');
+    strict_1.default.equal(prompt?.validCardIds.length, 3);
+    room.handleRespond(kit.id, { action: 'SUBMIT', selectedCardIds: prompt?.validCardIds.slice(0, 2) });
+    clearTimeout(room.timerHandle);
+    strict_1.default.equal(kit.hand.length, 2);
+});
+(0, node_test_1.default)('Lucky Duke chooses one of two judgement cards privately', () => {
+    const { room, players } = createRoom();
+    const lucky = players[0];
+    lucky.characterId = 'lucky_duke';
+    lucky.equipment = ['jail__lucky__clubs__J'];
+    room.currentTurnPlayerId = lucky.id;
+    room.deck = ['bang__safe__hearts__A', 'bang__fail__spades__7'];
+    room.startJudgementPhase();
+    clearTimeout(room.timerHandle);
+    const prompt = room.getSnapshotFor(lucky.id).activeInteraction;
+    strict_1.default.equal(prompt?.validCardIds.length, 2);
+    const heart = prompt?.validCardIds.find(card => card.includes('__hearts__'));
+    room.handleRespond(lucky.id, { action: 'SUBMIT', selectedCardIds: [heart] });
+    clearTimeout(room.timerHandle);
+    strict_1.default.equal(room.judgementResult, 'THOÁT TÙ');
+});

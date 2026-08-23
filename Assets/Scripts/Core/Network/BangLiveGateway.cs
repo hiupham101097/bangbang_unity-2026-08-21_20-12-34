@@ -31,6 +31,7 @@ namespace BangBang.Core.Network
         public event Action<List<RoomSummaryDTO>> OnRoomListUpdated;
         public event Action<ConnectionState> OnConnectionStateChanged;
         public event Action<string> OnErrorMessage;
+        public event Action<ChatMessageDTO> OnChatMessage;
 
         [Header("Node.js Server URL")]
         public string serverWsUrl = "ws://localhost:3000";
@@ -78,7 +79,8 @@ namespace BangBang.Core.Network
                 await SendEventAsync("session.resume", JsonUtility.ToJson(new SessionResumeRequestDTO
                 {
                     deviceId = LocalPlayerId,
-                    clientVersion = Application.version
+                    clientVersion = Application.version,
+                    accessToken = PlayerPrefs.GetString("bang.resumeToken", "")
                 }));
                 
                 CurrentConnectionState = ConnectionState.Connected;
@@ -192,7 +194,19 @@ namespace BangBang.Core.Network
                 else if (msg.type == "session.ready")
                 {
                     var session = JsonUtility.FromJson<SessionReadyDTO>(msg.data);
-                    if (session != null && !string.IsNullOrEmpty(session.playerId)) LocalPlayerId = session.playerId;
+                    if (session != null && !string.IsNullOrEmpty(session.playerId))
+                    {
+                        LocalPlayerId = session.playerId;
+                        if (!string.IsNullOrEmpty(session.accessToken))
+                        {
+                            PlayerPrefs.SetString("bang.resumeToken", session.accessToken);
+                            PlayerPrefs.Save();
+                        }
+                    }
+                }
+                else if (msg.type == "chat.message")
+                {
+                    OnChatMessage?.Invoke(JsonUtility.FromJson<ChatMessageDTO>(msg.data));
                 }
             }
             catch (Exception ex)
@@ -370,6 +384,8 @@ namespace BangBang.Core.Network
             req.targetPlayerIds = selectedPlayers;
             req.selectedCardIds = selectedCards;
             req.optionIndex = optionIndex;
+            if (!string.IsNullOrEmpty(interactionId) && interactionId.StartsWith("sid_", StringComparison.Ordinal))
+                return SendEventAsync("game.action.activateAbility", JsonUtility.ToJson(req));
             if (snapshot != null && string.Equals(snapshot.currentPhase, "GENERAL_STORE", StringComparison.OrdinalIgnoreCase))
             {
                 string card = selectedCards != null && selectedCards.Count > 0 ? selectedCards[0] : "";
@@ -406,6 +422,12 @@ namespace BangBang.Core.Network
         public Task<bool> RequestRematchAsync()
         {
             return SendEventAsync("room.rematch");
+        }
+
+        public Task<bool> SendChatAsync(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return Task.FromResult(false);
+            return SendEventAsync("chat.send", JsonUtility.ToJson(new ChatMessageDTO { message = message.Trim() }));
         }
 
         private void DisconnectWebSocket()

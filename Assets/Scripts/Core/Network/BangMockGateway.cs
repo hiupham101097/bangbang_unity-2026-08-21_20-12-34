@@ -19,6 +19,7 @@ namespace BangBang.Core.Network
         public event Action<List<RoomSummaryDTO>> OnRoomListUpdated;
         public event Action<ConnectionState> OnConnectionStateChanged;
         public event Action<string> OnErrorMessage;
+        public event Action<ChatMessageDTO> OnChatMessage;
 
         private MatchStateSnapshotDTO _currentSnapshot;
         private Coroutine _mockGameLoopCoroutine;
@@ -649,6 +650,13 @@ namespace BangBang.Core.Network
                 p.effectiveDistanceToLocal = 999;
                 p.isTargetable = false;
             }
+        }
+
+        public Task<bool> SendChatAsync(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return Task.FromResult(false);
+            OnChatMessage?.Invoke(new ChatMessageDTO { playerId = LocalPlayerId, playerName = "Bạn", message = message.Trim(), sentAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() });
+            return Task.FromResult(true);
         }
 
         private void BroadcastSnapshot()

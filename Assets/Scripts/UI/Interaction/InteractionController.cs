@@ -152,6 +152,24 @@ namespace BangBang.UI.Interaction
                 }
             }
 
+            if (prompt.validPlayerIds != null)
+            {
+                foreach (string playerId in prompt.validPlayerIds)
+                {
+                    string capturedId = playerId;
+                    var snapshot = GameStateStore.Instance != null ? GameStateStore.Instance.CurrentSnapshot : null;
+                    var player = snapshot != null ? snapshot.players.Find(p => p.id == capturedId) : null;
+                    var playerButton = CreateOptionButton("Player_" + capturedId, player != null ? player.name : capturedId, new Color(0.18f, 0.38f, 0.55f));
+                    playerButton.onClick.AddListener(() =>
+                    {
+                        AudioManager.Instance?.PlaySFX("button_tap");
+                        SelectPlayer(capturedId);
+                        var image = playerButton.GetComponent<Image>();
+                        if (image != null) image.color = _selectedPlayerIds.Contains(capturedId) ? new Color(0.85f, 0.62f, 0.16f) : new Color(0.18f, 0.38f, 0.55f);
+                    });
+                }
+            }
+
             if (prompt.options != null && prompt.options.Count > 0)
             {
                 for (int i = 0; i < prompt.options.Count; i++)
@@ -239,6 +257,10 @@ namespace BangBang.UI.Interaction
             else if (_currentPrompt.type == "SELECT_TARGET")
             {
                 isValid = _selectedPlayerIds.Count >= _currentPrompt.minSelections;
+            }
+            else if (_currentPrompt.type == "CHOOSE_OPTION")
+            {
+                isValid = true;
             }
 
             confirmButton.interactable = isValid && !(GameStateStore.Instance != null && GameStateStore.Instance.IsRequestPending);

@@ -38,6 +38,7 @@ namespace BangBang.UI.Views
         public Button playCardButton;
         public Text playCardButtonText;
         public Button endTurnButton;
+        public Button abilityButton;
         public Button cancelTargetButton;
         public GameObject targetBannerObj;
         public Text targetBannerText;
@@ -119,6 +120,12 @@ namespace BangBang.UI.Views
                 endTurnButton.onClick.RemoveAllListeners();
                 endTurnButton.onClick.AddListener(HandleEndTurnClicked);
             }
+
+            if (abilityButton != null)
+            {
+                abilityButton.onClick.RemoveAllListeners();
+                abilityButton.onClick.AddListener(HandleAbilityClicked);
+            }
         }
 
         private void OnDestroy()
@@ -173,6 +180,7 @@ namespace BangBang.UI.Views
             // 3. Local Dashboard
             if (local != null)
             {
+                bool spectating = !local.isAlive;
                 if (localNameText != null) localNameText.text = local.name;
                 if (localRoleText != null)
                 {
@@ -194,11 +202,56 @@ namespace BangBang.UI.Views
                 if (handCardLayout != null && localPrivate != null)
                 {
                     handCardLayout.UpdateHand(localPrivate.hand);
+                    handCardLayout.gameObject.SetActive(!spectating);
+                }
+
+                if (abilityButton != null)
+                {
+                    bool isSid = local.characterId == "sid_ketchum";
+                    abilityButton.gameObject.SetActive(isSid);
+                    abilityButton.interactable = isSid && local.currentHealth < local.maxHealth && localPrivate != null && localPrivate.hand.Count >= 2 && !GameStateStore.Instance.IsRequestPending;
+                }
+
+                if (spectating)
+                {
+                    if (drawCardButton != null) drawCardButton.gameObject.SetActive(false);
+                    if (playCardButton != null) playCardButton.gameObject.SetActive(false);
+                    if (endTurnButton != null) endTurnButton.gameObject.SetActive(false);
+                    if (abilityButton != null) abilityButton.gameObject.SetActive(false);
+                    if (targetBannerObj != null) targetBannerObj.SetActive(true);
+                    if (targetBannerText != null) targetBannerText.text = "BẠN ĐÃ BỊ LOẠI — ĐANG XEM TRẬN";
+                }
+                else if (_selectedCardUI == null && targetBannerObj != null)
+                {
+                    if (endTurnButton != null) endTurnButton.gameObject.SetActive(true);
+                    targetBannerObj.SetActive(false);
                 }
             }
 
             // 4. Opponents Seats
             RenderOpponentSeats(snapshot, localId);
+        }
+
+        private void HandleAbilityClicked()
+        {
+            var store = GameStateStore.Instance;
+            var hand = store != null ? store.LocalPrivateState?.hand : null;
+            if (store == null || hand == null || hand.Count < 2 || InteractionController.Instance == null) return;
+            InteractionController.Instance.ShowModal(new InteractionPromptDTO
+            {
+                interactionId = "sid_" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                type = "SELECT_CARDS",
+                actorPlayerId = store.LocalPlayerId,
+                title = "SID KETCHUM",
+                message = "Chọn đúng 2 lá để bỏ và hồi 1 máu.",
+                minSelections = 2,
+                maxSelections = 2,
+                validCardIds = new List<string>(hand),
+                validPlayerIds = new List<string>(),
+                options = new List<string>(),
+                canCancel = true,
+                expiresAt = 0
+            });
         }
 
         private void RenderBulletHealth(int current, int max)

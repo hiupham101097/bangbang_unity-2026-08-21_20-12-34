@@ -9,10 +9,12 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
+const allowedOrigins = new Set((process.env.BANG_ALLOWED_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean));
 const wss = new WebSocketServer({
     server,
     maxPayload: 64 * 1024,
-    perMessageDeflate: false
+    perMessageDeflate: false,
+    verifyClient: ({ origin }, done) => done(!origin || allowedOrigins.size === 0 || allowedOrigins.has(origin), 403, 'Origin not allowed')
 });
 
 const PORT = process.env.PORT || 3000;
@@ -26,3 +28,12 @@ const engine = new ServerEngine(wss);
 server.listen(PORT, () => {
     console.log(`[BANG SERVER] Listening on port ${PORT}`);
 });
+
+const shutdown = () => {
+    engine.dispose();
+    wss.close();
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 5000).unref();
+};
+process.once('SIGINT', shutdown);
+process.once('SIGTERM', shutdown);

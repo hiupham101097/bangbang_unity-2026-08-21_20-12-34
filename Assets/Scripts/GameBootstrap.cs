@@ -578,6 +578,8 @@ namespace BangBang.UI
                 gameTableView.playCardButtonText = gameTableView.playCardButton.GetComponentInChildren<Text>();
                 gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "❌ HỦY CHỌN", new Vector2(720f, 80f), new Color(0.5f, 0.2f, 0.2f), tableObj.transform, new Vector2(180, 50));
                 gameTableView.endTurnButton = CreateButton("EndTurnBtn", "⏭ HẾT LƯỢT", new Vector2(720f, 10f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 60));
+                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(720f, -60f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(180, 56));
+                gameTableView.abilityButton.gameObject.SetActive(false);
 
                 var introRoot = CreateFullScreenPanel("MatchStartOverlay", tableObj.transform);
                 introRoot.GetComponent<Image>().color = new Color(0.035f, 0.025f, 0.02f, 0.96f);
@@ -660,6 +662,7 @@ namespace BangBang.UI
             // Ensure all button listeners are bound
             EnsureContextualGuide(canvas.transform);
             EnsureNetworkOverlay(canvas.transform);
+            if (canvas.GetComponent<BangBang.UI.ChatOverlay>() == null) canvas.gameObject.AddComponent<BangBang.UI.ChatOverlay>();
             if (canvas.GetComponent<BangUITheme>() == null) canvas.gameObject.AddComponent<BangUITheme>();
 
             homeScreen?.BindListeners();

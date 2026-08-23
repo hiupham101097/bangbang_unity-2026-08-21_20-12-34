@@ -23,6 +23,7 @@ namespace BangBang.Core.Network
         event Action<List<RoomSummaryDTO>> OnRoomListUpdated;
         event Action<ConnectionState> OnConnectionStateChanged;
         event Action<string> OnErrorMessage;
+        event Action<ChatMessageDTO> OnChatMessage;
 
         Task<bool> InitializeSessionAsync(string deviceId, string displayName);
         Task<bool> RefreshRoomListAsync();
@@ -41,5 +42,6 @@ namespace BangBang.Core.Network
         Task<bool> SubmitInteractionAsync(string interactionId, string action, List<string> selectedPlayers = null, List<string> selectedCards = null, int optionIndex = 0);
         Task<bool> EndTurnAsync(List<string> discardCardIds = null);
         Task<bool> RequestRematchAsync();
+        Task<bool> SendChatAsync(string message);
     }
 }
