@@ -216,10 +216,30 @@ namespace BangBang.Core.Network
             if (string.IsNullOrEmpty(CurrentRoomId)) return Fail("Chưa vào phòng.");
             string body = "{\"action\":\"" + Escape(action) + "\",\"payload\":" + (string.IsNullOrEmpty(payload) ? "{}" : payload) + "}";
             var response = await HttpAsync("POST", "/v1/rooms/" + CurrentRoomId, body, true);
-            if (!response.ok) return Fail(response.error);
+            if (!response.ok)
+            {
+                bool expiredInteraction = (action == "respond_bang" || action == "rescue" || action.StartsWith("choose_")) &&
+                    !string.IsNullOrEmpty(response.error) &&
+                    (response.error.Contains("Không có phản ứng hợp lệ") || response.error.Contains("hợp lệ"));
+                if (expiredInteraction)
+                {
+                    await RefreshCurrentRoomSnapshotAsync();
+                    return false;
+                }
+                return Fail(response.error);
+            }
             var envelope = JsonUtility.FromJson<RoomEnvelope>(response.body);
             if (envelope?.room == null) return Fail("Phản hồi phòng không hợp lệ.");
             Publish(envelope.room); return true;
+        }
+
+        private async Task RefreshCurrentRoomSnapshotAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentRoomId)) return;
+            var latest = await HttpAsync("GET", "/v1/rooms/" + CurrentRoomId, null, true);
+            if (!latest.ok) return;
+            var envelope = JsonUtility.FromJson<RoomEnvelope>(latest.body);
+            if (envelope?.room != null) Publish(envelope.room);
         }
 
         private void Publish(WorkerRoom room)

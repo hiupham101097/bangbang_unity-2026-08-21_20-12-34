@@ -266,28 +266,38 @@ namespace BangBang.UI.Interaction
             confirmButton.interactable = isValid && !(GameStateStore.Instance != null && GameStateStore.Instance.IsRequestPending);
         }
 
-        private void SubmitCurrentInteraction()
+        private async void SubmitCurrentInteraction()
         {
             if (_currentPrompt == null) return;
+            string interactionId = _currentPrompt.interactionId;
+            var players = new List<string>(_selectedPlayerIds);
+            var cards = new List<string>(_selectedCardIds);
+            int optionIndex = _selectedOptionIndex;
             GameStateStore.Instance?.SetRequestPending(true);
 
-            OnInteractionSubmitted?.Invoke(_currentPrompt.interactionId, _selectedPlayerIds, _selectedCardIds, _selectedOptionIndex);
-            GameStateStore.Instance?.Gateway?.SubmitInteractionAsync(_currentPrompt.interactionId, "SUBMIT", _selectedPlayerIds, _selectedCardIds, _selectedOptionIndex);
+            OnInteractionSubmitted?.Invoke(interactionId, players, cards, optionIndex);
             HideModal();
+            bool ok = GameStateStore.Instance?.Gateway != null && await GameStateStore.Instance.Gateway.SubmitInteractionAsync(interactionId, "SUBMIT", players, cards, optionIndex);
+            if (!ok) GameStateStore.Instance?.SetRequestPending(false);
         }
 
-        private void CancelCurrentInteraction()
+        private async void CancelCurrentInteraction()
         {
             if (_currentPrompt == null) return;
-            GameStateStore.Instance?.Gateway?.SubmitInteractionAsync(_currentPrompt.interactionId, "CANCEL");
+            string interactionId = _currentPrompt.interactionId;
             HideModal();
+            bool ok = GameStateStore.Instance?.Gateway != null && await GameStateStore.Instance.Gateway.SubmitInteractionAsync(interactionId, "CANCEL");
+            if (!ok) GameStateStore.Instance?.SetRequestPending(false);
         }
 
-        private void SubmitDefaultAutoAction()
+        private async void SubmitDefaultAutoAction()
         {
             if (_currentPrompt == null) return;
-            GameStateStore.Instance?.Gateway?.SubmitInteractionAsync(_currentPrompt.interactionId, _currentPrompt.defaultAction ?? "AUTO");
+            string interactionId = _currentPrompt.interactionId;
+            string defaultAction = _currentPrompt.defaultAction ?? "AUTO";
             HideModal();
+            bool ok = GameStateStore.Instance?.Gateway != null && await GameStateStore.Instance.Gateway.SubmitInteractionAsync(interactionId, defaultAction);
+            if (!ok) GameStateStore.Instance?.SetRequestPending(false);
         }
     }
 }
