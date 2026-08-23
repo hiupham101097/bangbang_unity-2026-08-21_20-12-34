@@ -194,7 +194,7 @@ namespace BangBang.UI.Views
 
             if (player != null)
             {
-                var sprite = CardCatalogDatabase.LoadSprite(string.IsNullOrEmpty(player.characterId) ? "Characters/willy_the_kid" : "Characters/" + player.characterId);
+                var sprite = AvatarCatalog.Load(player.avatarId, player.id);
                 if (sprite != null) avatarImg.sprite = sprite;
             }
             else

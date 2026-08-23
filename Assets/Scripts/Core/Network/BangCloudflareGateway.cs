@@ -14,12 +14,12 @@ namespace BangBang.Core.Network
 {
     public sealed class BangCloudflareGateway : MonoBehaviour, IGameGateway
     {
-        [Serializable] private class WorkerUser { public string id; public string name; }
+        [Serializable] private class WorkerUser { public string id; public string name; public string avatarId; }
         [Serializable] private class SessionEnvelope { public string token; public WorkerUser user; public string error; }
         [Serializable] private class WorkerCard { public string id; public string value; public string pickedBy; }
         [Serializable] private class WorkerPlayer
         {
-            public string id; public string name; public int seat; public bool bot; public bool ready;
+            public string id; public string name; public string avatarId; public int seat; public bool bot; public bool ready;
             public bool alive = true; public int health; public int maxHealth; public int cardCount;
             public string characterId; public string revealedRole; public string role;
             public List<string> hand = new List<string>(); public List<string> equipment = new List<string>();
@@ -89,7 +89,7 @@ namespace BangBang.Core.Network
         {
             LocalPlayerId = string.IsNullOrWhiteSpace(deviceId) ? Guid.NewGuid().ToString("N") : deviceId;
             SetConnection(ConnectionState.Connecting);
-            string body = "{\"deviceId\":\"" + Escape(LocalPlayerId) + "\",\"displayName\":\"" + Escape(displayName) + "\"}";
+            string body = "{\"deviceId\":\"" + Escape(LocalPlayerId) + "\",\"displayName\":\"" + Escape(displayName) + "\",\"avatarId\":\"" + Escape(BangBang.Core.Data.AvatarCatalog.SelectedId) + "\"}";
             var response = await HttpAsync("POST", "/v1/session", body, false);
             if (!response.ok) { SetConnection(ConnectionState.Disconnected); return Fail("Không thể kết nối Cloudflare: " + response.error); }
             var session = JsonUtility.FromJson<SessionEnvelope>(response.body);
@@ -183,12 +183,24 @@ namespace BangBang.Core.Network
         public Task<bool> SubmitInteractionAsync(string interactionId, string action, List<string> selectedPlayers = null, List<string> selectedCards = null, int optionIndex = 0)
         {
             var cards = selectedCards ?? new List<string>();
-            string actionType = _room?.pendingBang?.actionType ?? string.Empty;
+            var pending = _room?.pendingBang;
+            if (pending == null || pending.id != interactionId) return Task.FromResult(false);
+            string expectedPlayerId = pending.actionType == "general_store" ? pending.currentPickerId :
+                (pending.actionType == "kit_carlson" || pending.actionType == "lucky_duke_judgment" ? pending.actorId : pending.targetId);
+            if (!string.IsNullOrEmpty(expectedPlayerId) && expectedPlayerId != LocalPlayerId) return Task.FromResult(false);
+            string actionType = pending.actionType ?? string.Empty;
             if (actionType == "general_store") return CommandAsync("choose_general_store", "{\"cardId\":\"" + Escape(cards.FirstOrDefault()) + "\"}");
             if (actionType == "rescue") return CommandAsync("rescue", "{\"cardIds\":" + JsonArray(cards) + "}");
             if (actionType == "kit_carlson") return CommandAsync("choose_kit_carlson", "{\"cardIds\":" + JsonArray(cards) + "}");
-            if (actionType == "lucky_duke_judgment") return CommandAsync("choose_lucky_duke", "{\"cardId\":\"" + Escape(cards.FirstOrDefault()) + "\"}");
-            return CommandAsync("respond_bang", "{\"cardIds\":" + JsonArray(cards) + ",\"pass\":" + (string.Equals(action, "PASS", StringComparison.OrdinalIgnoreCase) ? "true" : "false") + "}");
+            if (actionType == "lucky_duke_judgment") return CommandAsync("choose_lucky_duke", "{\"resultCardId\":\"" + Escape(cards.FirstOrDefault()) + "\"}");
+            bool pass = string.Equals(action, "PASS", StringComparison.OrdinalIgnoreCase) || string.Equals(action, "CANCEL", StringComparison.OrdinalIgnoreCase) || cards.Count == 0;
+            return CommandAsync("respond_bang", "{\"response\":\"" + (pass ? "damage" : "card") + "\",\"cardId\":\"" + Escape(cards.FirstOrDefault()) + "\",\"cardIds\":" + JsonArray(cards) + "}");
+        }
+
+        public async Task<bool> UpdateAvatarAsync(string avatarId)
+        {
+            BangBang.Core.Data.AvatarCatalog.SelectedId = avatarId;
+            return await InitializeSessionAsync(LocalPlayerId, "Cao bồi viễn tây");
         }
 
         public Task<bool> EndTurnAsync(List<string> discardCardIds = null)
@@ -215,7 +227,6 @@ namespace BangBang.Core.Network
             _room = room;
             var snapshot = Convert(room);
             OnSnapshotReceived?.Invoke(snapshot);
-            OnInteractionReceived?.Invoke(snapshot.activeInteraction);
         }
 
         private MatchStateSnapshotDTO Convert(WorkerRoom room)
@@ -243,7 +254,7 @@ namespace BangBang.Core.Network
             };
             snapshot.players = (room.players ?? new List<WorkerPlayer>()).Select(player => new PlayerSnapshotDTO
             {
-                id = player.id, name = player.name, seat = player.seat, isBot = player.bot,
+                id = player.id, name = player.name, avatarId = player.avatarId, seat = player.seat, isBot = player.bot,
                 isHost = player.id == room.hostId, isReady = player.ready || player.bot || player.id == room.hostId,
                 isConnected = true, isAlive = player.alive, currentHealth = player.health, maxHealth = player.maxHealth,
                 characterId = player.characterId, publicRoleId = player.revealedRole,
@@ -273,9 +284,11 @@ namespace BangBang.Core.Network
         private static InteractionPromptDTO ConvertInteraction(WorkerPending pending)
         {
             if (pending == null) return null;
+            string actorId = pending.actionType == "general_store" ? pending.currentPickerId :
+                (pending.actionType == "kit_carlson" || pending.actionType == "lucky_duke_judgment" ? pending.actorId : pending.targetId);
             return new InteractionPromptDTO
             {
-                interactionId = pending.id, type = "RESPOND", actorPlayerId = pending.targetId,
+                interactionId = pending.id, type = "RESPOND", actorPlayerId = actorId,
                 title = pending.actionType ?? "Phản ứng", message = "Chọn phản ứng hợp lệ hoặc Bỏ qua",
                 requiredCount = Math.Max(1, pending.requiredDodges), requiredCardType = pending.requiredCardType,
                 validCardIds = pending.choices ?? pending.openedCardIds ?? new List<string>(), expiresAt = pending.deadline,

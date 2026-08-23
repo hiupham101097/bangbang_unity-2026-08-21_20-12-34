@@ -235,6 +235,7 @@ namespace BangBang.UI
                 homeScreen.logoImage.raycastTarget = false;
 
                 var profile = CreateSurface("ProfileSurface", new Vector2(-705f, 470f), new Vector2(430, 76), homeObj.transform);
+                homeScreen.profileButton = profile.AddComponent<Button>();
                 var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
                 avatarObj.transform.SetParent(profile.transform, false);
                 avatarObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(-164, 0);
@@ -274,6 +275,23 @@ namespace BangBang.UI
                 var gPopup = CreatePopupBox("GuidePopup", "HƯỚNG DẪN LUẬT CHƠI", "• CẢNH SÁT TRƯỞNG: Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội.\n• PHÓ CẢNH SÁT: Bảo vệ Cảnh Sát Trưởng bằng mọi giá.\n• CƯỚP (OUTLAW): Tiêu diệt Cảnh Sát Trưởng.\n• KẺ PHẢN BỘI: Người sống sót cuối cùng và hạ Cảnh Sát Trưởng sau cùng.\n\n• CỰ LY BẮN: Khoảng cách ngắn nhất quanh bàn. Vũ khí tăng tầm bắn.", homeObj.transform);
                 homeScreen.guidePopup = gPopup.Item1;
                 homeScreen.closeGuideButton = gPopup.Item2;
+
+                var pPopup = CreatePopupBox("ProfilePopup", "TÀI KHOẢN & AVATAR", "Chọn hình đại diện. Avatar sẽ hiển thị trong phòng và trên bàn đấu.", homeObj.transform);
+                homeScreen.profilePopup = pPopup.Item1;
+                homeScreen.closeProfileButton = pPopup.Item2;
+                var profileBox = pPopup.Item1.transform.Find("Box");
+                var avatarGrid = new GameObject("AvatarGrid", typeof(RectTransform), typeof(GridLayoutGroup));
+                avatarGrid.transform.SetParent(profileBox, false);
+                var avatarGridRt = avatarGrid.GetComponent<RectTransform>();
+                avatarGridRt.anchoredPosition = new Vector2(0, 5f);
+                avatarGridRt.sizeDelta = new Vector2(600, 230);
+                var avatarLayout = avatarGrid.GetComponent<GridLayoutGroup>();
+                avatarLayout.cellSize = new Vector2(108, 108);
+                avatarLayout.spacing = new Vector2(12, 12);
+                avatarLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                avatarLayout.constraintCount = 5;
+                avatarLayout.childAlignment = TextAnchor.MiddleCenter;
+                homeScreen.avatarOptionsContainer = avatarGrid.transform;
             }
 
             // CARD GALLERY VIEW

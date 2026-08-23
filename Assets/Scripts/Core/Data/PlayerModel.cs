@@ -9,6 +9,7 @@ namespace BangBang.Core.Data
     {
         public string id;
         public string name;
+        public string avatarId;
         public int seat;
         public bool isBot;
         public bool isReady;

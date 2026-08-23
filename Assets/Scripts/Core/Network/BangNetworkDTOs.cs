@@ -90,6 +90,7 @@ namespace BangBang.Core.Network
     {
         public string id;
         public string name;
+        public string avatarId;
         public int seat;
         public bool isBot;
         public bool isHost;

@@ -93,7 +93,9 @@ var index_default = {
     if (request.method === "POST" && url.pathname === "/v1/session") {
       const body = await request.json();
       if (!body.deviceId || body.deviceId.length < 8) return fail("Thi\u1EBFu deviceId.");
-      const user2 = { id: body.deviceId, name: (body.displayName || "Cao b\u1ED3i").slice(0, 24) };
+      const allowedAvatars = ["quick_jack", "iron_rose", "doctor_lee", "lucky_joe2", "role_sheriff", "role_deputy", "role_raider", "role_guardian", "role_traitor"];
+      const avatarId = allowedAvatars.includes(body.avatarId) ? body.avatarId : "quick_jack";
+      const user2 = { id: body.deviceId, name: (body.displayName || "Cao b\u1ED3i").slice(0, 24), avatarId };
       return json({ token: await sign(user2, env.AUTH_SECRET), user: user2 });
     }
     const user = await authenticate(request, env.AUTH_SECRET);
@@ -216,7 +218,7 @@ var BangBangMatch = class extends DurableObject {
     const existing = await this.load(false);
     if (existing) return fail("M\xE3 ph\xF2ng tr\xF9ng, h\xE3y t\u1EA1o l\u1EA1i.", 409);
     const maxPlayers = Math.max(4, Math.min(8, Number(data.maxPlayers || 4)));
-    const host = { id: data.user.id, name: data.user.name, seat: 0, bot: false, ready: false, alive: true, health: 0, maxHealth: 0, cardCount: 0, hand: [], equipment: [], attackRange: 1 };
+    const host = { id: data.user.id, name: data.user.name, avatarId: data.user.avatarId, seat: 0, bot: false, ready: false, alive: true, health: 0, maxHealth: 0, cardCount: 0, hand: [], equipment: [], attackRange: 1 };
     const state = { id: data.code, code: data.code, hostId: host.id, maxPlayers, turnDurationSeconds: Math.max(20, Number(data.turnDurationSeconds || 60)), status: "waiting", phase: "lobby", players: [host], deck: [], discard: [], turnNumber: 0, bangUsedThisTurn: 0, publicLog: ["Ph\xF2ng \u0111\xE3 \u0111\u01B0\u1EE3c t\u1EA1o."] };
     await this.save(state);
     return json({ room: this.snapshot(state, data.user.id) }, 201);
@@ -236,7 +238,7 @@ var BangBangMatch = class extends DurableObject {
     if (requestKey && state.processedRequestIds?.includes(requestKey)) return state;
     if (command.action === "join") {
       if (state.status !== "waiting" || state.players.length >= state.maxPlayers) throw Error("Ph\xF2ng \u0111\xE3 \u0111\u1EA7y ho\u1EB7c \u0111\xE3 b\u1EAFt \u0111\u1EA7u.");
-      if (!state.players.some((player) => player.id === user.id)) state.players.push({ id: user.id, name: user.name, seat: state.players.length, bot: false, ready: false, alive: true, health: 0, maxHealth: 0, cardCount: 0, hand: [], equipment: [], attackRange: 1 });
+      if (!state.players.some((player) => player.id === user.id)) state.players.push({ id: user.id, name: user.name, avatarId: user.avatarId, seat: state.players.length, bot: false, ready: false, alive: true, health: 0, maxHealth: 0, cardCount: 0, hand: [], equipment: [], attackRange: 1 });
     } else {
       const player = state.players.find((item) => item.id === user.id);
       if (!player) throw Error("B\u1EA1n ch\u01B0a \u1EDF trong ph\xF2ng n\xE0y.");
@@ -254,7 +256,8 @@ var BangBangMatch = class extends DurableObject {
       } else if (command.action === "add_bot") {
         if (user.id !== state.hostId || state.status !== "waiting" || state.players.length >= state.maxPlayers) throw Error("Kh\xF4ng th\u1EC3 th\xEAm bot.");
         const seat = state.players.length;
-        state.players.push({ id: `bot_${crypto.randomUUID()}`, name: `Bot ${seat}`, seat, bot: true, ready: true, alive: true, health: 0, maxHealth: 0, cardCount: 0, hand: [], equipment: [], attackRange: 1 });
+        const botAvatars = ["doctor_lee", "iron_rose", "lucky_joe2", "role_raider", "role_guardian"];
+        state.players.push({ id: `bot_${crypto.randomUUID()}`, name: `Bot ${seat}`, avatarId: botAvatars[seat % botAvatars.length], seat, bot: true, ready: true, alive: true, health: 0, maxHealth: 0, cardCount: 0, hand: [], equipment: [], attackRange: 1 });
       } else if (command.action === "remove_bot") {
         const botId = String(payload.botId || "");
         if (user.id !== state.hostId || state.status !== "waiting") throw Error("Kh\xF4ng th\u1EC3 x\xF3a bot.");
@@ -1387,7 +1390,7 @@ async function authenticate(request, secret) {
   const [payload, signature] = token.split(".");
   if (!payload || !signature || signature !== await signatureFor(payload, secret)) return null;
   const user = JSON.parse(base64ToText(payload));
-  return user.exp > Date.now() ? { id: user.id, name: user.name } : null;
+  return user.exp > Date.now() ? { id: user.id, name: user.name, avatarId: user.avatarId ?? "quick_jack" } : null;
 }
 __name(authenticate, "authenticate");
 function toBase64(bytes) {
@@ -1410,4 +1413,3 @@ export {
   index_default as default
 };
 //# sourceMappingURL=index.js.map
-

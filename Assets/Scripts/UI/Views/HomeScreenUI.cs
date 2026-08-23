@@ -16,6 +16,10 @@ namespace BangBang.UI.Views
         public Image avatarImage;
         public Text playerNameText;
         public Text playerBountyText;
+        public Button profileButton;
+        public GameObject profilePopup;
+        public Button closeProfileButton;
+        public Transform avatarOptionsContainer;
 
         [Header("3 Main Home Buttons")]
         public Button startButton; // BẮT ĐẦU -> Chuyển vào Sảnh Chờ (Lobby)
@@ -46,7 +50,9 @@ namespace BangBang.UI.Views
             SetupVisuals();
             if (questsPopup != null) questsPopup.SetActive(false);
             if (guidePopup != null) guidePopup.SetActive(false);
+            if (profilePopup != null) profilePopup.SetActive(false);
             if (cardGalleryView != null) cardGalleryView.gameObject.SetActive(false);
+            BuildAvatarOptions();
         }
 
         public void BindListeners()
@@ -137,6 +143,51 @@ namespace BangBang.UI.Views
                     if (guidePopup != null) guidePopup.SetActive(false);
                 });
             }
+
+            if (profileButton != null)
+            {
+                profileButton.onClick.RemoveAllListeners();
+                profileButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (profilePopup != null) profilePopup.SetActive(true);
+                });
+            }
+
+            if (closeProfileButton != null)
+            {
+                closeProfileButton.onClick.RemoveAllListeners();
+                closeProfileButton.onClick.AddListener(() =>
+                {
+                    AudioManager.Instance?.PlaySFX("button_tap");
+                    if (profilePopup != null) profilePopup.SetActive(false);
+                });
+            }
+        }
+
+        private void BuildAvatarOptions()
+        {
+            if (avatarOptionsContainer == null) return;
+            foreach (Transform child in avatarOptionsContainer) Destroy(child.gameObject);
+            foreach (var sprite in AvatarCatalog.LoadAll())
+            {
+                var option = new GameObject("Avatar_" + sprite.name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+                option.transform.SetParent(avatarOptionsContainer, false);
+                option.GetComponent<RectTransform>().sizeDelta = new Vector2(108, 108);
+                option.GetComponent<LayoutElement>().preferredWidth = 108;
+                option.GetComponent<LayoutElement>().preferredHeight = 108;
+                option.GetComponent<Image>().sprite = sprite;
+                option.GetComponent<Image>().preserveAspect = true;
+                string avatarId = sprite.name;
+                option.GetComponent<Button>().onClick.AddListener(async () =>
+                {
+                    AvatarCatalog.SelectedId = avatarId;
+                    if (avatarImage != null) avatarImage.sprite = AvatarCatalog.Load(avatarId);
+                    if (GameStateStore.Instance?.Gateway is BangCloudflareGateway cloudflare)
+                        await cloudflare.UpdateAvatarAsync(avatarId);
+                    if (profilePopup != null) profilePopup.SetActive(false);
+                });
+            }
         }
 
         public void SetupVisuals()
@@ -163,7 +214,7 @@ namespace BangBang.UI.Views
 
             if (avatarImage != null)
             {
-                var charSprite = CardCatalogDatabase.LoadSprite("Characters/willy_the_kid");
+                var charSprite = AvatarCatalog.Load(AvatarCatalog.SelectedId);
                 if (charSprite != null) avatarImage.sprite = charSprite;
             }
 

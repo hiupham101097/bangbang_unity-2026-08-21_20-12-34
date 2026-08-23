@@ -57,9 +57,9 @@ namespace BangBang.UI
             }
 
             // Avatar sprite
-            if (avatarImage != null && player.character != null)
+            if (avatarImage != null)
             {
-                var sprite = CardCatalogDatabase.LoadSprite(player.character.resourcePath);
+                var sprite = AvatarCatalog.Load(player.avatarId, player.id);
                 if (sprite != null)
                 {
                     avatarImage.sprite = sprite;

@@ -201,10 +201,9 @@ namespace BangBang.UI.Views
                                          r == "outlaw" ? "💀 CƯỚP (OUTLAW)" : "🗡️ PHẢN BỘI (RENEGADE)";
                 }
 
-                if (localAvatarImage != null && !string.IsNullOrEmpty(local.characterId))
+                if (localAvatarImage != null)
                 {
-                    var charInfo = CardCatalogDatabase.GetCharacterInfo(local.characterId);
-                    localAvatarImage.sprite = CardCatalogDatabase.LoadSprite(charInfo.resourcePath);
+                    localAvatarImage.sprite = AvatarCatalog.Load(local.avatarId, local.id);
                 }
 
                 RenderBulletHealth(local.currentHealth, local.maxHealth);
@@ -342,6 +341,7 @@ namespace BangBang.UI.Views
                 {
                     id = p.id,
                     name = p.name,
+                    avatarId = p.avatarId,
                     seat = p.seat,
                     isAlive = p.isAlive,
                     health = p.currentHealth,
