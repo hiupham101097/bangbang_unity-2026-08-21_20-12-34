@@ -94,7 +94,7 @@ namespace BangBang.Core.Network
             if (!response.ok) { SetConnection(ConnectionState.Disconnected); return Fail("Không thể kết nối Cloudflare: " + response.error); }
             var session = JsonUtility.FromJson<SessionEnvelope>(response.body);
             if (session == null || string.IsNullOrEmpty(session.token)) { SetConnection(ConnectionState.Disconnected); return Fail("Cloudflare không trả token phiên hợp lệ."); }
-            _token = session.token;
+            _token = session.token.Trim();
             if (session.user != null && !string.IsNullOrEmpty(session.user.id)) LocalPlayerId = session.user.id;
             SetConnection(ConnectionState.Connected);
             return true;
@@ -307,7 +307,12 @@ namespace BangBang.Core.Network
         }
         private IEnumerator HttpCoroutine(string method, string path, string body, bool authenticated, TaskCompletionSource<HttpResult> completion)
         {
-            using (var request = new UnityWebRequest(serverBaseUrl.TrimEnd('/') + path, method))
+            string requestUrl = serverBaseUrl.TrimEnd('/') + path;
+            if (authenticated && !string.IsNullOrEmpty(_token))
+            {
+                requestUrl += (requestUrl.Contains("?") ? "&" : "?") + "token=" + UnityWebRequest.EscapeURL(_token);
+            }
+            using (var request = new UnityWebRequest(requestUrl, method))
             {
                 if (body != null) request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
                 request.downloadHandler = new DownloadHandlerBuffer(); request.SetRequestHeader("Content-Type", "application/json");
@@ -318,7 +323,7 @@ namespace BangBang.Core.Network
             }
         }
 
-        private bool Fail(string error) { OnErrorMessage?.Invoke(error); OnActionRejected?.Invoke(string.Empty, error); return false; }
+        private bool Fail(string error) { OnErrorMessage?.Invoke(error); return false; }
         private void SetConnection(ConnectionState state) { CurrentConnectionState = state; OnConnectionStateChanged?.Invoke(state); }
         private static string SlotCard(List<WorkerCard> cards, int index) => cards != null && index >= 0 && index < cards.Count ? cards[index].id : string.Empty;
         private static List<int> LockedSlots(List<WorkerCard> cards) { var result = new List<int>(); if (cards != null) for (int i = 0; i < cards.Count; i++) if (!string.IsNullOrEmpty(cards[i].pickedBy)) result.Add(i); return result; }
