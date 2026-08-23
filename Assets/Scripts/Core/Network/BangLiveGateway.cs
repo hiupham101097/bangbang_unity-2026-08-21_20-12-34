@@ -20,6 +20,14 @@ namespace BangBang.Core.Network
         public string data; // Contains stringified JSON data from server or to server
     }
 
+    [Serializable]
+    public class VoiceFrameDTO
+    {
+        public string fromPlayerId;
+        public string payload;
+        public float level;
+    }
+
     public class BangLiveGateway : MonoBehaviour, IGameGateway
     {
         public ConnectionState CurrentConnectionState { get; private set; } = ConnectionState.Disconnected;
@@ -32,6 +40,7 @@ namespace BangBang.Core.Network
         public event Action<ConnectionState> OnConnectionStateChanged;
         public event Action<string> OnErrorMessage;
         public event Action<ChatMessageDTO> OnChatMessage;
+        public event Action<string, string, float> OnVoiceFrame;
 
         [Header("Node.js Server URL")]
         public string serverWsUrl = "ws://localhost:3000";
@@ -221,6 +230,12 @@ namespace BangBang.Core.Network
                     _roomMutationReady = null;
                     OnActionRejected?.Invoke(string.Empty, msg.data);
                 }
+                else if (msg.type == "voice.frame")
+                {
+                    var frame = JsonUtility.FromJson<VoiceFrameDTO>(msg.data);
+                    if (frame != null && !string.IsNullOrEmpty(frame.fromPlayerId) && !string.IsNullOrEmpty(frame.payload))
+                        OnVoiceFrame?.Invoke(frame.fromPlayerId, frame.payload, frame.level);
+                }
                 else if (msg.type == "session.ready")
                 {
                     var session = JsonUtility.FromJson<SessionReadyDTO>(msg.data);
@@ -314,6 +329,12 @@ namespace BangBang.Core.Network
             {
                 return false;
             }
+        }
+
+        public Task<bool> SendVoiceFrameAsync(string base64Pcm16, float level)
+        {
+            if (string.IsNullOrEmpty(CurrentRoomId) || string.IsNullOrEmpty(base64Pcm16)) return Task.FromResult(false);
+            return SendEventAsync("voice.frame", "{\"payload\":\"" + base64Pcm16 + "\",\"level\":" + level.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) + "}");
         }
 
         // --- IGameGateway Implementation ---

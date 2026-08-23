@@ -182,6 +182,7 @@ namespace BangBang.UI
             if (responsiveLayout == null) responsiveLayout = canvas.gameObject.AddComponent<BangResponsiveLayout>();
 
             if (FindAnyObjectByType<AudioManager>() == null) new GameObject("AudioManager", typeof(AudioManager));
+            if (FindAnyObjectByType<VoiceChatManager>() == null) new GameObject("VoiceChatManager", typeof(VoiceChatManager));
             if (FindAnyObjectByType<FXManager>() == null) new GameObject("FXManager", typeof(FXManager));
 
             // Gateways
@@ -621,11 +622,16 @@ namespace BangBang.UI
                 gameTableView.opponentSeatsContainer = ocRt;
 
                 // Center Zone
-                var centerZone = new GameObject("CenterZone", typeof(RectTransform));
+                var centerZone = new GameObject("CenterZone", typeof(RectTransform), typeof(Image), typeof(Outline));
                 centerZone.transform.SetParent(tableObj.transform, false);
                 var czRt = centerZone.GetComponent<RectTransform>();
                 czRt.anchoredPosition = new Vector2(0, 60f);
-                czRt.sizeDelta = new Vector2(500, 200);
+                czRt.sizeDelta = new Vector2(500, 210);
+                centerZone.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+                centerZone.GetComponent<Image>().type = Image.Type.Sliced;
+                centerZone.GetComponent<Image>().color = new Color(0.055f, 0.035f, 0.022f, 0.78f);
+                centerZone.GetComponent<Outline>().effectColor = new Color(BangUITheme.Brass.r, BangUITheme.Brass.g, BangUITheme.Brass.b, 0.55f);
+                centerZone.GetComponent<Outline>().effectDistance = new Vector2(2f, -2f);
 
                 var drawObj = new GameObject("DrawPile", typeof(RectTransform), typeof(Image));
                 drawObj.transform.SetParent(centerZone.transform, false);
@@ -659,11 +665,16 @@ namespace BangBang.UI
                 gameTableView.combatLogText = logObj.GetComponent<Text>();
 
                 // Local Player Dashboard (bottom-left)
-                var localDashObj = new GameObject("LocalPlayerDash", typeof(RectTransform));
+                var localDashObj = new GameObject("LocalPlayerDash", typeof(RectTransform), typeof(Image), typeof(Outline));
                 localDashObj.transform.SetParent(tableObj.transform, false);
                 var ldRt = localDashObj.GetComponent<RectTransform>();
                 ldRt.anchoredPosition = new Vector2(-745f, -400f);
                 ldRt.sizeDelta = new Vector2(320, 180);
+                localDashObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+                localDashObj.GetComponent<Image>().type = Image.Type.Sliced;
+                localDashObj.GetComponent<Image>().color = new Color(0.055f, 0.035f, 0.022f, 0.92f);
+                localDashObj.GetComponent<Outline>().effectColor = BangUITheme.Brass;
+                localDashObj.GetComponent<Outline>().effectDistance = new Vector2(2f, -2f);
 
                 // Local avatar
                 var localAvatarObj = new GameObject("LocalAvatar", typeof(RectTransform), typeof(Image));
@@ -744,6 +755,10 @@ namespace BangBang.UI
                 gameTableView.endTurnButton = CreateButton("EndTurnBtn", "KẾT THÚC LƯỢT", new Vector2(770f, -390f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(210, 64));
                 gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(770f, -320f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(190, 56));
                 gameTableView.abilityButton.gameObject.SetActive(false);
+
+                var micButton = CreateButton("VoiceMicBtn", "MIC: TẮT", new Vector2(-770f, 430f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(180, 52));
+                var voice = FindAnyObjectByType<VoiceChatManager>();
+                if (voice != null) voice.Initialize(micButton);
 
                 var introRoot = CreateFullScreenPanel("MatchStartOverlay", tableObj.transform);
                 introRoot.GetComponent<Image>().color = new Color(0.035f, 0.025f, 0.02f, 0.96f);

@@ -21,6 +21,12 @@ class GameRoom {
     rematchVotes = new Set();
     static RECONNECT_GRACE_MS = 90_000;
     bangCardsPlayedThisTurn = 0;
+    // Public-behaviour memory used by bots. Positive values mean a player has
+    // behaved aggressively toward the Sheriff; negative values mean support.
+    // Bots deliberately do not read unrevealed roleId values when targeting.
+    botSuspicion = new Map();
+    voiceRate = new Map();
+    chatRate = new Map();
     // Turn State
     currentTurnPlayerId = "";
     currentPhase = "";
@@ -91,7 +97,8 @@ class GameRoom {
             judgementCard: this.judgementCard, judgementEffect: this.judgementEffect, judgementResult: this.judgementResult,
             pendingDrawCards: this.pendingDrawCards, pendingJudgementCards: this.pendingJudgementCards, pendingJudgementKind: this.pendingJudgementKind,
             rules: this.rules, combatLogs: this.combatLogs, rematchVotes: Array.from(this.rematchVotes),
-            disconnectedAt: Array.from(this.disconnectedAt.entries()), bangCardsPlayedThisTurn: this.bangCardsPlayedThisTurn
+            disconnectedAt: Array.from(this.disconnectedAt.entries()), bangCardsPlayedThisTurn: this.bangCardsPlayedThisTurn,
+            botSuspicion: Array.from(this.botSuspicion.entries())
         };
     }
     static restore(data, wss, onChanged, onGameEnded) {
@@ -135,6 +142,7 @@ class GameRoom {
         room.rematchVotes = new Set(data.rematchVotes || []);
         room.disconnectedAt = new Map(data.disconnectedAt || []);
         room.bangCardsPlayedThisTurn = data.bangCardsPlayedThisTurn || 0;
+        room.botSuspicion = new Map(data.botSuspicion || []);
         for (const player of room.players.values())
             player.isConnected = false;
         room.rearmRestoredTimer();
@@ -327,13 +335,42 @@ class GameRoom {
         else if (type === 'chat.send') {
             const player = this.players.get(socketId);
             const message = String(data.message || '').trim().slice(0, 240);
-            if (player && message)
-                this.broadcastMessage('chat.message', { playerId: player.id, playerName: player.name, message, sentAt: Date.now() });
+            const now = Date.now();
+            const rate = this.chatRate.get(socketId) || { windowAt: now, count: 0 };
+            if (now - rate.windowAt >= 5000) {
+                rate.windowAt = now;
+                rate.count = 0;
+            }
+            rate.count++;
+            this.chatRate.set(socketId, rate);
+            if (player && message && rate.count <= 5)
+                this.broadcastMessage('chat.message', { playerId: player.id, playerName: player.name, message, sentAt: now });
         }
         else if (type === 'voice.signal') {
             const targetId = String(data.targetPlayerId || '');
             if (this.players.has(targetId))
                 this.sendPrivateMessage(targetId, 'voice.signal', { fromPlayerId: socketId, signal: data.signal });
+        }
+        else if (type === 'voice.frame') {
+            const player = this.players.get(socketId);
+            const payload = String(data.payload || '');
+            const level = Math.max(0, Math.min(1, Number(data.level) || 0));
+            const now = Date.now();
+            const rate = this.voiceRate.get(socketId) || { windowAt: now, count: 0 };
+            if (now - rate.windowAt >= 1000) {
+                rate.windowAt = now;
+                rate.count = 0;
+            }
+            rate.count++;
+            this.voiceRate.set(socketId, rate);
+            // 20 ms mono PCM16 packets are ~856 base64 chars. Keep a hard cap
+            // so voice cannot be abused to inflate websocket traffic.
+            if (rate.count <= 55 && player && player.isConnected && payload.length > 0 && payload.length <= 2048) {
+                for (const peer of this.alivePlayers()) {
+                    if (peer.id !== socketId && !peer.isBot && peer.isConnected)
+                        this.sendPrivateMessage(peer.id, 'voice.frame', { fromPlayerId: socketId, payload, level });
+                }
+            }
         }
     }
     handleDisconnect(socketId) {
@@ -681,7 +718,7 @@ class GameRoom {
             bot.draftCharacterSlot1 = first;
             bot.draftCharacterSlot2 = second;
             bot.draftCharacterOptions = [this.characterPool[first], this.characterPool[second]];
-            bot.characterId = bot.draftCharacterOptions[Math.floor(Math.random() * 2)];
+            bot.characterId = this.chooseBotCharacter(bot, bot.draftCharacterOptions);
             this.characterSlotLocks.set(first, bot.id);
             this.characterSlotLocks.set(second, bot.id);
         }
@@ -1153,29 +1190,57 @@ class GameRoom {
     runBotTurn(bot) {
         if (this.state !== GameState_1.ServerGameState.PLAY || this.currentTurnPlayerId !== bot.id)
             return;
-        if (bot.characterId === 'sid_ketchum' && bot.currentHealth < bot.maxHealth && bot.hand.length >= 2) {
-            this.handleActivateAbility(bot.id, { cardIds: bot.hand.slice(0, 2) });
+        if (bot.characterId === 'sid_ketchum' && bot.currentHealth <= Math.max(2, bot.maxHealth - 1) && bot.hand.length >= 3) {
+            const expendable = [...bot.hand]
+                .sort((a, b) => this.botCardKeepValue(bot, a) - this.botCardKeepValue(bot, b))
+                .slice(0, 2);
+            this.handleActivateAbility(bot.id, { cardIds: expendable });
         }
         if (this.state !== GameState_1.ServerGameState.PLAY)
             return;
         const beer = bot.hand.find(c => this.cardType(c) === 'beer');
-        if (beer && bot.currentHealth < bot.maxHealth && this.alivePlayers().length > 2)
+        if (beer && bot.currentHealth < bot.maxHealth && this.alivePlayers().length > 2 && (bot.currentHealth <= 2 || bot.hand.length > bot.currentHealth)) {
             this.handlePlayCard(bot.id, { cardId: beer, targetPlayerIds: [] });
+        }
         if (this.state !== GameState_1.ServerGameState.PLAY)
             return;
         const equipmentTypes = new Set(['volcanic', 'schofield', 'remington', 'rev_carabine', 'winchester', 'scope', 'mustang', 'barrel', 'dynamite']);
-        const equipment = bot.hand.find(c => equipmentTypes.has(this.cardType(c)));
-        if (equipment)
+        let equipment = bot.hand
+            .filter(c => equipmentTypes.has(this.cardType(c)))
+            .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
+        while (equipment && this.state === GameState_1.ServerGameState.PLAY) {
+            const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: equipment, targetPlayerIds: [] });
+            if (bot.hand.length >= before)
+                break;
+            equipment = bot.hand
+                .filter(c => equipmentTypes.has(this.cardType(c)))
+                .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
+        }
         if (this.state !== GameState_1.ServerGameState.PLAY)
             return;
         const target = this.chooseBotTarget(bot);
+        const disrupt = bot.hand.find(c => ['jail', 'panico', 'cat_balou', 'duello'].includes(this.cardType(c)));
+        if (disrupt && target) {
+            const type = this.cardType(disrupt);
+            const valid = type !== 'jail' || (target.roleId !== 'sheriff' && !target.equipment.some(c => this.cardType(c) === 'jail'));
+            const inRange = type !== 'panico' || this.calculateDistance(bot, target) <= 1;
+            if (valid && inRange)
+                this.handlePlayCard(bot.id, { cardId: disrupt, targetPlayerIds: [target.id] });
+        }
+        if (this.state !== GameState_1.ServerGameState.PLAY)
+            return;
+        const drawAction = bot.hand.find(c => ['dilizenza', 'wells_fargo'].includes(this.cardType(c)));
+        if (drawAction)
+            this.handlePlayCard(bot.id, { cardId: drawAction, targetPlayerIds: [] });
+        if (this.state !== GameState_1.ServerGameState.PLAY)
+            return;
         const bang = bot.hand.find(c => this.cardType(c) === 'bang');
         if (bang && target)
             this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
         if (this.state !== GameState_1.ServerGameState.PLAY)
             return;
-        const globalAction = bot.hand.find(c => ['general_store', 'indiani', 'gatling', 'saloon', 'dilizenza', 'wells_fargo'].includes(this.cardType(c)));
+        const globalAction = bot.hand.find(c => this.shouldBotPlayGlobal(bot, this.cardType(c)));
         if (globalAction)
             this.handlePlayCard(bot.id, { cardId: globalAction, targetPlayerIds: [] });
         if (this.state === GameState_1.ServerGameState.PLAY)
@@ -1184,25 +1249,90 @@ class GameRoom {
     chooseBotTarget(bot) {
         const candidates = this.alivePlayers().filter(player => player.id !== bot.id && this.isTargetable(bot, player));
         const score = (target) => {
-            let value = (target.maxHealth - target.currentHealth) * 2;
+            let value = (target.maxHealth - target.currentHealth) * 3 + (target.hand.length * 0.35);
+            const suspicion = this.botSuspicion.get(target.id) || 0;
             if (bot.roleId === 'outlaw')
                 value += target.roleId === 'sheriff' ? 100 : 0;
             else if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') {
+                value += suspicion * 8;
                 if (target.isRoleRevealed && target.roleId === 'outlaw')
                     value += 100;
                 if (target.isRoleRevealed && target.roleId === 'deputy')
                     value -= 100;
+                if (target.roleId === 'sheriff')
+                    value -= 1000;
             }
             else if (bot.roleId === 'renegade') {
                 const alive = this.alivePlayers();
                 if (alive.length === 2 && target.roleId === 'sheriff')
                     value += 100;
-                else if (target.roleId !== 'sheriff')
-                    value += 20;
+                else if (target.roleId === 'sheriff')
+                    value -= 60 + Math.max(0, 3 - target.currentHealth) * 20;
+                else
+                    value += 20 + suspicion * 2;
             }
+            if (target.currentHealth === 1)
+                value += 12;
+            value += Math.random() * 2.5;
             return value;
         };
         return candidates.sort((a, b) => score(b) - score(a))[0];
+    }
+    chooseBotCharacter(bot, options) {
+        const score = (id) => {
+            let value = 0;
+            if (['jourdonnais', 'paul_regret', 'bart_cassidy'].includes(id))
+                value += bot.roleId === 'sheriff' ? 9 : 5;
+            if (['willy_the_kid', 'slab_the_killer', 'calamity_janet'].includes(id))
+                value += bot.roleId === 'outlaw' ? 9 : 4;
+            if (['kit_carlson', 'black_jack', 'jesse_jones'].includes(id))
+                value += 6;
+            if (['sid_ketchum', 'suzy_lafayette'].includes(id))
+                value += bot.roleId === 'renegade' ? 8 : 5;
+            return value + Math.random() * 2;
+        };
+        return [...options].sort((a, b) => score(b) - score(a))[0];
+    }
+    botCardKeepValue(bot, card) {
+        const type = this.cardType(card);
+        if (type === 'beer')
+            return bot.currentHealth <= 2 ? 100 : 35;
+        if (type === 'dodge')
+            return 80;
+        if (type === 'bang')
+            return bot.roleId === 'outlaw' ? 65 : 45;
+        if (['barrel', 'mustang'].includes(type))
+            return 60;
+        if (['wells_fargo', 'dilizenza'].includes(type))
+            return 55;
+        return 20;
+    }
+    botEquipmentValue(bot, card) {
+        const type = this.cardType(card);
+        if (type === 'barrel')
+            return bot.currentHealth <= 2 ? 100 : 75;
+        if (type === 'mustang')
+            return bot.roleId === 'sheriff' ? 90 : 65;
+        if (type === 'volcanic')
+            return bot.hand.filter(c => this.cardType(c) === 'bang').length * 25 + 45;
+        if (type === 'dynamite')
+            return bot.currentHealth <= 2 ? 5 : 30;
+        const ranges = { schofield: 52, remington: 58, rev_carabine: 64, winchester: 70, scope: 62 };
+        return ranges[type] || 25;
+    }
+    shouldBotPlayGlobal(bot, type) {
+        if (type === 'general_store')
+            return true;
+        if (type === 'saloon')
+            return bot.currentHealth < bot.maxHealth && this.alivePlayers().filter(p => p.currentHealth < p.maxHealth).length <= 2;
+        if (!['indiani', 'gatling'].includes(type))
+            return false;
+        const sheriff = this.alivePlayers().find(p => p.roleId === 'sheriff');
+        if (bot.roleId === 'outlaw')
+            return !!sheriff && sheriff.currentHealth <= 2;
+        if (bot.roleId === 'sheriff' || bot.roleId === 'deputy')
+            return this.alivePlayers().some(p => p.id !== bot.id && (this.botSuspicion.get(p.id) || 0) >= 2);
+        return this.alivePlayers().length <= 3;
     }
     drawCards(player, count) {
         for (let n = 0; n < count; n++) {
@@ -1273,6 +1403,7 @@ class GameRoom {
             }
             this.bangCardsPlayedThisTurn++;
         }
+        this.observePublicAction(p, target, type);
         p.hand.splice(idx, 1);
         this.addCombatLog(`${p.name} dùng ${type}${target ? ` lên ${target.name}` : ''}.`);
         if (this.isEquipment(type))
@@ -1317,6 +1448,23 @@ class GameRoom {
                 return;
         }
         this.broadcastSnapshot();
+    }
+    observePublicAction(actor, target, type) {
+        if (target && ['bang', 'duello', 'jail', 'cat_balou', 'panico'].includes(type)) {
+            let delta = 0;
+            if (target.roleId === 'sheriff')
+                delta = type === 'bang' || type === 'duello' ? 2 : 1;
+            else if (target.isRoleRevealed && target.roleId === 'outlaw')
+                delta = -1.25;
+            if (delta !== 0)
+                this.botSuspicion.set(actor.id, Math.max(-5, Math.min(8, (this.botSuspicion.get(actor.id) || 0) + delta)));
+        }
+        if (type === 'saloon') {
+            const sheriff = this.alivePlayers().find(player => player.roleId === 'sheriff');
+            if (sheriff && sheriff.currentHealth < sheriff.maxHealth) {
+                this.botSuspicion.set(actor.id, Math.max(-5, (this.botSuspicion.get(actor.id) || 0) - 0.5));
+            }
+        }
     }
     reject(playerId, reason) {
         this.sendPrivateMessage(playerId, 'game.action.rejected', { reason, revision: this.revision });

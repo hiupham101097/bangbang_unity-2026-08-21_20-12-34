@@ -144,6 +144,8 @@ var BangBangMatch = class extends DurableObject {
     __name(this, "BangBangMatch");
   }
   stateData;
+  voiceRate = /* @__PURE__ */ new Map();
+  chatRate = /* @__PURE__ */ new Map();
   constructor(ctx, env) {
     super(ctx, env);
   }
@@ -165,7 +167,37 @@ var BangBangMatch = class extends DurableObject {
     const user = ws.deserializeAttachment();
     if (!user) return;
     try {
-      await this.apply(user, JSON.parse(message));
+      const incoming = JSON.parse(message);
+      if (incoming?.action === "voice_frame") {
+        const payload = String(incoming.payload || "");
+        const now = Date.now();
+        const rate = this.voiceRate.get(user.id) || { at: now, count: 0 };
+        if (now - rate.at >= 1e3) { rate.at = now; rate.count = 0; }
+        rate.count++;
+        this.voiceRate.set(user.id, rate);
+        if (rate.count <= 55 && payload.length > 0 && payload.length <= 2048) {
+          const frame = JSON.stringify({ type: "voice_frame", fromPlayerId: user.id, payload, level: Math.max(0, Math.min(1, Number(incoming.level) || 0)) });
+          for (const peer of this.ctx.getWebSockets()) {
+            const peerUser = peer.deserializeAttachment();
+            if (peerUser?.id !== user.id) peer.send(frame);
+          }
+        }
+        return;
+      }
+      if (incoming?.action === "chat_send") {
+        const messageText = String(incoming.message || "").trim().slice(0, 240);
+        const now = Date.now();
+        const rate = this.chatRate.get(user.id) || { at: now, count: 0 };
+        if (now - rate.at >= 5e3) { rate.at = now; rate.count = 0; }
+        rate.count++;
+        this.chatRate.set(user.id, rate);
+        if (messageText && rate.count <= 5) {
+          const frame = JSON.stringify({ type: "chat_message", playerId: user.id, playerName: String(user.name || "Cao bồi").slice(0, 32), message: messageText, sentAt: now });
+          for (const peer of this.ctx.getWebSockets()) peer.send(frame);
+        }
+        return;
+      }
+      await this.apply(user, incoming);
     } catch (error) {
       ws.send(JSON.stringify({ type: "error", error: error instanceof Error ? error.message : "L\u1ED7i m\xE1y ch\u1EE7" }));
     }

@@ -185,7 +185,10 @@ namespace BangBang.UI.Views
 
             if (endTurnButton != null)
             {
-                endTurnButton.interactable = isMyTurn && string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) && !GameStateStore.Instance.IsRequestPending;
+                bool canEnd = isMyTurn && string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) && !GameStateStore.Instance.IsRequestPending;
+                endTurnButton.interactable = canEnd;
+                var endLabel = endTurnButton.GetComponentInChildren<Text>();
+                if (endLabel != null) endLabel.text = canEnd ? "KẾT THÚC LƯỢT" : (isMyTurn ? "ĐANG XỬ LÝ…" : "CHỜ ĐỐI THỦ");
             }
 
             // 3. Local Dashboard
@@ -669,11 +672,13 @@ namespace BangBang.UI.Views
             var snapshot = GameStateStore.Instance.CurrentSnapshot;
             if (snapshot == null || snapshot.state != ServerGameState.PLAY || !string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) || snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId) return;
 
-            string targetId = null;
             if (card.info.requiresTarget)
             {
-                var targetableOpp = snapshot.players.Find(p => p.id != GameStateStore.Instance.LocalPlayerId && p.isTargetable && p.isAlive);
-                if (targetableOpp != null) targetId = targetableOpp.id;
+                // Never auto-fire at the first seat: it feels random and is
+                // especially punishing in a hidden-role game. Dragging a
+                // targeted card now enters the same explicit aiming flow as a tap.
+                HandleCardSelected(card);
+                return;
             }
 
             CancelCardSelection();
@@ -682,8 +687,7 @@ namespace BangBang.UI.Views
 
             if (GameStateStore.Instance?.Gateway != null)
             {
-                var targetList = targetId != null ? new List<string> { targetId } : null;
-                await GameStateStore.Instance.Gateway.PlayCardAsync(card.cardId, targetList);
+                await GameStateStore.Instance.Gateway.PlayCardAsync(card.cardId, null);
             }
         }
 

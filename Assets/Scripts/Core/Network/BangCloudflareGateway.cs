@@ -43,7 +43,7 @@ namespace BangBang.Core.Network
             public List<string> hand = new List<string>();
         }
         [Serializable] private class RoomEnvelope { public WorkerRoom room; public string error; }
-        [Serializable] private class WsEnvelope { public string type; public WorkerRoom room; public string error; }
+        [Serializable] private class WsEnvelope { public string type; public WorkerRoom room; public string error; public string fromPlayerId; public string payload; public float level; public string playerId; public string playerName; public string message; public long sentAt; }
         [Serializable] private class WorkerRoomSummary
         {
             public string id; public string code; public int maxPlayers; public int turnDurationSeconds;
@@ -63,6 +63,7 @@ namespace BangBang.Core.Network
         public event Action<ConnectionState> OnConnectionStateChanged;
         public event Action<string> OnErrorMessage;
         public event Action<ChatMessageDTO> OnChatMessage;
+        public event Action<string, string, float> OnVoiceFrame;
 
         private string _token;
         private ClientWebSocket _socket;
@@ -78,7 +79,15 @@ namespace BangBang.Core.Network
                 try
                 {
                     var envelope = JsonUtility.FromJson<WsEnvelope>(raw);
-                    if (envelope != null && envelope.room != null)
+                    if (envelope != null && envelope.type == "voice_frame" && !string.IsNullOrEmpty(envelope.payload))
+                    {
+                        OnVoiceFrame?.Invoke(envelope.fromPlayerId, envelope.payload, envelope.level);
+                    }
+                    else if (envelope != null && envelope.type == "chat_message" && !string.IsNullOrEmpty(envelope.message))
+                    {
+                        OnChatMessage?.Invoke(new ChatMessageDTO { playerId = envelope.playerId, playerName = envelope.playerName, message = envelope.message, sentAt = envelope.sentAt });
+                    }
+                    else if (envelope != null && envelope.room != null)
                     {
                         bool belongsToCurrentRoom = !string.IsNullOrEmpty(CurrentRoomId) &&
                             (envelope.room.id == CurrentRoomId || envelope.room.code == CurrentRoomId);
@@ -215,7 +224,20 @@ namespace BangBang.Core.Network
             return CommandAsync("end_turn", "{}");
         }
         public Task<bool> RequestRematchAsync() { OnErrorMessage?.Invoke("Cloudflare chưa hỗ trợ rematch."); return Task.FromResult(false); }
-        public Task<bool> SendChatAsync(string message) { OnErrorMessage?.Invoke("Cloudflare chưa hỗ trợ chat."); return Task.FromResult(false); }
+        public async Task<bool> SendChatAsync(string message)
+        {
+            string clean = (message ?? string.Empty).Trim();
+            if (_socket == null || _socket.State != WebSocketState.Open || clean.Length == 0) return false;
+            if (clean.Length > 240) clean = clean.Substring(0, 240);
+            string json = "{\"action\":\"chat_send\",\"message\":\"" + Escape(clean) + "\"}";
+            byte[] bytes = Encoding.UTF8.GetBytes(json);
+            try
+            {
+                await _socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, _socketCts.Token);
+                return true;
+            }
+            catch { return false; }
+        }
 
         private async Task<bool> CommandAsync(string action, string payload)
         {
@@ -336,6 +358,19 @@ namespace BangBang.Core.Network
                 await _socket.ConnectAsync(new Uri(url), _socketCts.Token); _ = ReceiveLoopAsync();
             }
             catch (Exception exception) { Debug.LogWarning("[CloudflareGateway] Realtime unavailable, HTTP commands remain active: " + exception.Message); }
+        }
+
+        public async Task<bool> SendVoiceFrameAsync(string base64Pcm16, float level)
+        {
+            if (_socket == null || _socket.State != WebSocketState.Open || string.IsNullOrEmpty(base64Pcm16)) return false;
+            string json = "{\"action\":\"voice_frame\",\"payload\":\"" + base64Pcm16 + "\",\"level\":" + level.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) + "}";
+            byte[] bytes = Encoding.UTF8.GetBytes(json);
+            try
+            {
+                await _socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, _socketCts.Token);
+                return true;
+            }
+            catch { return false; }
         }
 
         private async Task ReceiveLoopAsync()
