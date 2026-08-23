@@ -39,21 +39,21 @@ namespace BangBang.UI
             rect.anchoredPosition = new Vector2(-18f, 18f); rect.sizeDelta = new Vector2(420f, 260f);
             _panel.GetComponent<UnityEngine.UI.Image>().color = new Color(0.04f, 0.03f, 0.025f, 0.92f);
 
-            _log = CreateText("Messages", _panel.transform, new Vector2(0, 32), new Vector2(390, 190), 15);
+            _log = CreateText("Messages", _panel.transform, new Vector2(0, 32), new Vector2(390, 190), 17);
             _log.alignment = TextAnchor.LowerLeft;
             _input = new GameObject("Input", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.InputField)).GetComponent<UnityEngine.UI.InputField>();
             _input.transform.SetParent(_panel.transform, false);
-            _input.GetComponent<RectTransform>().anchoredPosition = new Vector2(-42, -100); _input.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 42);
+            _input.GetComponent<RectTransform>().anchoredPosition = new Vector2(-42, -100); _input.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 52);
             _input.GetComponent<UnityEngine.UI.Image>().color = new Color(0.16f, 0.12f, 0.09f, 1f);
-            _input.textComponent = CreateText("Text", _input.transform, Vector2.zero, new Vector2(280, 38), 15);
-            _input.placeholder = CreateText("Placeholder", _input.transform, Vector2.zero, new Vector2(280, 38), 15);
+            _input.textComponent = CreateText("Text", _input.transform, Vector2.zero, new Vector2(280, 48), 17);
+            _input.placeholder = CreateText("Placeholder", _input.transform, Vector2.zero, new Vector2(280, 48), 17);
             ((UnityEngine.UI.Text)_input.placeholder).text = "Nhập tin nhắn…";
 
             var button = new GameObject("Send", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
             button.transform.SetParent(_panel.transform, false);
-            button.GetComponent<RectTransform>().anchoredPosition = new Vector2(160, -100); button.GetComponent<RectTransform>().sizeDelta = new Vector2(80, 42);
+            button.GetComponent<RectTransform>().anchoredPosition = new Vector2(160, -100); button.GetComponent<RectTransform>().sizeDelta = new Vector2(90, 52);
             button.GetComponent<UnityEngine.UI.Image>().color = new Color(0.58f, 0.38f, 0.12f);
-            CreateText("Text", button.transform, Vector2.zero, new Vector2(76, 40), 14).text = "GỬI";
+            CreateText("Text", button.transform, Vector2.zero, new Vector2(86, 48), 17).text = "GỬI";
             button.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(Send);
         }
 

@@ -176,7 +176,7 @@ namespace BangBang.UI.Views
         {
             var seatObj = new GameObject("Seat_" + seatIndex, typeof(RectTransform), typeof(Image));
             var rt = seatObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(150, 190);
+            rt.sizeDelta = new Vector2(174, 210);
 
             var bgImg = seatObj.GetComponent<Image>();
             bgImg.color = player != null ? BangUITheme.Surface : new Color(BangUITheme.Ink.r, BangUITheme.Ink.g, BangUITheme.Ink.b, 0.58f);
@@ -188,7 +188,7 @@ namespace BangBang.UI.Views
             avatarObj.transform.SetParent(seatObj.transform, false);
             var avatarRt = avatarObj.GetComponent<RectTransform>();
             avatarRt.anchoredPosition = new Vector2(0, 28f);
-            avatarRt.sizeDelta = new Vector2(76, 76);
+            avatarRt.sizeDelta = new Vector2(92, 92);
             var avatarImg = avatarObj.GetComponent<Image>();
             avatarImg.preserveAspect = true;
 
@@ -210,7 +210,7 @@ namespace BangBang.UI.Views
             nameRt.sizeDelta = new Vector2(160, 36);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameTxt.fontSize = 13;
+            nameTxt.fontSize = 17;
             nameTxt.fontStyle = FontStyle.Bold;
             nameTxt.alignment = TextAnchor.MiddleCenter;
             nameTxt.color = (player != null && player.isHost) ? new Color(1f, 0.85f, 0.3f) : Color.white;
@@ -224,7 +224,7 @@ namespace BangBang.UI.Views
             statusRt.sizeDelta = new Vector2(150, 26);
             var statusTxt = statusObj.GetComponent<Text>();
             statusTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            statusTxt.fontSize = 12;
+            statusTxt.fontSize = 16;
             statusTxt.fontStyle = FontStyle.Bold;
             statusTxt.alignment = TextAnchor.MiddleCenter;
             statusTxt.color = player != null ? (player.isReady ? new Color(0.3f, 1f, 0.4f) : new Color(0.85f, 0.6f, 0.2f)) : Color.gray;

@@ -151,8 +151,8 @@ namespace BangBang.UI
 
                 var scaler = canvasObj.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.matchWidthOrHeight = 0.5f; // Balanced scaling across 16:9, 18:9 and tablet landscape
+                scaler.referenceResolution = new Vector2(1760, 1080);
+                scaler.matchWidthOrHeight = 0.55f;
 
                 if (FindAnyObjectByType<Camera>() == null)
                 {
@@ -162,6 +162,9 @@ namespace BangBang.UI
 
                 EnsureEventSystem();
             }
+
+            var responsiveLayout = canvas.GetComponent<BangResponsiveLayout>();
+            if (responsiveLayout == null) responsiveLayout = canvas.gameObject.AddComponent<BangResponsiveLayout>();
 
             if (FindAnyObjectByType<AudioManager>() == null) new GameObject("AudioManager", typeof(AudioManager));
             if (FindAnyObjectByType<FXManager>() == null) new GameObject("FXManager", typeof(FXManager));

@@ -198,7 +198,7 @@ namespace BangBang.UI.Interaction
             txtObj.transform.SetParent(btnObj.transform, false);
             var txtRt = txtObj.GetComponent<RectTransform>(); txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one; txtRt.sizeDelta = Vector2.zero;
             var txt = txtObj.GetComponent<Text>();
-            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); txt.fontSize = 15; txt.fontStyle = FontStyle.Bold; txt.alignment = TextAnchor.MiddleCenter; txt.color = Color.white; txt.text = label; txt.raycastTarget = false;
+            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); txt.fontSize = 18; txt.fontStyle = FontStyle.Bold; txt.alignment = TextAnchor.MiddleCenter; txt.color = Color.white; txt.text = label; txt.raycastTarget = false;
             return btnObj.GetComponent<Button>();
         }
 

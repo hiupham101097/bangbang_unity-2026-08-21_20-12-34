@@ -87,7 +87,7 @@ namespace BangBang.UI
             cardObj.transform.SetParent(transform, false);
 
             var rt = cardObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(110, 160);
+            rt.sizeDelta = new Vector2(124, 180);
 
             var bgImg = cardObj.GetComponent<Image>();
             bgImg.color = new Color(0.96f, 0.93f, 0.88f); // Parchment
@@ -123,7 +123,7 @@ namespace BangBang.UI
             titleRt.offsetMax = Vector2.zero;
             var titleTxt = titleObj.GetComponent<Text>();
             titleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            titleTxt.fontSize = 12;
+            titleTxt.fontSize = 16;
             titleTxt.fontStyle = FontStyle.Bold;
             titleTxt.alignment = TextAnchor.MiddleCenter;
             titleTxt.color = new Color(0.2f, 0.1f, 0.05f);
@@ -138,7 +138,7 @@ namespace BangBang.UI
             suitRt.offsetMax = Vector2.zero;
             var suitTxt = suitObj.GetComponent<Text>();
             suitTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            suitTxt.fontSize = 11;
+            suitTxt.fontSize = 15;
             suitTxt.alignment = TextAnchor.MiddleCenter;
             suitTxt.color = Color.black;
 

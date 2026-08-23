@@ -267,7 +267,7 @@ namespace BangBang.UI.Views
             codeRt.sizeDelta = new Vector2(380, 24);
             var codeTxt = codeObj.GetComponent<Text>();
             codeTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            codeTxt.fontSize = 13;
+            codeTxt.fontSize = 16;
             codeTxt.alignment = TextAnchor.MiddleLeft;
             codeTxt.color = BangUITheme.Muted;
             codeTxt.text = "MÃ PHÒNG  " + room.roomCode;
@@ -292,7 +292,7 @@ namespace BangBang.UI.Views
             statusRt.sizeDelta = new Vector2(300, 26);
             var statusTxt = statusObj.GetComponent<Text>();
             statusTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            statusTxt.fontSize = 13;
+            statusTxt.fontSize = 16;
             statusTxt.alignment = TextAnchor.MiddleCenter;
             bool full = room.currentPlayers >= room.maxPlayers;
             statusTxt.color = full ? BangUITheme.Danger : BangUITheme.Success;

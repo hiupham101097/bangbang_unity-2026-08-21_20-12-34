@@ -395,13 +395,13 @@ namespace BangBang.UI.Views
             seatObj.transform.SetParent(parent, false);
 
             var rt = seatObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(130, 160);
+            rt.sizeDelta = new Vector2(154, 184);
 
             // ── Wooden Avatar Frame ──
             var frameObj = new GameObject("AvatarFrame", typeof(RectTransform), typeof(Image));
             frameObj.transform.SetParent(seatObj.transform, false);
             var frameRt = frameObj.GetComponent<RectTransform>();
-            frameRt.sizeDelta = new Vector2(90, 90);
+            frameRt.sizeDelta = new Vector2(104, 104);
             frameRt.anchoredPosition = new Vector2(0, 15f);
             var frameImg = frameObj.GetComponent<Image>();
             frameImg.color = new Color(0.4f, 0.25f, 0.12f);
@@ -410,7 +410,7 @@ namespace BangBang.UI.Views
             var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
             avatarObj.transform.SetParent(frameObj.transform, false);
             var avatarRt = avatarObj.GetComponent<RectTransform>();
-            avatarRt.sizeDelta = new Vector2(82, 82);
+            avatarRt.sizeDelta = new Vector2(96, 96);
             var avatarImg = avatarObj.GetComponent<Image>();
             avatarImg.preserveAspect = true;
             avatarImg.color = Color.white;
@@ -441,7 +441,7 @@ namespace BangBang.UI.Views
             hpTxtRt.sizeDelta = Vector2.zero;
             var hpTxt = hpTxtObj.GetComponent<Text>();
             hpTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            hpTxt.fontSize = 15;
+            hpTxt.fontSize = 18;
             hpTxt.fontStyle = FontStyle.Bold;
             hpTxt.alignment = TextAnchor.MiddleCenter;
             hpTxt.color = Color.white;
@@ -455,7 +455,7 @@ namespace BangBang.UI.Views
             nameRt.sizeDelta = new Vector2(160, 22);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameTxt.fontSize = 13;
+            nameTxt.fontSize = 16;
             nameTxt.fontStyle = FontStyle.Bold;
             nameTxt.alignment = TextAnchor.MiddleCenter;
             nameTxt.color = Color.white;
@@ -468,7 +468,7 @@ namespace BangBang.UI.Views
             roleRt.sizeDelta = new Vector2(140, 20);
             var roleTxt = roleObj.GetComponent<Text>();
             roleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            roleTxt.fontSize = 11;
+            roleTxt.fontSize = 15;
             roleTxt.alignment = TextAnchor.MiddleCenter;
             roleTxt.color = new Color(0.9f, 0.8f, 0.4f);
 

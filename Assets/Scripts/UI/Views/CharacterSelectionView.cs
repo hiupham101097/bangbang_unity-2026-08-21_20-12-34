@@ -88,7 +88,7 @@ namespace BangBang.UI.Views
             bool mine = privateState != null && privateState.draftCharacterSlots != null && privateState.draftCharacterSlots.Contains(slot);
             var card = new GameObject("CharacterSlot_" + slot, typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
             card.transform.SetParent(candidatesContainer, false);
-            card.GetComponent<RectTransform>().sizeDelta = new Vector2(76, 114);
+            card.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 144);
             var image = card.GetComponent<UnityEngine.UI.Image>();
             image.sprite = CardCatalogDatabase.LoadSprite("card_back");
             image.color = locked && !mine ? new Color(0.32f, 0.32f, 0.32f, 0.7f) : Color.white;

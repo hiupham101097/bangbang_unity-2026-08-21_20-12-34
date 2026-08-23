@@ -131,7 +131,7 @@ namespace BangBang.UI.Views
             nameRt.sizeDelta = new Vector2(170, 24);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameTxt.fontSize = 13;
+            nameTxt.fontSize = 16;
             nameTxt.fontStyle = FontStyle.Bold;
             nameTxt.alignment = TextAnchor.MiddleCenter;
             nameTxt.color = Color.white;
@@ -145,7 +145,7 @@ namespace BangBang.UI.Views
             roleRt.sizeDelta = new Vector2(170, 24);
             var roleTxt = roleObj.GetComponent<Text>();
             roleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            roleTxt.fontSize = 13;
+            roleTxt.fontSize = 16;
             roleTxt.fontStyle = FontStyle.Bold;
             roleTxt.alignment = TextAnchor.MiddleCenter;
             roleTxt.color = new Color(1f, 0.85f, 0.3f);
@@ -159,7 +159,7 @@ namespace BangBang.UI.Views
             statusRt.sizeDelta = new Vector2(170, 24);
             var statusTxt = statusObj.GetComponent<Text>();
             statusTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            statusTxt.fontSize = 12;
+            statusTxt.fontSize = 16;
             statusTxt.alignment = TextAnchor.MiddleCenter;
             statusTxt.color = player.isAlive ? new Color(0.3f, 1f, 0.4f) : Color.red;
             statusTxt.text = player.isAlive ? "🟢 SỐNG SÓT" : "💀 ĐÃ BỊ LOẠI";
