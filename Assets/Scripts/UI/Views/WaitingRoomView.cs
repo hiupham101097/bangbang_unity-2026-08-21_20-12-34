@@ -159,6 +159,7 @@ namespace BangBang.UI.Views
                 var player = i < snapshot.players.Count ? snapshot.players[i] : null;
                 var seatObj = CreateSeatCard(i, player);
                 seatObj.transform.SetParent(seatsContainer, false);
+                seatObj.GetComponent<RectTransform>().anchoredPosition = GetWaitingSeatPosition(maxPlayers, i);
                 _seatCardObjects.Add(seatObj);
             }
         }
@@ -167,17 +168,19 @@ namespace BangBang.UI.Views
         {
             var seatObj = new GameObject("Seat_" + seatIndex, typeof(RectTransform), typeof(Image));
             var rt = seatObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(170, 240);
+            rt.sizeDelta = new Vector2(150, 190);
 
             var bgImg = seatObj.GetComponent<Image>();
-            bgImg.color = player != null ? new Color(0.18f, 0.12f, 0.08f, 0.95f) : new Color(0.1f, 0.08f, 0.06f, 0.5f);
+            bgImg.color = player != null ? BangUITheme.Surface : new Color(BangUITheme.Ink.r, BangUITheme.Ink.g, BangUITheme.Ink.b, 0.58f);
+            bgImg.sprite = BangUITheme.RoundedSprite;
+            bgImg.type = Image.Type.Sliced;
 
             // Avatar
             var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
             avatarObj.transform.SetParent(seatObj.transform, false);
             var avatarRt = avatarObj.GetComponent<RectTransform>();
-            avatarRt.anchoredPosition = new Vector2(0, 35f);
-            avatarRt.sizeDelta = new Vector2(90, 90);
+            avatarRt.anchoredPosition = new Vector2(0, 28f);
+            avatarRt.sizeDelta = new Vector2(76, 76);
             var avatarImg = avatarObj.GetComponent<Image>();
             avatarImg.preserveAspect = true;
 
@@ -217,9 +220,16 @@ namespace BangBang.UI.Views
             statusTxt.fontStyle = FontStyle.Bold;
             statusTxt.alignment = TextAnchor.MiddleCenter;
             statusTxt.color = player != null ? (player.isReady ? new Color(0.3f, 1f, 0.4f) : new Color(0.85f, 0.6f, 0.2f)) : Color.gray;
-            statusTxt.text = player != null ? (player.isReady ? "🟢 ĐÃ SẴN SÀNG" : "⏳ ĐANG CHỜ") : "⚪ TRỐNG";
+            statusTxt.text = player != null ? (player.isReady ? "ĐÃ SẴN SÀNG" : "ĐANG CHỜ") : "GHẾ TRỐNG";
 
             return seatObj;
+        }
+
+        private static Vector2 GetWaitingSeatPosition(int totalPlayers, int index)
+        {
+            float angle = 90f + (360f / Mathf.Max(4, totalPlayers)) * index;
+            float radians = angle * Mathf.Deg2Rad;
+            return new Vector2(Mathf.Cos(radians) * 620f, Mathf.Sin(radians) * 285f + 20f);
         }
 
         private async void HandleAddBotClicked()

@@ -395,6 +395,8 @@ namespace BangBang.UI
             {
                 var waitingObj = CreateFullScreenPanel("WaitingRoomView", canvas.transform);
                 waitingRoomView = waitingObj.AddComponent<WaitingRoomView>();
+                waitingObj.GetComponent<Image>().sprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/waiting_room_v2");
+                waitingObj.GetComponent<Image>().color = Color.white;
 
                 var codeObj = CreateText("RoomCodeText", "MÃ PHÒNG: SALOON", new Vector2(0, 420f), new Vector2(600, 50), 26, Color.yellow, waitingObj.transform);
                 waitingRoomView.roomCodeText = codeObj.GetComponent<Text>();
@@ -404,22 +406,20 @@ namespace BangBang.UI
                 var reasonObj = CreateText("ReasonText", "Đang chờ người chơi sẵn sàng...", new Vector2(0, 360f), new Vector2(800, 30), 14, Color.white, waitingObj.transform);
                 waitingRoomView.startDisabledReasonText = reasonObj.GetComponent<Text>();
 
-                var seatsContainer = new GameObject("SeatsContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                var seatsContainer = new GameObject("SeatsContainer", typeof(RectTransform));
                 seatsContainer.transform.SetParent(waitingObj.transform, false);
                 var sRt = seatsContainer.GetComponent<RectTransform>();
                 sRt.anchoredPosition = new Vector2(0, 30f);
                 sRt.sizeDelta = new Vector2(1500, 260);
-                var hlg = seatsContainer.GetComponent<HorizontalLayoutGroup>();
-                hlg.childAlignment = TextAnchor.MiddleCenter;
-                hlg.spacing = 15f;
                 waitingRoomView.seatsContainer = seatsContainer.transform;
 
                 // Controls: Start, Add Bot, Ready, Leave
-                waitingRoomView.startGameButton = CreateButton("StartBtn", "🚀 BẮT ĐẦU TRẬN ĐẤU", new Vector2(430f, -380f), new Color(0.2f, 0.7f, 0.25f), waitingObj.transform, new Vector2(250, 65));
-                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "🤖 THÊM BOT", new Vector2(190f, -380f), new Color(0.85f, 0.5f, 0.15f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.startGameButton = CreateButton("StartBtn", "BẮT ĐẦU TRẬN", new Vector2(430f, -450f), BangUITheme.Brass, waitingObj.transform, new Vector2(260, 65));
+                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "THÊM BOT", new Vector2(190f, -450f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(180, 65));
                 waitingRoomView.removeBotButton = CreateButton("RemoveBotBtn", "BỚT BOT", new Vector2(0f, -380f), BangUITheme.Danger, waitingObj.transform, new Vector2(160, 65));
-                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-190f, -380f), new Color(0.2f, 0.55f, 0.85f), waitingObj.transform, new Vector2(180, 65));
-                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "⬅ RỜI PHÒNG", new Vector2(-400f, -380f), new Color(0.45f, 0.25f, 0.15f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.removeBotButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -450f);
+                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-190f, -450f), BangUITheme.Success, waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "RỜI PHÒNG", new Vector2(-430f, -450f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(180, 65));
 
                 flowController.waitingRoomView = waitingRoomView;
             }
@@ -527,18 +527,18 @@ namespace BangBang.UI
                 gameTableView.discardPileCountText = discTxtObj.GetComponent<Text>();
 
                 // Turn phase status (top center)
-                var phaseObj = CreateText("TurnPhase", "⏳ LƯỢT ĐỐI THỦ", new Vector2(0, 200f), new Vector2(500, 36), 18, Color.white, tableObj.transform);
+                var phaseObj = CreateText("TurnPhase", "LƯỢT ĐỐI THỦ", new Vector2(0, 478f), new Vector2(500, 42), 20, BangUITheme.Ivory, tableObj.transform);
                 gameTableView.turnPhaseStatusText = phaseObj.GetComponent<Text>();
 
                 // Combat log (bottom center, above hand)
-                var logObj = CreateText("LogText", "Chào mừng đến bàn đấu Bang!", new Vector2(0, -225f), new Vector2(700, 30), 14, new Color(0.95f, 0.85f, 0.6f), tableObj.transform);
+                var logObj = CreateText("LogText", "LỊCH SỬ HÀNH ĐỘNG", new Vector2(0, -135f), new Vector2(700, 30), 14, BangUITheme.Muted, tableObj.transform);
                 gameTableView.combatLogText = logObj.GetComponent<Text>();
 
                 // Local Player Dashboard (bottom-left)
                 var localDashObj = new GameObject("LocalPlayerDash", typeof(RectTransform));
                 localDashObj.transform.SetParent(tableObj.transform, false);
                 var ldRt = localDashObj.GetComponent<RectTransform>();
-                ldRt.anchoredPosition = new Vector2(-750f, -380f);
+                ldRt.anchoredPosition = new Vector2(-745f, -400f);
                 ldRt.sizeDelta = new Vector2(320, 180);
 
                 // Local avatar
@@ -586,8 +586,8 @@ namespace BangBang.UI
                 handRt.anchorMin = new Vector2(0f, 0f);
                 handRt.anchorMax = new Vector2(1f, 0f);
                 handRt.pivot = new Vector2(0.5f, 0f);
-                handRt.anchoredPosition = new Vector2(0, 10f);
-                handRt.sizeDelta = new Vector2(0, 200f);
+                handRt.anchoredPosition = new Vector2(0, 4f);
+                handRt.sizeDelta = new Vector2(0, 230f);
                 gameTableView.handCardLayout = handObj.GetComponent<HandCardFanLayout>();
 
                 // Target Banner (top center)
@@ -613,12 +613,12 @@ namespace BangBang.UI
                 gameTableView.cardPreviewTooltipText = ttTxtObj.GetComponent<Text>();
 
                 // Action Buttons (right side)
-                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "🃏 RÚT BÀI", new Vector2(720f, 220f), new Color(0.2f, 0.55f, 0.85f), tableObj.transform, new Vector2(180, 60));
-                gameTableView.playCardButton = CreateButton("PlayCardBtn", "💥 ĐÁNH BÀI", new Vector2(720f, 150f), new Color(0.85f, 0.45f, 0.15f), tableObj.transform, new Vector2(180, 60));
+                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "RÚT BÀI", new Vector2(770f, 30f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(190, 60));
+                gameTableView.playCardButton = CreateButton("PlayCardBtn", "ĐÁNH BÀI", new Vector2(770f, -42f), BangUITheme.Brass, tableObj.transform, new Vector2(190, 60));
                 gameTableView.playCardButtonText = gameTableView.playCardButton.GetComponentInChildren<Text>();
-                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "❌ HỦY CHỌN", new Vector2(720f, 80f), new Color(0.5f, 0.2f, 0.2f), tableObj.transform, new Vector2(180, 50));
-                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "⏭ HẾT LƯỢT", new Vector2(720f, 10f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 60));
-                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(720f, -60f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(180, 56));
+                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "HỦY CHỌN", new Vector2(770f, -114f), BangUITheme.Danger, tableObj.transform, new Vector2(190, 52));
+                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "KẾT THÚC LƯỢT", new Vector2(770f, -390f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(210, 64));
+                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(770f, -320f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(190, 56));
                 gameTableView.abilityButton.gameObject.SetActive(false);
 
                 var introRoot = CreateFullScreenPanel("MatchStartOverlay", tableObj.transform);

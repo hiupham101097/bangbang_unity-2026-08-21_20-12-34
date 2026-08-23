@@ -52,6 +52,7 @@ namespace BangBang.UI.Views
         private int _renderedHealth = -1;
         private int _renderedMaxHealth = -1;
         private string _renderedEquipmentKey = null;
+        private int _renderedTableCapacity = -1;
 
         private CardUI _selectedCardUI;
         private string _selectedTargetId;
@@ -65,7 +66,7 @@ namespace BangBang.UI.Views
             BindListeners();
             if (tableBackgroundImage != null)
             {
-                var tableSprite = CardCatalogDatabase.LoadSprite("room_table");
+                var tableSprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/match_table_8");
                 if (tableSprite != null)
                 {
                     tableBackgroundImage.sprite = tableSprite;
@@ -140,6 +141,16 @@ namespace BangBang.UI.Views
         {
             if (snapshot == null) return;
 
+            int tableCapacity = Mathf.Clamp(snapshot.rules != null && snapshot.rules.maxPlayers > 0
+                ? snapshot.rules.maxPlayers
+                : snapshot.players.Count, 4, 8);
+            if (_renderedTableCapacity != tableCapacity && tableBackgroundImage != null)
+            {
+                var tableSprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/match_table_" + tableCapacity);
+                if (tableSprite != null) tableBackgroundImage.sprite = tableSprite;
+                _renderedTableCapacity = tableCapacity;
+            }
+
             string localId = GameStateStore.Instance != null ? GameStateStore.Instance.LocalPlayerId : "";
             var local = snapshot.players.Find(p => p.id == localId);
             var localPrivate = GameStateStore.Instance != null ? GameStateStore.Instance.LocalPrivateState : null;
@@ -158,7 +169,7 @@ namespace BangBang.UI.Views
             {
                 turnPhaseStatusText.text = snapshot.state == ServerGameState.JUDGEMENT && !string.IsNullOrEmpty(snapshot.judgementCard)
                     ? "PHÁN XÉT " + snapshot.judgementEffect + ": " + snapshot.judgementCard.Replace("__", " ") + " — " + snapshot.judgementResult
-                    : (isMyTurn ? "🟢 LƯỢT CỦA BẠN" : "⏳ LƯỢT ĐỐI THỦ");
+                    : (isMyTurn ? "LƯỢT CỦA BẠN" : "LƯỢT ĐỐI THỦ");
                 turnPhaseStatusText.color = isMyTurn ? new Color(0.3f, 1f, 0.4f) : Color.white;
             }
 
@@ -356,12 +367,24 @@ namespace BangBang.UI.Views
                 _seatUIs[i].OnSeatClicked -= HandleOpponentSeatClicked;
                 _seatUIs[i].OnSeatClicked += HandleOpponentSeatClicked;
 
-                // Position on horseshoe arc
-                float t = opponents.Count > 1 ? (float)i / (opponents.Count - 1) : 0.5f;
-                float angle = Mathf.Lerp(195f, -15f, t) * Mathf.Deg2Rad;
                 var rt = _seatUIs[i].GetComponent<RectTransform>();
-                rt.anchoredPosition = new Vector2(Mathf.Cos(angle) * 650f, Mathf.Sin(angle) * 260f + 50f);
+                rt.anchoredPosition = GetOpponentSeatPosition(snapshot.rules != null ? snapshot.rules.maxPlayers : opponents.Count + 1, i);
             }
+        }
+
+        private static Vector2 GetOpponentSeatPosition(int totalPlayers, int index)
+        {
+            Vector2[][] positions =
+            {
+                new[] { new Vector2(-500, 350), new Vector2(0, 350), new Vector2(500, 350) },
+                new[] { new Vector2(-500, 350), new Vector2(500, 350), new Vector2(-735, 65), new Vector2(735, 65) },
+                new[] { new Vector2(-500, 350), new Vector2(0, 350), new Vector2(500, 350), new Vector2(-735, 65), new Vector2(735, 65) },
+                new[] { new Vector2(-430, 350), new Vector2(430, 350), new Vector2(-735, 135), new Vector2(-735, -145), new Vector2(735, 135), new Vector2(735, -145) },
+                new[] { new Vector2(-500, 350), new Vector2(0, 350), new Vector2(500, 350), new Vector2(-735, 135), new Vector2(-735, -145), new Vector2(735, 135), new Vector2(735, -145) }
+            };
+            int capacityIndex = Mathf.Clamp(totalPlayers, 4, 8) - 4;
+            var layout = positions[capacityIndex];
+            return layout[Mathf.Clamp(index, 0, layout.Length - 1)];
         }
 
         /// <summary>Creates a fully-built PlayerSeatUI with all child components wired up.</summary>
