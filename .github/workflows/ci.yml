@@ -33,3 +33,21 @@ jobs:
           projectPath: .
           unityVersion: 6000.5.8f1
           testMode: EditMode
+
+  cloudflare-deploy:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: server
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 7188e9f1199b82b18de176412006f8a8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run cf:check
+      - run: npm run cf:deploy
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}

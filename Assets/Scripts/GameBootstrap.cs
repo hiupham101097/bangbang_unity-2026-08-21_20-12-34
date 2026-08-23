@@ -28,6 +28,7 @@ namespace BangBang.UI
         public GameFlowController flowController;
         public InteractionController interactionController;
         public BangLiveGateway liveGateway;
+        public BangCloudflareGateway cloudflareGateway;
         public BangMockGateway mockGateway;
 
         [Header("Views")]
@@ -71,8 +72,8 @@ namespace BangBang.UI
             // Initialize Gateways & State Store
             if (useLiveCloudflareServer)
             {
-                _activeGateway = liveGateway;
-                Debug.Log("[GameBootstrap] Using LiveGateway -> " + liveGateway.serverWsUrl);
+                _activeGateway = cloudflareGateway;
+                Debug.Log("[GameBootstrap] Using CloudflareGateway -> " + cloudflareGateway.serverBaseUrl);
             }
             else
             {
@@ -176,10 +177,13 @@ namespace BangBang.UI
                 var gateway = new GameObject("LiveGateway").AddComponent<BangLiveGateway>();
                 liveGateway = gateway;
             }
-            string configuredLiveUrl = string.IsNullOrWhiteSpace(liveWebSocketUrl) ? localServerUrl : liveWebSocketUrl.Trim();
-            liveGateway.serverWsUrl = useLiveCloudflareServer ? configuredLiveUrl : localServerUrl;
-            if (useLiveCloudflareServer && string.IsNullOrWhiteSpace(liveWebSocketUrl))
-                Debug.LogWarning("[GameBootstrap] liveWebSocketUrl chưa cấu hình; tạm dùng Node.js local: " + localServerUrl);
+            liveGateway.serverWsUrl = string.IsNullOrWhiteSpace(liveWebSocketUrl) ? localServerUrl : liveWebSocketUrl.Trim();
+            if (cloudflareGateway == null)
+            {
+                var gateway = new GameObject("CloudflareGateway").AddComponent<BangCloudflareGateway>();
+                cloudflareGateway = gateway;
+            }
+            cloudflareGateway.serverBaseUrl = cloudflareWorkerUrl.TrimEnd('/');
             if (BangNetworkClient.Instance != null) BangNetworkClient.Instance.serverBaseUrl = cloudflareWorkerUrl;
 
             // State Store & Flow

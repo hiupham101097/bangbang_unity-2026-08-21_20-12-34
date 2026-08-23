@@ -1,0 +1,11 @@
+{
+  "name": "bangbang-cloudflare",
+  "private": true,
+  "scripts": {
+    "cf:check": "wrangler deploy --dry-run",
+    "cf:deploy": "wrangler deploy --keep-vars"
+  },
+  "devDependencies": {
+    "wrangler": "4.125.0"
+  }
+}
