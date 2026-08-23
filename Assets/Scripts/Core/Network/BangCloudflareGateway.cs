@@ -102,6 +102,7 @@ namespace BangBang.Core.Network
 
         public async Task<bool> RefreshRoomListAsync()
         {
+            if (!await WaitForAuthenticatedSessionAsync()) return false;
             var response = await HttpAsync("GET", "/v1/rooms", null, true);
             if (!response.ok) return Fail(response.error);
             var source = JsonUtility.FromJson<RoomListEnvelope>(response.body);
@@ -112,6 +113,25 @@ namespace BangBang.Core.Network
                 turnTimeSeconds = room.turnDurationSeconds, isPrivate = false, pingMs = 0
             }).ToList());
             return true;
+        }
+
+        private async Task<bool> WaitForAuthenticatedSessionAsync()
+        {
+            // Unity can enable a view in the same frame that bootstrap starts the
+            // session. Give that in-flight request a short chance to publish its
+            // token instead of sending an unauthenticated request to the Worker.
+            for (int attempt = 0;
+                 attempt < 50 && CurrentConnectionState == ConnectionState.Connecting;
+                 attempt++)
+            {
+                await Task.Delay(100);
+            }
+
+            if (CurrentConnectionState == ConnectionState.Connected && !string.IsNullOrWhiteSpace(_token))
+                return true;
+
+            Debug.LogWarning("[CloudflareGateway] Room refresh skipped: session is not authenticated yet.");
+            return false;
         }
 
         public async Task<bool> CreateRoomAsync(string roomName, int maxPlayers, bool isPrivate, string password, int turnSeconds)

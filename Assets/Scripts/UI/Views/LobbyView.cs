@@ -57,7 +57,18 @@ namespace BangBang.UI.Views
                 GameStateStore.Instance.Gateway.OnConnectionStateChanged += UpdateConnectionState;
             }
 
-            HandleRefreshRoomsClicked();
+        }
+
+        private void OnEnable()
+        {
+            // Views are constructed while the splash screen is still negotiating a
+            // session. Never issue an authenticated room request before the token is
+            // ready; the first real refresh happens when the player opens this view.
+            var gateway = GameStateStore.Instance?.Gateway;
+            if (gateway != null && gateway.CurrentConnectionState == ConnectionState.Connected)
+            {
+                HandleRefreshRoomsClicked();
+            }
         }
 
         public void BindListeners()
@@ -194,9 +205,10 @@ namespace BangBang.UI.Views
 
         private async void HandleRefreshRoomsClicked()
         {
-            if (GameStateStore.Instance?.Gateway != null)
+            var gateway = GameStateStore.Instance?.Gateway;
+            if (gateway != null && gateway.CurrentConnectionState == ConnectionState.Connected)
             {
-                await GameStateStore.Instance.Gateway.RefreshRoomListAsync();
+                await gateway.RefreshRoomListAsync();
             }
         }
 

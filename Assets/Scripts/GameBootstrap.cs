@@ -62,6 +62,7 @@ namespace BangBang.UI
         private async void Start()
         {
             EnsureUIHierarchy();
+            HideViewsDuringBoot();
             CreateSplashOverlay();
 
             if (AudioManager.Instance != null)
@@ -93,6 +94,20 @@ namespace BangBang.UI
             _deviceId = PlayerPrefs.GetString("bang_device_id", Guid.NewGuid().ToString("N").Substring(0, 16));
             PlayerPrefs.SetString("bang_device_id", _deviceId);
             await ConnectSessionAsync();
+        }
+
+        private void HideViewsDuringBoot()
+        {
+            // Dynamically-created views otherwise receive Start/OnEnable while the
+            // splash screen is still obtaining the Cloudflare session token.
+            if (homeScreen != null) homeScreen.gameObject.SetActive(false);
+            if (cardGalleryView != null) cardGalleryView.gameObject.SetActive(false);
+            if (lobbyView != null) lobbyView.gameObject.SetActive(false);
+            if (waitingRoomView != null) waitingRoomView.gameObject.SetActive(false);
+            if (roleRevealView != null) roleRevealView.gameObject.SetActive(false);
+            if (characterSelectionView != null) characterSelectionView.gameObject.SetActive(false);
+            if (gameTableView != null) gameTableView.gameObject.SetActive(false);
+            if (resultView != null) resultView.gameObject.SetActive(false);
         }
 
         private async System.Threading.Tasks.Task ConnectSessionAsync()
