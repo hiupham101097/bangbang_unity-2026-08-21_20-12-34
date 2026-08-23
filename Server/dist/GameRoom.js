@@ -236,6 +236,14 @@ class GameRoom {
     handleMessage(ws, type, data) {
         const socketId = ws.id;
         data = data || {};
+        if (data.stateRevision !== undefined && data.stateRevision !== this.revision) {
+            this.sendPrivateMessage(socketId, 'game.action.rejected', { reason: 'STALE_STATE', revision: this.revision });
+            this.sendSnapshotTo(socketId);
+            return;
+        }
+        // Only consume an action id after its revision has been accepted. A stale
+        // client must be able to resync and retry instead of being rejected as a
+        // duplicate on the second attempt.
         if (data.actionId) {
             if (this.processedActionIds.has(data.actionId)) {
                 this.sendPrivateMessage(socketId, 'game.action.rejected', { reason: 'DUPLICATE_ACTION', revision: this.revision });
@@ -248,11 +256,6 @@ class GameRoom {
                 if (oldest)
                     this.processedActionIds.delete(oldest);
             }
-        }
-        if (data.stateRevision !== undefined && data.stateRevision !== this.revision) {
-            this.sendPrivateMessage(socketId, 'game.action.rejected', { reason: 'STALE_STATE', revision: this.revision });
-            this.sendSnapshotTo(socketId);
-            return;
         }
         if (type === 'room.ready') {
             const p = this.players.get(socketId);

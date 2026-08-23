@@ -30,6 +30,7 @@ namespace BangBang.UI.Views
 
         private readonly List<GameObject> _seatCardObjects = new List<GameObject>();
         private bool _isLocalReady;
+        private bool _roomMutationInFlight;
 
         private void Awake()
         {
@@ -41,6 +42,7 @@ namespace BangBang.UI.Views
             if (GameStateStore.Instance != null)
             {
                 GameStateStore.Instance.OnStateSnapshotUpdated += RenderWaitingRoom;
+                GameStateStore.Instance.OnRequestPendingChanged += HandleRequestPendingChanged;
                 if (GameStateStore.Instance.CurrentSnapshot != null)
                 {
                     RenderWaitingRoom(GameStateStore.Instance.CurrentSnapshot);
@@ -99,6 +101,7 @@ namespace BangBang.UI.Views
             if (GameStateStore.Instance != null)
             {
                 GameStateStore.Instance.OnStateSnapshotUpdated -= RenderWaitingRoom;
+                GameStateStore.Instance.OnRequestPendingChanged -= HandleRequestPendingChanged;
             }
         }
 
@@ -112,11 +115,16 @@ namespace BangBang.UI.Views
 
             var local = snapshot.players.Find(p => p.id == GameStateStore.Instance.LocalPlayerId);
             bool isHost = local != null && local.isHost;
-            if (addBotButton != null) addBotButton.gameObject.SetActive(isHost);
+            bool requestPending = GameStateStore.Instance.IsRequestPending || _roomMutationInFlight;
+            if (addBotButton != null)
+            {
+                addBotButton.gameObject.SetActive(isHost);
+                addBotButton.interactable = snapshot.players.Count < maxPlayers && !requestPending;
+            }
             if (removeBotButton != null)
             {
                 removeBotButton.gameObject.SetActive(isHost);
-                removeBotButton.interactable = snapshot.players.Exists(player => player.isBot) && !GameStateStore.Instance.IsRequestPending;
+                removeBotButton.interactable = snapshot.players.Exists(player => player.isBot) && !requestPending;
             }
 
             if (readyToggleButton != null)
@@ -131,7 +139,7 @@ namespace BangBang.UI.Views
                 startGameButton.gameObject.SetActive(isHost);
 
                 bool canStart = snapshot.players.Count >= 4 && snapshot.players.TrueForAll(p => p.isReady || p.isHost);
-                startGameButton.interactable = canStart && !GameStateStore.Instance.IsRequestPending;
+                startGameButton.interactable = canStart && !requestPending;
 
                 if (startDisabledReasonText != null)
                 {
@@ -234,20 +242,48 @@ namespace BangBang.UI.Views
 
         private async void HandleAddBotClicked()
         {
+            if (_roomMutationInFlight || GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
             var snap = GameStateStore.Instance?.CurrentSnapshot;
             int maxPlayers = snap != null && snap.rules != null && snap.rules.maxPlayers > 0 ? snap.rules.maxPlayers : 8;
             if (snap == null || snap.players.Count >= maxPlayers) return;
             AudioManager.Instance?.PlaySFX("button_tap");
+            _roomMutationInFlight = true;
             GameStateStore.Instance?.SetRequestPending(true);
-            if (GameStateStore.Instance?.Gateway != null) await GameStateStore.Instance.Gateway.AddBotAsync();
+            SetRoomMutationButtonsInteractable(false);
+            bool ok = GameStateStore.Instance?.Gateway != null && await GameStateStore.Instance.Gateway.AddBotAsync();
+            if (!ok)
+            {
+                _roomMutationInFlight = false;
+                GameStateStore.Instance?.SetRequestPending(false);
+            }
         }
 
         private async void HandleRemoveBotClicked()
         {
+            if (_roomMutationInFlight || GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
             AudioManager.Instance?.PlaySFX("button_tap");
+            _roomMutationInFlight = true;
             GameStateStore.Instance?.SetRequestPending(true);
+            SetRoomMutationButtonsInteractable(false);
             bool ok = GameStateStore.Instance?.Gateway != null && await GameStateStore.Instance.Gateway.RemoveBotAsync();
-            if (!ok) GameStateStore.Instance?.SetRequestPending(false);
+            if (!ok)
+            {
+                _roomMutationInFlight = false;
+                GameStateStore.Instance?.SetRequestPending(false);
+            }
+        }
+
+        private void HandleRequestPendingChanged(bool pending)
+        {
+            if (!pending) _roomMutationInFlight = false;
+            var snapshot = GameStateStore.Instance?.CurrentSnapshot;
+            if (snapshot != null && snapshot.state == ServerGameState.WAITING) RenderWaitingRoom(snapshot);
+        }
+
+        private void SetRoomMutationButtonsInteractable(bool interactable)
+        {
+            if (addBotButton != null) addBotButton.interactable = interactable;
+            if (removeBotButton != null) removeBotButton.interactable = interactable;
         }
 
         private async void HandleToggleReadyClicked()

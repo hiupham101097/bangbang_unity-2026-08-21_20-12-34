@@ -54,6 +54,25 @@ function createRoom(playerCount = 4) {
     strict_1.default.equal(new Set(snapshots.map(s => s.revision)).size, 1);
     strict_1.default.equal(new Set(snapshots.map(s => s.sequence)).size, 1);
 });
+(0, node_test_1.default)('stale room mutation can resync and retry without losing its action id', () => {
+    const room = new GameRoom_1.GameRoom('TEST02', {}, { maxPlayers: 8 });
+    const host = new FakeSocket('host');
+    strict_1.default.equal(room.joinPlayer(host, 'Host', true), true);
+    const staleRevision = room.getSnapshotFor('host').revision - 1;
+    room.handleMessage(host, 'room.addBot', {
+        actionId: 'add_bot_retry',
+        stateRevision: staleRevision
+    });
+    strict_1.default.equal(room.getPlayers().length, 1);
+    strict_1.default.equal(host.sent.at(-2)?.type, 'game.action.rejected');
+    strict_1.default.equal(JSON.parse(host.sent.at(-2).data).reason, 'STALE_STATE');
+    room.handleMessage(host, 'room.addBot', {
+        actionId: 'add_bot_retry',
+        stateRevision: room.getSnapshotFor('host').revision
+    });
+    strict_1.default.equal(room.getPlayers().length, 2);
+    strict_1.default.equal(room.getPlayers().filter(player => player.isBot).length, 1);
+});
 (0, node_test_1.default)('dead seats are removed from distance calculation', () => {
     const { room, players } = createRoom();
     for (const p of players)
