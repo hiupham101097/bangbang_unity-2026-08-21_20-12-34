@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run build && node --test dist/**/*.test.js",
-    "start": "ts-node src/index.ts",
+    "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
+    "postinstall": "npm run build",
     "test:soak": "npm run build && node dist/soak.js"
   },
   "keywords": [],

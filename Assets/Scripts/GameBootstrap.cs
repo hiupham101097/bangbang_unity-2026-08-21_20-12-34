@@ -17,7 +17,10 @@ namespace BangBang.UI
 
         [Header("Networking Mode")]
         public bool useLiveCloudflareServer = true;
+        [Tooltip("REST Worker URL; không dùng URL này cho BangLiveGateway.")]
         public string cloudflareWorkerUrl = "https://blue-frog-fec8.hieupham101097.workers.dev";
+        [Tooltip("Public Node.js WebSocket origin, ví dụ wss://bangbang-node-server.onrender.com. Để trống sẽ dùng localServerUrl.")]
+        public string liveWebSocketUrl = "";
         public string localServerUrl = "ws://localhost:3000";
 
         [Header("Core Architecture Controllers")]
@@ -172,7 +175,11 @@ namespace BangBang.UI
                 var gateway = new GameObject("LiveGateway").AddComponent<BangLiveGateway>();
                 liveGateway = gateway;
             }
-            liveGateway.serverWsUrl = useLiveCloudflareServer ? cloudflareWorkerUrl : localServerUrl;
+            string configuredLiveUrl = string.IsNullOrWhiteSpace(liveWebSocketUrl) ? localServerUrl : liveWebSocketUrl.Trim();
+            liveGateway.serverWsUrl = useLiveCloudflareServer ? configuredLiveUrl : localServerUrl;
+            if (useLiveCloudflareServer && string.IsNullOrWhiteSpace(liveWebSocketUrl))
+                Debug.LogWarning("[GameBootstrap] liveWebSocketUrl chưa cấu hình; tạm dùng Node.js local: " + localServerUrl);
+            if (BangNetworkClient.Instance != null) BangNetworkClient.Instance.serverBaseUrl = cloudflareWorkerUrl;
 
             // State Store & Flow
             if (gameStateStore == null) gameStateStore = gameObject.AddComponent<GameStateStore>();

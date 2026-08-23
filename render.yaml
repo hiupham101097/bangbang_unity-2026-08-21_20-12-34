@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: bangbang-node-server
+    runtime: node
+    rootDir: Server
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BANG_AUTH_SECRET
+        generateValue: true
+      - key: BANG_STATE_FILE
+        value: /tmp/bangbang-rooms.json

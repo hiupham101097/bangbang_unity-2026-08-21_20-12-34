@@ -43,6 +43,7 @@ namespace BangBang.Core.Network
         private string _deviceId;
         private bool _intentionalDisconnect;
         private bool _reconnectInProgress;
+        private bool _permanentConfigurationError;
         private const int MaxMessageBytes = 64 * 1024;
         private readonly ConcurrentQueue<string> _incomingMessages = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<ConnectionState> _connectionChanges = new ConcurrentQueue<ConnectionState>();
@@ -66,7 +67,17 @@ namespace BangBang.Core.Network
 
             try
             {
-                string wsUrl = serverWsUrl.Trim();
+                string wsUrl = (serverWsUrl ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(wsUrl))
+                {
+                    _permanentConfigurationError = true;
+                    throw new InvalidOperationException("Chưa cấu hình liveWebSocketUrl cho Node.js server.");
+                }
+                if (wsUrl.IndexOf("workers.dev", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    _permanentConfigurationError = true;
+                    throw new InvalidOperationException("URL Worker REST không tương thích BangLiveGateway; cần URL Node.js WebSocket riêng.");
+                }
                 if (wsUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     wsUrl = "wss://" + wsUrl.Substring(8);
                 else if (wsUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
@@ -128,7 +139,7 @@ namespace BangBang.Core.Network
             CurrentConnectionState = ConnectionState.Disconnected;
             _connectionChanges.Enqueue(CurrentConnectionState);
 
-            if (!_intentionalDisconnect && isActiveAndEnabled)
+            if (!_intentionalDisconnect && !_permanentConfigurationError && isActiveAndEnabled)
             {
                 _ = ReconnectAsync();
             }

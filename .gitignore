@@ -23,6 +23,7 @@
 # Node.js dependencies are restored from package-lock.json.
 **/node_modules/
 /Server/data/
+/.wrangler/
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be committed to version control.
 *.blend1
