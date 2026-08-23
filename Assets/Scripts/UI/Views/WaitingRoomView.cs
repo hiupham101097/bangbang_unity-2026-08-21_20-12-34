@@ -292,7 +292,8 @@ namespace BangBang.UI.Views
             GameStateStore.Instance?.SetRequestPending(true);
             if (GameStateStore.Instance?.Gateway != null)
             {
-                await GameStateStore.Instance.Gateway.ToggleReadyAsync(!_isLocalReady);
+                bool ok = await GameStateStore.Instance.Gateway.ToggleReadyAsync(!_isLocalReady);
+                if (!ok) GameStateStore.Instance.SetRequestPending(false);
             }
         }
 
@@ -302,7 +303,8 @@ namespace BangBang.UI.Views
             GameStateStore.Instance?.SetRequestPending(true);
             if (GameStateStore.Instance?.Gateway != null)
             {
-                await GameStateStore.Instance.Gateway.StartGameAsync();
+                bool ok = await GameStateStore.Instance.Gateway.StartGameAsync();
+                if (!ok) GameStateStore.Instance.SetRequestPending(false);
             }
         }
 

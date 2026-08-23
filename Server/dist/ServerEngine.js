@@ -199,11 +199,17 @@ class ServerEngine {
         else {
             // Route to room if player is in one
             const socketId = ws.id;
+            const requestedRoomId = String(data?.roomId || '').toUpperCase();
+            const requestedRoom = requestedRoomId ? this.rooms.get(requestedRoomId) : undefined;
+            if (requestedRoom?.hasPlayer(socketId)) {
+                requestedRoom.handleMessage(ws, type, data);
+                return;
+            }
             for (const room of this.rooms.values()) {
-                if (room.hasPlayer(socketId)) {
-                    room.handleMessage(ws, type, data);
-                    break;
-                }
+                if (!room.hasPlayer(socketId))
+                    continue;
+                room.handleMessage(ws, type, data);
+                return;
             }
         }
     }

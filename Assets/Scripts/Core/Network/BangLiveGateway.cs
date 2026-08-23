@@ -46,6 +46,8 @@ namespace BangBang.Core.Network
         private bool _permanentConfigurationError;
         private bool _retriedWithoutResumeToken;
         private TaskCompletionSource<bool> _sessionReady;
+        private TaskCompletionSource<bool> _roomMutationReady;
+        private int _roomMutationBaseRevision;
         private const int MaxMessageBytes = 64 * 1024;
         private readonly ConcurrentQueue<string> _incomingMessages = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<ConnectionState> _connectionChanges = new ConcurrentQueue<ConnectionState>();
@@ -203,6 +205,11 @@ namespace BangBang.Core.Network
                 {
                     var snapshot = JsonUtility.FromJson<MatchStateSnapshotDTO>(msg.data);
                     OnSnapshotReceived?.Invoke(snapshot);
+                    if (_roomMutationReady != null && snapshot != null && snapshot.revision > _roomMutationBaseRevision)
+                    {
+                        _roomMutationReady.TrySetResult(true);
+                        _roomMutationReady = null;
+                    }
                 }
                 else if (msg.type == "game.error")
                 {
@@ -210,6 +217,8 @@ namespace BangBang.Core.Network
                 }
                 else if (msg.type == "game.action.rejected")
                 {
+                    _roomMutationReady?.TrySetResult(false);
+                    _roomMutationReady = null;
                     OnActionRejected?.Invoke(string.Empty, msg.data);
                 }
                 else if (msg.type == "session.ready")
@@ -367,22 +376,42 @@ namespace BangBang.Core.Network
 
         public Task<bool> ToggleReadyAsync(bool isReady)
         {
-            return SendEventAsync("room.ready", "{\"isReady\":" + (isReady ? "true" : "false") + "}");
+            var req = CreateActionRequest();
+            return SendRoomMutationAsync("room.ready", "{\"roomId\":\"" + EscapeJson(CurrentRoomId) + "\",\"isReady\":" + (isReady ? "true" : "false") + ",\"actionId\":\"" + req.actionId + "\",\"stateRevision\":" + req.stateRevision + "}", req.stateRevision);
         }
 
         public Task<bool> AddBotAsync()
         {
-            return SendEventAsync("room.addBot", JsonUtility.ToJson(CreateActionRequest()));
+            var req = CreateActionRequest();
+            return SendRoomMutationAsync("room.addBot", JsonUtility.ToJson(req), req.stateRevision);
         }
 
         public Task<bool> RemoveBotAsync()
         {
-            return SendEventAsync("room.removeBot", JsonUtility.ToJson(CreateActionRequest()));
+            var req = CreateActionRequest();
+            return SendRoomMutationAsync("room.removeBot", JsonUtility.ToJson(req), req.stateRevision);
         }
 
         public Task<bool> StartGameAsync()
         {
-            return SendEventAsync("game.start");
+            var req = CreateActionRequest();
+            return SendRoomMutationAsync("game.start", JsonUtility.ToJson(req), req.stateRevision);
+        }
+
+        private async Task<bool> SendRoomMutationAsync(string type, string payload, int baseRevision)
+        {
+            if (_roomMutationReady != null) return false;
+            _roomMutationBaseRevision = baseRevision;
+            _roomMutationReady = new TaskCompletionSource<bool>();
+            var completion = _roomMutationReady;
+            if (!await SendEventAsync(type, payload))
+            {
+                if (_roomMutationReady == completion) _roomMutationReady = null;
+                return false;
+            }
+            var finished = await Task.WhenAny(completion.Task, Task.Delay(5000));
+            if (_roomMutationReady == completion) _roomMutationReady = null;
+            return finished == completion.Task && await completion.Task;
         }
 
         public Task<bool> PickRoleAsync(int slotId)
@@ -461,8 +490,14 @@ namespace BangBang.Core.Network
             return new ClientActionRequestDTO
             {
                 actionId = Guid.NewGuid().ToString("N"),
+                roomId = CurrentRoomId,
                 stateRevision = GameStateStore.Instance?.CurrentSnapshot?.revision ?? 0
             };
+        }
+
+        private static string EscapeJson(string value)
+        {
+            return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
 
         public Task<bool> RequestRematchAsync()
