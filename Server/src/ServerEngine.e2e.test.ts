@@ -49,7 +49,7 @@ class Peer {
     }
 }
 
-test('real WebSocket flow reaches a playable state without leaking hidden roles', { timeout: 20000 }, async () => {
+test('real WebSocket flow supports a full 8-player table without leaking hidden roles', { timeout: 25000 }, async () => {
     const server = http.createServer();
     const wss = new WebSocketServer({ server });
     new ServerEngine(wss);
@@ -59,7 +59,7 @@ test('real WebSocket flow reaches a playable state without leaking hidden roles'
     const peers: Peer[] = [];
 
     try {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 8; i++) {
             const socket = new WebSocket(`ws://127.0.0.1:${address.port}`);
             await new Promise<void>((resolve, reject) => { socket.once('open', resolve); socket.once('error', reject); });
             const peer = new Peer(socket);
@@ -68,7 +68,7 @@ test('real WebSocket flow reaches a playable state without leaking hidden roles'
             await peer.waitFor(message => message.type === 'session.ready');
         }
 
-        peers[0].send('room.create', { playerName: 'Host', maxPlayers: 4, turnTimeSec: 2, roleDraftSec: 2, characterDraftSec: 4 }, 'create');
+        peers[0].send('room.create', { playerName: 'Host', maxPlayers: 8, turnTimeSec: 10, roleDraftSec: 2, characterDraftSec: 4 }, 'create');
         const created = await peers[0].waitFor(message => message.type === 'room.created');
         const roomId = created.data.roomId;
         for (let i = 1; i < peers.length; i++) {
@@ -77,7 +77,7 @@ test('real WebSocket flow reaches a playable state without leaking hidden roles'
             peers[i].send('room.ready', { isReady: true });
         }
 
-        await peers[0].waitFor(message => message.type === 'room.snapshot' && message.data.players.length === 4);
+        await peers[0].waitFor(message => message.type === 'room.snapshot' && message.data.players.length === 8);
         peers[0].send('game.start');
         await Promise.all(peers.map(peer => peer.waitForState('ROLE_DRAFT')));
 
@@ -103,7 +103,7 @@ test('real WebSocket flow reaches a playable state without leaking hidden roles'
         }
 
         const playable = await peers[0].waitFor(message => message.type === 'room.snapshot' && ['TURN_START', 'JUDGEMENT', 'DRAW', 'PLAY'].includes(message.data.state), 9000);
-        assert.equal(playable.data.players.length, 4);
+        assert.equal(playable.data.players.length, 8);
         assert.ok(playable.data.privateState.hand.length > 0);
         playable.data.players.forEach((player: any) => {
             if (!player.isRoleRevealed) assert.equal(player.publicRoleId, undefined);

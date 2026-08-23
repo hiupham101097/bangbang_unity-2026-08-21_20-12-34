@@ -15,6 +15,7 @@ class GameRoom {
     sequence = 0;
     revision = 0;
     processedActionIds = new Set();
+    processedActionOrder = [];
     bangCardsPlayedThisTurn = 0;
     // Turn State
     currentTurnPlayerId = "";
@@ -49,14 +50,15 @@ class GameRoom {
     constructor(roomId, wss, config) {
         this.roomId = roomId;
         this.wss = wss;
+        const clampInt = (value, fallback, min, max) => Math.max(min, Math.min(max, Math.trunc(Number(value) || fallback)));
         this.rules = {
-            maxPlayers: config.maxPlayers || 5,
-            botCount: config.botCount || 0,
-            turnTimeSec: config.turnTimeSec || 30,
-            startingHandMode: config.startingHandMode || 'FIXED_7',
-            roleDraftSec: config.roleDraftSec || 20,
-            characterDraftSec: config.characterDraftSec || 30,
-            responseTimeSec: config.responseTimeSec || 10
+            maxPlayers: clampInt(config.maxPlayers, 5, 4, 8),
+            botCount: clampInt(config.botCount, 0, 0, 7),
+            turnTimeSec: clampInt(config.turnTimeSec, 30, 10, 120),
+            startingHandMode: config.startingHandMode === 'BY_HP' ? 'BY_HP' : 'FIXED_7',
+            roleDraftSec: clampInt(config.roleDraftSec, 20, 2, 60),
+            characterDraftSec: clampInt(config.characterDraftSec, 30, 4, 90),
+            responseTimeSec: clampInt(config.responseTimeSec, 10, 3, 30)
         };
     }
     get maxPlayers() { return this.rules.maxPlayers; }
@@ -142,8 +144,12 @@ class GameRoom {
                 return;
             }
             this.processedActionIds.add(data.actionId);
-            if (this.processedActionIds.size > 4096)
-                this.processedActionIds.clear();
+            this.processedActionOrder.push(data.actionId);
+            if (this.processedActionOrder.length > 4096) {
+                const oldest = this.processedActionOrder.shift();
+                if (oldest)
+                    this.processedActionIds.delete(oldest);
+            }
         }
         if (data.stateRevision !== undefined && data.stateRevision !== this.revision) {
             this.sendPrivateMessage(socketId, 'game.action.rejected', { reason: 'STALE_STATE', revision: this.revision });
@@ -834,15 +840,31 @@ class GameRoom {
     runBotTurn(bot) {
         if (this.state !== GameState_1.ServerGameState.PLAY || this.currentTurnPlayerId !== bot.id)
             return;
+        if (bot.characterId === 'sid_ketchum' && bot.currentHealth < bot.maxHealth && bot.hand.length >= 2) {
+            this.handleActivateAbility(bot.id, { cardIds: bot.hand.slice(0, 2) });
+        }
+        if (this.state !== GameState_1.ServerGameState.PLAY)
+            return;
         const beer = bot.hand.find(c => this.cardType(c) === 'beer');
         if (beer && bot.currentHealth < bot.maxHealth && this.alivePlayers().length > 2)
             this.handlePlayCard(bot.id, { cardId: beer, targetPlayerIds: [] });
+        if (this.state !== GameState_1.ServerGameState.PLAY)
+            return;
+        const equipmentTypes = new Set(['volcanic', 'schofield', 'remington', 'rev_carabine', 'winchester', 'scope', 'mustang', 'barrel', 'dynamite']);
+        const equipment = bot.hand.find(c => equipmentTypes.has(this.cardType(c)));
+        if (equipment)
+            this.handlePlayCard(bot.id, { cardId: equipment, targetPlayerIds: [] });
         if (this.state !== GameState_1.ServerGameState.PLAY)
             return;
         const target = this.alivePlayers().find(p => p.id !== bot.id && this.isTargetable(bot, p));
         const bang = bot.hand.find(c => this.cardType(c) === 'bang');
         if (bang && target)
             this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
+        if (this.state !== GameState_1.ServerGameState.PLAY)
+            return;
+        const globalAction = bot.hand.find(c => ['general_store', 'indiani', 'gatling', 'saloon', 'dilizenza', 'wells_fargo'].includes(this.cardType(c)));
+        if (globalAction)
+            this.handlePlayCard(bot.id, { cardId: globalAction, targetPlayerIds: [] });
         if (this.state === GameState_1.ServerGameState.PLAY)
             this.finishOrDiscardCurrentTurn();
     }

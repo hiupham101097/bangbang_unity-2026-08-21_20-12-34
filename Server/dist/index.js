@@ -12,7 +12,11 @@ const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 const server = http_1.default.createServer(app);
-const wss = new ws_1.WebSocketServer({ server });
+const wss = new ws_1.WebSocketServer({
+    server,
+    maxPayload: 64 * 1024,
+    perMessageDeflate: false
+});
 const PORT = process.env.PORT || 3000;
 app.get('/health', (req, res) => {
     res.send({ status: 'ok', version: '1.0.0' });

@@ -6,18 +6,40 @@ const uuid_1 = require("uuid");
 class ServerEngine {
     wss;
     rooms = new Map();
+    heartbeatHandle;
+    static MAX_ROOMS = 500;
     constructor(wss) {
         this.wss = wss;
         this.setupHandlers();
+        this.heartbeatHandle = setInterval(() => {
+            for (const client of this.wss.clients) {
+                const socket = client;
+                if (socket.isAlive === false) {
+                    socket.terminate();
+                    continue;
+                }
+                socket.isAlive = false;
+                socket.ping();
+            }
+        }, 30_000);
+        this.heartbeatHandle.unref();
+        this.wss.once('close', () => clearInterval(this.heartbeatHandle));
     }
     setupHandlers() {
         this.wss.on('connection', (ws) => {
             // Assign a connection ID
             ws.id = (0, uuid_1.v4)();
+            ws.isAlive = true;
+            ws.on('pong', () => { ws.isAlive = true; });
             console.log(`[CONNECT] User connected: ${ws.id}`);
             ws.on('message', (message) => {
                 try {
-                    const parsed = JSON.parse(message);
+                    const raw = message.toString();
+                    if (raw.length > 64 * 1024)
+                        return ws.close(1009, 'Message too large');
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed.type !== 'string' || parsed.type.length > 80)
+                        return;
                     this.handleMessage(ws, parsed);
                 }
                 catch (e) {
@@ -56,6 +78,11 @@ class ServerEngine {
             ws.send(JSON.stringify({ type: 'session.ready', data: JSON.stringify({ playerId: stableId, resumed, serverTime: Date.now() }) }));
         }
         else if (type === 'room.create') {
+            if (this.rooms.size >= ServerEngine.MAX_ROOMS) {
+                if (reqId)
+                    ws.send(JSON.stringify({ reqId, type: 'error', data: 'Server room capacity reached' }));
+                return;
+            }
             const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             const room = new GameRoom_1.GameRoom(roomId, this.wss, data || {});
             this.rooms.set(roomId, room);
@@ -85,7 +112,7 @@ class ServerEngine {
             }
         }
         else if (type === 'room.list') {
-            const list = Array.from(this.rooms.values()).map(r => ({
+            const list = Array.from(this.rooms.values()).slice(0, 200).map(r => ({
                 roomId: r.roomId,
                 roomCode: r.roomId,
                 roomName: `Saloon ${r.roomId}`,

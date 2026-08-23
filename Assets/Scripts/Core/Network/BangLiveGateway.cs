@@ -41,6 +41,8 @@ namespace BangBang.Core.Network
         private string _displayName;
         private string _deviceId;
         private bool _intentionalDisconnect;
+        private bool _reconnectInProgress;
+        private const int MaxMessageBytes = 64 * 1024;
         private readonly ConcurrentQueue<string> _incomingMessages = new ConcurrentQueue<string>();
         private readonly ConcurrentQueue<ConnectionState> _connectionChanges = new ConcurrentQueue<ConnectionState>();
         
@@ -109,6 +111,8 @@ namespace BangBang.Core.Network
                         {
                             result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cts.Token);
                             message.Write(buffer, 0, result.Count);
+                            if (message.Length > MaxMessageBytes)
+                                throw new InvalidOperationException("Server message exceeds 64 KiB limit.");
                         }
                         _incomingMessages.Enqueue(Encoding.UTF8.GetString(message.ToArray()));
                     }
@@ -136,18 +140,25 @@ namespace BangBang.Core.Network
 
         private async Task ReconnectAsync()
         {
+            if (_reconnectInProgress || _intentionalDisconnect) return;
+            _reconnectInProgress = true;
             CurrentConnectionState = ConnectionState.Reconnecting;
             _connectionChanges.Enqueue(CurrentConnectionState);
-            for (int attempt = 0; attempt < 5 && !_intentionalDisconnect; attempt++)
+            try
             {
-                await Task.Delay(1000 * (attempt + 1));
-                if (await InitializeSessionAsync(_deviceId, _displayName))
+                for (int attempt = 0; attempt < 6 && !_intentionalDisconnect; attempt++)
                 {
-                    if (!string.IsNullOrEmpty(CurrentRoomId))
-                        await SendEventAsync("game.resync", "{}");
-                    return;
+                    int exponentialMs = Math.Min(16000, 1000 * (1 << attempt));
+                    await Task.Delay(exponentialMs + UnityEngine.Random.Range(0, 350));
+                    if (await InitializeSessionAsync(_deviceId, _displayName))
+                    {
+                        if (!string.IsNullOrEmpty(CurrentRoomId))
+                            await SendEventAsync("game.resync", "{}");
+                        return;
+                    }
                 }
             }
+            finally { _reconnectInProgress = false; }
         }
 
         private void HandleServerMessage(string jsonRaw)

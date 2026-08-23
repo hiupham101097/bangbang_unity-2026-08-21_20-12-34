@@ -48,6 +48,9 @@ namespace BangBang.UI.Views
         private readonly List<PlayerSeatUI> _seatUIs = new List<PlayerSeatUI>();
         private readonly List<GameObject> _localEquipCards = new List<GameObject>();
         private readonly List<GameObject> _bulletTokens = new List<GameObject>();
+        private int _renderedHealth = -1;
+        private int _renderedMaxHealth = -1;
+        private string _renderedEquipmentKey = null;
 
         private CardUI _selectedCardUI;
         private string _selectedTargetId;
@@ -201,6 +204,9 @@ namespace BangBang.UI.Views
         private void RenderBulletHealth(int current, int max)
         {
             if (localBulletHealthContainer == null) return;
+            if (_renderedHealth == current && _renderedMaxHealth == max) return;
+            _renderedHealth = current;
+            _renderedMaxHealth = max;
             foreach (var b in _bulletTokens) Destroy(b);
             _bulletTokens.Clear();
 
@@ -222,6 +228,9 @@ namespace BangBang.UI.Views
         private void RenderLocalEquipment(List<string> equipment)
         {
             if (localEquipmentTray == null) return;
+            string equipmentKey = equipment == null ? string.Empty : string.Join("\u001f", equipment);
+            if (_renderedEquipmentKey == equipmentKey) return;
+            _renderedEquipmentKey = equipmentKey;
             foreach (var eq in _localEquipCards) Destroy(eq);
             _localEquipCards.Clear();
 

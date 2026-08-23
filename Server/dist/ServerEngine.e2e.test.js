@@ -84,7 +84,7 @@ class Peer {
         return (await this.waitFor(message => message.type === 'room.snapshot' && predicate(message.data), timeoutMs)).data;
     }
 }
-(0, node_test_1.default)('real WebSocket flow reaches a playable state without leaking hidden roles', { timeout: 20000 }, async () => {
+(0, node_test_1.default)('real WebSocket flow supports a full 8-player table without leaking hidden roles', { timeout: 25000 }, async () => {
     const server = node_http_1.default.createServer();
     const wss = new ws_1.WebSocketServer({ server });
     new ServerEngine_1.ServerEngine(wss);
@@ -93,7 +93,7 @@ class Peer {
     strict_1.default.ok(address && typeof address !== 'string');
     const peers = [];
     try {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 8; i++) {
             const socket = new ws_1.default(`ws://127.0.0.1:${address.port}`);
             await new Promise((resolve, reject) => { socket.once('open', resolve); socket.once('error', reject); });
             const peer = new Peer(socket);
@@ -101,7 +101,7 @@ class Peer {
             peer.send('session.resume', { deviceId: `e2e_player_${i}`, clientVersion: 'test' });
             await peer.waitFor(message => message.type === 'session.ready');
         }
-        peers[0].send('room.create', { playerName: 'Host', maxPlayers: 4, turnTimeSec: 2, roleDraftSec: 2, characterDraftSec: 4 }, 'create');
+        peers[0].send('room.create', { playerName: 'Host', maxPlayers: 8, turnTimeSec: 10, roleDraftSec: 2, characterDraftSec: 4 }, 'create');
         const created = await peers[0].waitFor(message => message.type === 'room.created');
         const roomId = created.data.roomId;
         for (let i = 1; i < peers.length; i++) {
@@ -109,7 +109,7 @@ class Peer {
             await peers[i].waitFor(message => message.type === 'room.joined');
             peers[i].send('room.ready', { isReady: true });
         }
-        await peers[0].waitFor(message => message.type === 'room.snapshot' && message.data.players.length === 4);
+        await peers[0].waitFor(message => message.type === 'room.snapshot' && message.data.players.length === 8);
         peers[0].send('game.start');
         await Promise.all(peers.map(peer => peer.waitForState('ROLE_DRAFT')));
         for (let i = 0; i < peers.length; i++) {
@@ -132,7 +132,7 @@ class Peer {
             peer.send('draft.character.confirm', { characterId: option, actionId: `confirm_${i}`, stateRevision: peer.snapshot.revision });
         }
         const playable = await peers[0].waitFor(message => message.type === 'room.snapshot' && ['TURN_START', 'JUDGEMENT', 'DRAW', 'PLAY'].includes(message.data.state), 9000);
-        strict_1.default.equal(playable.data.players.length, 4);
+        strict_1.default.equal(playable.data.players.length, 8);
         strict_1.default.ok(playable.data.privateState.hand.length > 0);
         playable.data.players.forEach((player) => {
             if (!player.isRoleRevealed)

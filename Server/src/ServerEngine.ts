@@ -5,21 +5,41 @@ import { v4 as uuidv4 } from 'uuid';
 export class ServerEngine {
     private wss: WebSocketServer;
     private rooms: Map<string, GameRoom> = new Map();
+    private heartbeatHandle: NodeJS.Timeout;
+    private static readonly MAX_ROOMS = 500;
 
     constructor(wss: WebSocketServer) {
         this.wss = wss;
         this.setupHandlers();
+        this.heartbeatHandle = setInterval(() => {
+            for (const client of this.wss.clients) {
+                const socket = client as WebSocket & { isAlive?: boolean };
+                if (socket.isAlive === false) {
+                    socket.terminate();
+                    continue;
+                }
+                socket.isAlive = false;
+                socket.ping();
+            }
+        }, 30_000);
+        this.heartbeatHandle.unref();
+        this.wss.once('close', () => clearInterval(this.heartbeatHandle));
     }
 
     private setupHandlers() {
         this.wss.on('connection', (ws: WebSocket) => {
             // Assign a connection ID
             (ws as any).id = uuidv4();
+            (ws as any).isAlive = true;
+            ws.on('pong', () => { (ws as any).isAlive = true; });
             console.log(`[CONNECT] User connected: ${(ws as any).id}`);
 
-            ws.on('message', (message: string) => {
+            ws.on('message', (message) => {
                 try {
-                    const parsed = JSON.parse(message);
+                    const raw = message.toString();
+                    if (raw.length > 64 * 1024) return ws.close(1009, 'Message too large');
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed.type !== 'string' || parsed.type.length > 80) return;
                     this.handleMessage(ws, parsed);
                 } catch (e) {
                     console.error('Invalid message format', message);
@@ -57,6 +77,10 @@ export class ServerEngine {
             ws.send(JSON.stringify({ type: 'session.ready', data: JSON.stringify({ playerId: stableId, resumed, serverTime: Date.now() }) }));
         }
         else if (type === 'room.create') {
+            if (this.rooms.size >= ServerEngine.MAX_ROOMS) {
+                if (reqId) ws.send(JSON.stringify({ reqId, type: 'error', data: 'Server room capacity reached' }));
+                return;
+            }
             const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             const room = new GameRoom(roomId, this.wss, data || {});
             this.rooms.set(roomId, room);
@@ -85,7 +109,7 @@ export class ServerEngine {
             }
         }
         else if (type === 'room.list') {
-            const list = Array.from(this.rooms.values()).map(r => ({
+            const list = Array.from(this.rooms.values()).slice(0, 200).map(r => ({
                 roomId: r.roomId,
                 roomCode: r.roomId,
                 roomName: `Saloon ${r.roomId}`,

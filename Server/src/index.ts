@@ -9,7 +9,11 @@ app.use(cors());
 app.use(express.json());
 
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+    server,
+    maxPayload: 64 * 1024,
+    perMessageDeflate: false
+});
 
 const PORT = process.env.PORT || 3000;
 
