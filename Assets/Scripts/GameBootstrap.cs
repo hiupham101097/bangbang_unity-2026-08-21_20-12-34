@@ -605,12 +605,52 @@ namespace BangBang.UI
             }
 
             // Ensure all button listeners are bound
+            EnsureContextualGuide(canvas.transform);
+            if (canvas.GetComponent<BangUITheme>() == null) canvas.gameObject.AddComponent<BangUITheme>();
+
             homeScreen?.BindListeners();
             lobbyView?.BindListeners();
             waitingRoomView?.BindListeners();
             characterSelectionView?.BindListeners();
             gameTableView?.BindListeners();
             resultView?.BindListeners();
+        }
+
+        private void EnsureContextualGuide(Transform canvasTransform)
+        {
+            if (canvasTransform.Find("GlobalSafeArea") != null) return;
+
+            var safeRoot = new GameObject("GlobalSafeArea", typeof(RectTransform));
+            safeRoot.transform.SetParent(canvasTransform, false);
+            var safeRt = safeRoot.GetComponent<RectTransform>();
+            safeRt.anchorMin = Vector2.zero;
+            safeRt.anchorMax = Vector2.one;
+            safeRt.offsetMin = Vector2.zero;
+            safeRt.offsetMax = Vector2.zero;
+            safeRoot.AddComponent<SafeAreaFitter>();
+
+            var guideRoot = new GameObject("ContextualGuide", typeof(RectTransform), typeof(Image), typeof(ContextualGuideUI));
+            guideRoot.transform.SetParent(safeRoot.transform, false);
+            var guideRt = guideRoot.GetComponent<RectTransform>();
+            guideRt.anchorMin = new Vector2(0.5f, 1f);
+            guideRt.anchorMax = new Vector2(0.5f, 1f);
+            guideRt.pivot = new Vector2(0.5f, 1f);
+            guideRt.anchoredPosition = new Vector2(0f, -18f);
+            guideRt.sizeDelta = new Vector2(760f, 76f);
+            var guideImage = guideRoot.GetComponent<Image>();
+            guideImage.color = new Color(0.09f, 0.075f, 0.065f, 0.94f);
+            guideImage.raycastTarget = false;
+
+            var eyebrowObj = CreateText("Eyebrow", "BƯỚC HIỆN TẠI", new Vector2(0f, 18f), new Vector2(700f, 22f), 12, BangUITheme.Brass, guideRoot.transform);
+            var instructionObj = CreateText("Instruction", "Đang đồng bộ trạng thái trận đấu…", new Vector2(0f, -12f), new Vector2(700f, 34f), 16, BangUITheme.Ivory, guideRoot.transform);
+            eyebrowObj.GetComponent<Text>().raycastTarget = false;
+            instructionObj.GetComponent<Text>().raycastTarget = false;
+
+            guideRoot.GetComponent<ContextualGuideUI>().Initialize(
+                guideRoot,
+                eyebrowObj.GetComponent<Text>(),
+                instructionObj.GetComponent<Text>());
+            safeRoot.transform.SetAsLastSibling();
         }
 
         private (GameObject, Button) CreatePopupBox(string name, string title, string content, Transform parent)

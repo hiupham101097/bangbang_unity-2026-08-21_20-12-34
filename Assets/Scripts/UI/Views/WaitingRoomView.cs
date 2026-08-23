@@ -207,28 +207,13 @@ namespace BangBang.UI.Views
             return seatObj;
         }
 
-        private void HandleAddBotClicked()
+        private async void HandleAddBotClicked()
         {
             var snap = GameStateStore.Instance?.CurrentSnapshot;
             if (snap == null || snap.players.Count >= 7) return;
-
-            string[] botPool = { "Bill Độc Nhãn", "Apache Jack", "Django Nhanh Nhẹn", "Doc Holliday", "Jesse Râu Đen", "Billy Cao Kều" };
-            int nextIdx = snap.players.Count;
-            string botName = botPool[(nextIdx - 1) % botPool.Length];
-
-            snap.players.Add(new PlayerSnapshotDTO
-            {
-                id = "bot_" + nextIdx,
-                name = botName,
-                seat = nextIdx,
-                isHost = false,
-                isReady = true,
-                currentHealth = 4,
-                maxHealth = 4
-            });
-
             AudioManager.Instance?.PlaySFX("button_tap");
-            RenderWaitingRoom(snap);
+            GameStateStore.Instance?.SetRequestPending(true);
+            if (GameStateStore.Instance?.Gateway != null) await GameStateStore.Instance.Gateway.AddBotAsync();
         }
 
         private async void HandleToggleReadyClicked()

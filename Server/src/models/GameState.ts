@@ -49,6 +49,8 @@ export interface InteractionPromptDTO {
     message: string;
     minSelections: number;
     maxSelections: number;
+    requiredCount?: number;
+    requiredCardType?: string;
     validPlayerIds: string[];
     validCardIds: string[];
     options: string[];
@@ -62,6 +64,9 @@ export interface RuleConfig {
     botCount: number;
     turnTimeSec: number;
     startingHandMode: 'FIXED_7' | 'BY_HP';
+    roleDraftSec: number;
+    characterDraftSec: number;
+    responseTimeSec: number;
 }
 
 export interface MatchStateSnapshotDTO {
@@ -85,5 +90,6 @@ export interface MatchStateSnapshotDTO {
     combatLogs: string[];
     serverTime: number;
     sequence: number;
+    revision: number;
     rules: RuleConfig;
 }

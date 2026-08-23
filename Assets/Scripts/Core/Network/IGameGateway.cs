@@ -30,6 +30,7 @@ namespace BangBang.Core.Network
         Task<bool> JoinRoomAsync(string roomCodeOrId, string password = "");
         Task<bool> LeaveRoomAsync();
         Task<bool> ToggleReadyAsync(bool isReady);
+        Task<bool> AddBotAsync();
         Task<bool> StartGameAsync();
         Task<bool> SelectCharacterAsync(string characterId);
         Task<bool> RequestDrawAsync();

@@ -42,13 +42,27 @@ class ServerEngine {
         const type = payload.type;
         const data = payload.data;
         const reqId = payload.reqId; // for callbacks
-        if (type === 'room.create') {
+        if (type === 'session.resume') {
+            const stableId = String(data?.deviceId || ws.id).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+            let resumed = false;
+            for (const room of this.rooms.values()) {
+                if (room.reconnectPlayer(stableId, ws)) {
+                    resumed = true;
+                    break;
+                }
+            }
+            ws.id = stableId;
+            ws.send(JSON.stringify({ type: 'session.ready', data: JSON.stringify({ playerId: stableId, resumed, serverTime: Date.now() }) }));
+        }
+        else if (type === 'room.create') {
             const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             const room = new GameRoom_1.GameRoom(roomId, this.wss, data || {});
             this.rooms.set(roomId, room);
             room.joinPlayer(ws, data?.playerName || 'Player', true);
+            for (let i = 0; i < Math.min(Number(data?.botCount || 0), room.maxPlayers - 1); i++)
+                room.addBot();
             if (reqId) {
-                ws.send(JSON.stringify({ reqId, type: 'room.created', data: JSON.stringify({ roomId: roomId }) }));
+                ws.send(JSON.stringify({ reqId, type: 'room.created', data: JSON.stringify({ roomId, playerId: ws.id }) }));
             }
         }
         else if (type === 'room.join') {
@@ -62,7 +76,7 @@ class ServerEngine {
             const joined = room.joinPlayer(ws, playerName || 'Player');
             if (joined) {
                 if (reqId)
-                    ws.send(JSON.stringify({ reqId, type: 'room.joined', data: JSON.stringify({ success: true }) }));
+                    ws.send(JSON.stringify({ reqId, type: 'room.joined', data: JSON.stringify({ success: true, playerId: ws.id }) }));
             }
             else {
                 if (reqId)

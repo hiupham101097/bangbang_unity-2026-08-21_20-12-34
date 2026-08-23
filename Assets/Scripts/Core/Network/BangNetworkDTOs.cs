@@ -3,6 +3,21 @@ using System.Collections.Generic;
 
 namespace BangBang.Core.Network
 {
+    [Serializable]
+    public class SessionResumeRequestDTO
+    {
+        public string deviceId;
+        public string clientVersion;
+    }
+
+    [Serializable]
+    public class SessionReadyDTO
+    {
+        public string playerId;
+        public bool resumed;
+        public long serverTime;
+    }
+
     public enum ServerGameState
     {
         LOBBY,
@@ -35,6 +50,8 @@ namespace BangBang.Core.Network
     public class RoomCreatedResponseDTO
     {
         public string roomId;
+        public string playerId;
+        public bool success;
     }
 
     [Serializable]
@@ -47,6 +64,8 @@ namespace BangBang.Core.Network
         public string message;
         public int minSelections = 1;
         public int maxSelections = 1;
+        public int requiredCount = 1;
+        public string requiredCardType;
         public List<string> validPlayerIds = new List<string>();
         public List<string> validCardIds = new List<string>();
         public List<string> options = new List<string>();
@@ -92,6 +111,9 @@ namespace BangBang.Core.Network
         public int botCount;
         public int turnTimeSec;
         public string startingHandMode;
+        public int roleDraftSec;
+        public int characterDraftSec;
+        public int responseTimeSec;
     }
 
     [Serializable]
@@ -117,6 +139,7 @@ namespace BangBang.Core.Network
         public List<string> combatLogs = new List<string>();
         public long serverTime;
         public int sequence;
+        public int revision;
         public RuleConfig rules;
     }
 
@@ -128,10 +151,21 @@ namespace BangBang.Core.Network
         public string playerId;
         public string action; // "CREATE_ROOM", "JOIN_ROOM", "READY", "START_GAME", "SELECT_CHARACTER", "DRAW", "PLAY_CARD", "INTERACTION_RESPONSE", "END_TURN", "REMATCH"
         public string cardId;
+        public string characterId;
         public List<string> targetPlayerIds = new List<string>();
         public List<string> selectedCardIds = new List<string>();
         public int optionIndex;
         public string interactionId;
+        public string actionId;
+        public int stateRevision;
+    }
+
+    [Serializable]
+    public class DiscardRequestDTO
+    {
+        public string actionId;
+        public int stateRevision;
+        public List<string> cardIds = new List<string>();
     }
 
     [Serializable]

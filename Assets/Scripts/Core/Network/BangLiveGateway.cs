@@ -5,6 +5,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BangBang.Core.State;
 using UnityEngine;
 
 namespace BangBang.Core.Network
@@ -65,6 +66,11 @@ namespace BangBang.Core.Network
 
                 await _webSocket.ConnectAsync(new Uri(wsUrl), _cts.Token);
                 _ = ReceiveWebSocketLoopAsync();
+                await SendEventAsync("session.resume", JsonUtility.ToJson(new SessionResumeRequestDTO
+                {
+                    deviceId = LocalPlayerId,
+                    clientVersion = Application.version
+                }));
                 
                 CurrentConnectionState = ConnectionState.Connected;
                 OnConnectionStateChanged?.Invoke(CurrentConnectionState);
@@ -125,6 +131,15 @@ namespace BangBang.Core.Network
                 else if (msg.type == "game.error")
                 {
                     OnErrorMessage?.Invoke(msg.data);
+                }
+                else if (msg.type == "game.action.rejected")
+                {
+                    OnActionRejected?.Invoke(string.Empty, msg.data);
+                }
+                else if (msg.type == "session.ready")
+                {
+                    var session = JsonUtility.FromJson<SessionReadyDTO>(msg.data);
+                    if (session != null && !string.IsNullOrEmpty(session.playerId)) LocalPlayerId = session.playerId;
                 }
             }
             catch (Exception ex)
@@ -200,7 +215,11 @@ namespace BangBang.Core.Network
             {
                 try {
                     var dict = JsonUtility.FromJson<RoomCreatedResponseDTO>(res);
-                    if (dict != null && !string.IsNullOrEmpty(dict.roomId)) CurrentRoomId = dict.roomId;
+                    if (dict != null && !string.IsNullOrEmpty(dict.roomId))
+                    {
+                        CurrentRoomId = dict.roomId;
+                        if (!string.IsNullOrEmpty(dict.playerId)) LocalPlayerId = dict.playerId;
+                    }
                 } catch { CurrentRoomId = "WAITING..."; }
                 return true;
             }
@@ -214,6 +233,12 @@ namespace BangBang.Core.Network
             if (res != null && !res.Contains("error"))
             {
                 CurrentRoomId = roomCodeOrId;
+                try
+                {
+                    var joined = JsonUtility.FromJson<RoomCreatedResponseDTO>(res);
+                    if (joined != null && !string.IsNullOrEmpty(joined.playerId)) LocalPlayerId = joined.playerId;
+                }
+                catch { }
                 return true;
             }
             return false;
@@ -230,6 +255,11 @@ namespace BangBang.Core.Network
             return SendEventAsync("room.ready", "{\"isReady\":" + (isReady ? "true" : "false") + "}");
         }
 
+        public Task<bool> AddBotAsync()
+        {
+            return SendEventAsync("room.addBot", JsonUtility.ToJson(CreateActionRequest()));
+        }
+
         public Task<bool> StartGameAsync()
         {
             return SendEventAsync("game.start");
@@ -237,7 +267,9 @@ namespace BangBang.Core.Network
 
         public Task<bool> SelectCharacterAsync(string characterId)
         {
-            return SendEventAsync("draft.character.pick", "{\"characterId\":\"" + characterId + "\"}");
+            var req = CreateActionRequest();
+            req.characterId = characterId;
+            return SendEventAsync("draft.character.confirm", JsonUtility.ToJson(req));
         }
 
         public Task<bool> RequestDrawAsync()
@@ -247,19 +279,47 @@ namespace BangBang.Core.Network
 
         public Task<bool> PlayCardAsync(string cardId, List<string> targetPlayerIds = null, List<string> selectedCardIds = null)
         {
-            var req = new ClientActionRequestDTO { cardId = cardId, targetPlayerIds = targetPlayerIds, selectedCardIds = selectedCardIds };
+            var req = CreateActionRequest();
+            req.cardId = cardId;
+            req.targetPlayerIds = targetPlayerIds;
+            req.selectedCardIds = selectedCardIds;
             return SendEventAsync("game.action.play", JsonUtility.ToJson(req));
         }
 
         public Task<bool> SubmitInteractionAsync(string interactionId, string action, List<string> selectedPlayers = null, List<string> selectedCards = null, int optionIndex = 0)
         {
-            var req = new ClientActionRequestDTO { action = action, targetPlayerIds = selectedPlayers, selectedCardIds = selectedCards };
+            var req = CreateActionRequest();
+            req.interactionId = interactionId;
+            req.action = action;
+            req.targetPlayerIds = selectedPlayers;
+            req.selectedCardIds = selectedCards;
+            req.optionIndex = optionIndex;
             return SendEventAsync("game.action.respond", JsonUtility.ToJson(req));
         }
 
         public Task<bool> EndTurnAsync(List<string> discardCardIds = null)
         {
-            return SendEventAsync("game.action.endTurn");
+            var req = CreateActionRequest();
+            if (discardCardIds != null && discardCardIds.Count > 0)
+            {
+                req.selectedCardIds = discardCardIds;
+                return SendEventAsync("discard.submit", JsonUtility.ToJson(new DiscardRequestDTO
+                {
+                    actionId = req.actionId,
+                    stateRevision = req.stateRevision,
+                    cardIds = discardCardIds
+                }));
+            }
+            return SendEventAsync("game.action.endTurn", JsonUtility.ToJson(req));
+        }
+
+        private ClientActionRequestDTO CreateActionRequest()
+        {
+            return new ClientActionRequestDTO
+            {
+                actionId = Guid.NewGuid().ToString("N"),
+                stateRevision = GameStateStore.Instance?.CurrentSnapshot?.revision ?? 0
+            };
         }
 
         public Task<bool> RequestRematchAsync()

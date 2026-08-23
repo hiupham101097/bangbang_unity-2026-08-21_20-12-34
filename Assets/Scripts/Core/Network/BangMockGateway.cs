@@ -116,6 +116,26 @@ namespace BangBang.Core.Network
             return Task.FromResult(true);
         }
 
+        public Task<bool> AddBotAsync()
+        {
+            if (_currentSnapshot == null || _currentSnapshot.players.Count >= _currentSnapshot.rules.maxPlayers) return Task.FromResult(false);
+            int seat = _currentSnapshot.players.Count;
+            _currentSnapshot.players.Add(new PlayerSnapshotDTO
+            {
+                id = "bot_" + seat,
+                name = "Bot Cao Bồi " + (seat + 1),
+                seat = seat,
+                isBot = true,
+                isReady = true,
+                isConnected = true,
+                isAlive = true,
+                currentHealth = 4,
+                maxHealth = 4
+            });
+            BroadcastSnapshot();
+            return Task.FromResult(true);
+        }
+
         public Task<bool> StartGameAsync()
         {
             if (_currentSnapshot == null) return Task.FromResult(false);
