@@ -102,6 +102,9 @@ namespace BangBang.Core.Network
         public string roleId;
         public List<string> hand = new List<string>();
         public List<string> draftCharacterOptions = new List<string>();
+        public int draftRoleSlot = -1;
+        public List<int> draftCharacterSlots = new List<int>();
+        public string selectedCharacterId;
     }
     
     [Serializable]
@@ -125,6 +128,11 @@ namespace BangBang.Core.Network
         public ServerGameState state;
         public string phaseId;
         public long deadlineAt;
+        public int draftSlotCount;
+        public List<int> lockedDraftSlots = new List<int>();
+        public string judgementCard;
+        public string judgementEffect;
+        public string judgementResult;
         public string currentTurnPlayerId;
         public string currentPhase; // "draw", "play", "discard"
         public int turnNumber;
@@ -179,5 +187,11 @@ namespace BangBang.Core.Network
         public bool isPrivate;
         public int turnTimeSeconds;
         public int pingMs;
+    }
+
+    [Serializable]
+    public class RoomSummaryListDTO
+    {
+        public List<RoomSummaryDTO> items = new List<RoomSummaryDTO>();
     }
 }

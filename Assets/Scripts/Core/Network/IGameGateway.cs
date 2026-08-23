@@ -31,7 +31,10 @@ namespace BangBang.Core.Network
         Task<bool> LeaveRoomAsync();
         Task<bool> ToggleReadyAsync(bool isReady);
         Task<bool> AddBotAsync();
+        Task<bool> RemoveBotAsync();
         Task<bool> StartGameAsync();
+        Task<bool> PickRoleAsync(int slotId);
+        Task<bool> PickCharacterSlotAsync(int slotId);
         Task<bool> SelectCharacterAsync(string characterId);
         Task<bool> RequestDrawAsync();
         Task<bool> PlayCardAsync(string cardId, List<string> targetPlayerIds = null, List<string> selectedCardIds = null);

@@ -16,7 +16,7 @@ namespace BangBang.UI.Views
         public Button copyCodeButton;
         public Text playerCountText;
 
-        [Header("Seats Layout (7 Seats)")]
+        [Header("Seats Layout (4-8 Seats)")]
         public Transform seatsContainer;
 
         [Header("Action Controls")]
@@ -24,6 +24,7 @@ namespace BangBang.UI.Views
         public Text readyButtonText;
         public Button startGameButton;
         public Button addBotButton; // Nút thêm Bot chơi chung
+        public Button removeBotButton;
         public Button leaveRoomButton;
         public Text startDisabledReasonText;
 
@@ -68,6 +69,12 @@ namespace BangBang.UI.Views
                 addBotButton.onClick.AddListener(HandleAddBotClicked);
             }
 
+            if (removeBotButton != null)
+            {
+                removeBotButton.onClick.RemoveAllListeners();
+                removeBotButton.onClick.AddListener(HandleRemoveBotClicked);
+            }
+
             if (readyToggleButton != null)
             {
                 readyToggleButton.onClick.RemoveAllListeners();
@@ -100,10 +107,17 @@ namespace BangBang.UI.Views
             if (snapshot == null || snapshot.state != ServerGameState.WAITING) return;
 
             if (roomCodeText != null) roomCodeText.text = "MÃ PHÒNG: " + snapshot.roomCode;
-            if (playerCountText != null) playerCountText.text = snapshot.players.Count + " / 7 Người";
+            int maxPlayers = snapshot.rules != null && snapshot.rules.maxPlayers > 0 ? snapshot.rules.maxPlayers : 8;
+            if (playerCountText != null) playerCountText.text = snapshot.players.Count + " / " + maxPlayers + " Người";
 
             var local = snapshot.players.Find(p => p.id == GameStateStore.Instance.LocalPlayerId);
             bool isHost = local != null && local.isHost;
+            if (addBotButton != null) addBotButton.gameObject.SetActive(isHost);
+            if (removeBotButton != null)
+            {
+                removeBotButton.gameObject.SetActive(isHost);
+                removeBotButton.interactable = snapshot.players.Exists(player => player.isBot) && !GameStateStore.Instance.IsRequestPending;
+            }
 
             if (readyToggleButton != null)
             {
@@ -139,7 +153,8 @@ namespace BangBang.UI.Views
             foreach (var s in _seatCardObjects) Destroy(s);
             _seatCardObjects.Clear();
 
-            for (int i = 0; i < 7; i++)
+            int maxPlayers = snapshot.rules != null && snapshot.rules.maxPlayers > 0 ? snapshot.rules.maxPlayers : 8;
+            for (int i = 0; i < maxPlayers; i++)
             {
                 var player = i < snapshot.players.Count ? snapshot.players[i] : null;
                 var seatObj = CreateSeatCard(i, player);
@@ -210,10 +225,19 @@ namespace BangBang.UI.Views
         private async void HandleAddBotClicked()
         {
             var snap = GameStateStore.Instance?.CurrentSnapshot;
-            if (snap == null || snap.players.Count >= 7) return;
+            int maxPlayers = snap != null && snap.rules != null && snap.rules.maxPlayers > 0 ? snap.rules.maxPlayers : 8;
+            if (snap == null || snap.players.Count >= maxPlayers) return;
             AudioManager.Instance?.PlaySFX("button_tap");
             GameStateStore.Instance?.SetRequestPending(true);
             if (GameStateStore.Instance?.Gateway != null) await GameStateStore.Instance.Gateway.AddBotAsync();
+        }
+
+        private async void HandleRemoveBotClicked()
+        {
+            AudioManager.Instance?.PlaySFX("button_tap");
+            GameStateStore.Instance?.SetRequestPending(true);
+            bool ok = GameStateStore.Instance?.Gateway != null && await GameStateStore.Instance.Gateway.RemoveBotAsync();
+            if (!ok) GameStateStore.Instance?.SetRequestPending(false);
         }
 
         private async void HandleToggleReadyClicked()
@@ -244,6 +268,8 @@ namespace BangBang.UI.Views
             {
                 await GameStateStore.Instance.Gateway.LeaveRoomAsync();
             }
+            GameStateStore.Instance?.SetRequestPending(false);
+            GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
         }
     }
 }

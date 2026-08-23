@@ -16,7 +16,7 @@ namespace BangBang.UI
         public static GameBootstrap Instance { get; private set; }
 
         [Header("Networking Mode")]
-        public bool useLiveCloudflareServer = false;
+        public bool useLiveCloudflareServer = true;
         public string cloudflareWorkerUrl = "https://blue-frog-fec8.hieupham101097.workers.dev";
         public string localServerUrl = "ws://localhost:3000";
 
@@ -37,6 +37,12 @@ namespace BangBang.UI
         public GameTableView gameTableView;
         public ResultView resultView;
 
+        private GameObject _splashOverlay;
+        private Text _splashStatus;
+        private Button _splashRetryButton;
+        private IGameGateway _activeGateway;
+        private string _deviceId;
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -52,6 +58,7 @@ namespace BangBang.UI
         private async void Start()
         {
             EnsureUIHierarchy();
+            CreateSplashOverlay();
 
             if (AudioManager.Instance != null)
             {
@@ -59,33 +66,61 @@ namespace BangBang.UI
             }
 
             // Initialize Gateways & State Store
-            IGameGateway activeGateway;
             if (useLiveCloudflareServer)
             {
-                activeGateway = liveGateway;
+                _activeGateway = liveGateway;
                 Debug.Log("[GameBootstrap] Using LiveGateway -> " + liveGateway.serverWsUrl);
             }
             else
             {
-                activeGateway = mockGateway;
+                _activeGateway = mockGateway;
                 Debug.Log("[GameBootstrap] Using MockGateway (offline/local mode)");
             }
 
             if (gameStateStore != null)
             {
-                gameStateStore.BindGateway(activeGateway);
+                gameStateStore.BindGateway(_activeGateway);
             }
 
             // Re-bind FlowController after gateway is set up (timing fix)
             flowController?.BindToStore();
 
             // Start User Session
-            string deviceId = PlayerPrefs.GetString("bang_device_id", Guid.NewGuid().ToString("N").Substring(0, 16));
-            PlayerPrefs.SetString("bang_device_id", deviceId);
-            await activeGateway.InitializeSessionAsync(deviceId, "Cao bồi viễn tây");
+            _deviceId = PlayerPrefs.GetString("bang_device_id", Guid.NewGuid().ToString("N").Substring(0, 16));
+            PlayerPrefs.SetString("bang_device_id", _deviceId);
+            await ConnectSessionAsync();
+        }
 
-            // Show Home Screen initially
-            ShowHomeScreen();
+        private async System.Threading.Tasks.Task ConnectSessionAsync()
+        {
+            if (_splashRetryButton != null) _splashRetryButton.gameObject.SetActive(false);
+            if (_splashStatus != null) _splashStatus.text = "Đang kết nối và đồng bộ phiên…";
+            bool ready = _activeGateway != null && await _activeGateway.InitializeSessionAsync(_deviceId, "Cao bồi viễn tây");
+            if (ready)
+            {
+                if (_splashOverlay != null) _splashOverlay.SetActive(false);
+                ShowHomeScreen();
+            }
+            else
+            {
+                if (_splashStatus != null) _splashStatus.text = "Không thể kết nối máy chủ. Kiểm tra mạng rồi thử lại.";
+                if (_splashRetryButton != null) _splashRetryButton.gameObject.SetActive(true);
+            }
+        }
+
+        private void CreateSplashOverlay()
+        {
+            if (_splashOverlay != null) return;
+            var canvas = FindAnyObjectByType<Canvas>();
+            if (canvas == null) return;
+            _splashOverlay = CreateFullScreenPanel("SplashOverlay", canvas.transform);
+            _splashOverlay.GetComponent<Image>().color = new Color(0.035f, 0.025f, 0.02f, 1f);
+            CreateText("SplashTitle", "BANG ONLINE", new Vector2(0, 80), new Vector2(700, 90), 46, BangUITheme.Brass, _splashOverlay.transform);
+            _splashStatus = CreateText("SplashStatus", "Đang khởi tạo…", new Vector2(0, -20), new Vector2(760, 45), 18, Color.white, _splashOverlay.transform).GetComponent<Text>();
+            _splashRetryButton = CreateButton("SplashRetry", "THỬ LẠI", new Vector2(0, -110), BangUITheme.Brass, _splashOverlay.transform, new Vector2(220, 58));
+            _splashRetryButton.onClick.AddListener(async () => await ConnectSessionAsync());
+            _splashRetryButton.gameObject.SetActive(false);
+            _splashOverlay.transform.SetAsLastSibling();
         }
 
         public void ShowHomeScreen()
@@ -323,6 +358,8 @@ namespace BangBang.UI
 
                 var codeObj = CreateText("RoomCodeText", "MÃ PHÒNG: SALOON", new Vector2(0, 420f), new Vector2(600, 50), 26, Color.yellow, waitingObj.transform);
                 waitingRoomView.roomCodeText = codeObj.GetComponent<Text>();
+                waitingRoomView.copyCodeButton = CreateButton("CopyCodeBtn", "SAO CHÉP MÃ", new Vector2(390f, 420f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(180, 48));
+                waitingRoomView.playerCountText = CreateText("PlayerCount", "0 / 8 Người", new Vector2(-390f, 420f), new Vector2(220, 40), 18, Color.white, waitingObj.transform).GetComponent<Text>();
 
                 var reasonObj = CreateText("ReasonText", "Đang chờ người chơi sẵn sàng...", new Vector2(0, 360f), new Vector2(800, 30), 14, Color.white, waitingObj.transform);
                 waitingRoomView.startDisabledReasonText = reasonObj.GetComponent<Text>();
@@ -331,17 +368,18 @@ namespace BangBang.UI
                 seatsContainer.transform.SetParent(waitingObj.transform, false);
                 var sRt = seatsContainer.GetComponent<RectTransform>();
                 sRt.anchoredPosition = new Vector2(0, 30f);
-                sRt.sizeDelta = new Vector2(1300, 260);
+                sRt.sizeDelta = new Vector2(1500, 260);
                 var hlg = seatsContainer.GetComponent<HorizontalLayoutGroup>();
                 hlg.childAlignment = TextAnchor.MiddleCenter;
                 hlg.spacing = 15f;
                 waitingRoomView.seatsContainer = seatsContainer.transform;
 
                 // Controls: Start, Add Bot, Ready, Leave
-                waitingRoomView.startGameButton = CreateButton("StartBtn", "🚀 BẮT ĐẦU TRẬN ĐẤU", new Vector2(330f, -380f), new Color(0.2f, 0.7f, 0.25f), waitingObj.transform, new Vector2(250, 65));
-                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "🤖 THÊM BOT", new Vector2(100f, -380f), new Color(0.85f, 0.5f, 0.15f), waitingObj.transform, new Vector2(180, 65));
-                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-100f, -380f), new Color(0.2f, 0.55f, 0.85f), waitingObj.transform, new Vector2(180, 65));
-                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "⬅ RỜI PHÒNG", new Vector2(-310f, -380f), new Color(0.45f, 0.25f, 0.15f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.startGameButton = CreateButton("StartBtn", "🚀 BẮT ĐẦU TRẬN ĐẤU", new Vector2(430f, -380f), new Color(0.2f, 0.7f, 0.25f), waitingObj.transform, new Vector2(250, 65));
+                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "🤖 THÊM BOT", new Vector2(190f, -380f), new Color(0.85f, 0.5f, 0.15f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.removeBotButton = CreateButton("RemoveBotBtn", "BỚT BOT", new Vector2(0f, -380f), BangUITheme.Danger, waitingObj.transform, new Vector2(160, 65));
+                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-190f, -380f), new Color(0.2f, 0.55f, 0.85f), waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "⬅ RỜI PHÒNG", new Vector2(-400f, -380f), new Color(0.45f, 0.25f, 0.15f), waitingObj.transform, new Vector2(180, 65));
 
                 flowController.waitingRoomView = waitingRoomView;
             }
@@ -388,11 +426,14 @@ namespace BangBang.UI
                 candidatesContainer.transform.SetParent(charObj.transform, false);
                 var cRt = candidatesContainer.GetComponent<RectTransform>();
                 cRt.anchoredPosition = new Vector2(0, 30f);
-                cRt.sizeDelta = new Vector2(700, 460);
+                cRt.sizeDelta = new Vector2(1500, 460);
                 var hlg = candidatesContainer.GetComponent<HorizontalLayoutGroup>();
                 hlg.childAlignment = TextAnchor.MiddleCenter;
-                hlg.spacing = 40f;
+                hlg.spacing = 14f;
                 characterSelectionView.candidatesContainer = candidatesContainer.transform;
+
+                var timerObj = CreateText("CharacterTimer", "Còn 30 giây", new Vector2(0, 365f), new Vector2(300, 36), 18, Color.white, charObj.transform);
+                characterSelectionView.timerText = timerObj.GetComponent<Text>();
 
                 characterSelectionView.confirmSelectionButton = CreateButton("ConfirmCharBtn", "XÁC NHẬN CHỌN TƯỚNG", new Vector2(0, -380f), new Color(0.2f, 0.7f, 0.25f), charObj.transform, new Vector2(300, 65));
 
@@ -538,6 +579,14 @@ namespace BangBang.UI
                 gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "❌ HỦY CHỌN", new Vector2(720f, 80f), new Color(0.5f, 0.2f, 0.2f), tableObj.transform, new Vector2(180, 50));
                 gameTableView.endTurnButton = CreateButton("EndTurnBtn", "⏭ HẾT LƯỢT", new Vector2(720f, 10f), new Color(0.18f, 0.12f, 0.08f, 0.95f), tableObj.transform, new Vector2(180, 60));
 
+                var introRoot = CreateFullScreenPanel("MatchStartOverlay", tableObj.transform);
+                introRoot.GetComponent<Image>().color = new Color(0.035f, 0.025f, 0.02f, 0.96f);
+                var introTitle = CreateText("IntroTitle", "BƯỚC 3/3 — PHÁT BÀI", new Vector2(0, 55), new Vector2(900, 80), 38, BangUITheme.Brass, introRoot.transform).GetComponent<Text>();
+                var introSubtitle = CreateText("IntroSubtitle", "Máy chủ đang chia bài…", new Vector2(0, -35), new Vector2(900, 50), 20, Color.white, introRoot.transform).GetComponent<Text>();
+                var introController = tableObj.AddComponent<MatchStartSequenceUI>();
+                introController.Initialize(introRoot, introTitle, introSubtitle);
+                introRoot.SetActive(false);
+
                 flowController.gameTableView = gameTableView;
             }
 
@@ -580,7 +629,7 @@ namespace BangBang.UI
                 var cardBox = new GameObject("CardBox", typeof(RectTransform), typeof(Image));
                 cardBox.transform.SetParent(modalObj.transform, false);
                 var cbRt = cardBox.GetComponent<RectTransform>();
-                cbRt.sizeDelta = new Vector2(550, 320);
+                cbRt.sizeDelta = new Vector2(1150, 360);
                 var cbImg = cardBox.GetComponent<Image>();
                 cbImg.color = new Color(0.18f, 0.12f, 0.08f, 0.98f);
 
@@ -596,16 +645,21 @@ namespace BangBang.UI
                 var optContainer = new GameObject("Options", typeof(RectTransform), typeof(HorizontalLayoutGroup));
                 optContainer.transform.SetParent(cardBox.transform, false);
                 var optRt = optContainer.GetComponent<RectTransform>();
-                optRt.anchoredPosition = new Vector2(0, -95f);
-                optRt.sizeDelta = new Vector2(480, 60);
+                optRt.anchoredPosition = new Vector2(0, -75f);
+                optRt.sizeDelta = new Vector2(1050, 70);
                 var ohlg = optContainer.GetComponent<HorizontalLayoutGroup>();
                 ohlg.childAlignment = TextAnchor.MiddleCenter;
                 ohlg.spacing = 15f;
                 interactionController.optionsContainer = optContainer.transform;
+
+                interactionController.confirmButton = CreateButton("InteractionConfirm", "XÁC NHẬN", new Vector2(155f, -145f), BangUITheme.Success, cardBox.transform, new Vector2(260, 56));
+                interactionController.confirmButtonText = interactionController.confirmButton.GetComponentInChildren<Text>();
+                interactionController.cancelButton = CreateButton("InteractionCancel", "PASS / BỎ QUA", new Vector2(-155f, -145f), BangUITheme.Danger, cardBox.transform, new Vector2(260, 56));
             }
 
             // Ensure all button listeners are bound
             EnsureContextualGuide(canvas.transform);
+            EnsureNetworkOverlay(canvas.transform);
             if (canvas.GetComponent<BangUITheme>() == null) canvas.gameObject.AddComponent<BangUITheme>();
 
             homeScreen?.BindListeners();
@@ -651,6 +705,18 @@ namespace BangBang.UI
                 eyebrowObj.GetComponent<Text>(),
                 instructionObj.GetComponent<Text>());
             safeRoot.transform.SetAsLastSibling();
+        }
+
+        private void EnsureNetworkOverlay(Transform canvasTransform)
+        {
+            if (canvasTransform.Find("NetworkStatusOverlay") != null) return;
+            var root = CreateFullScreenPanel("NetworkStatusOverlay", canvasTransform);
+            root.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.72f);
+            var status = CreateText("NetworkStatus", "Đang kết nối lại và đồng bộ trận đấu…", Vector2.zero, new Vector2(900, 60), 24, Color.white, root.transform).GetComponent<Text>();
+            var controller = canvasTransform.gameObject.AddComponent<NetworkStatusOverlay>();
+            controller.Initialize(root, status);
+            root.transform.SetAsLastSibling();
+            root.SetActive(false);
         }
 
         private (GameObject, Button) CreatePopupBox(string name, string title, string content, Transform parent)

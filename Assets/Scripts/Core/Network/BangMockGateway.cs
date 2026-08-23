@@ -69,6 +69,7 @@ namespace BangBang.Core.Network
                 },
                 serverTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 sequence = 1,
+                rules = new RuleConfig { maxPlayers = Mathf.Clamp(maxPlayers, 4, 8), turnTimeSec = turnSeconds, startingHandMode = "FIXED_7", roleDraftSec = 20, characterDraftSec = 30, responseTimeSec = 10 },
                 privateState = new PrivatePlayerState { hand = new List<string>(), draftCharacterOptions = new List<string>() }
             };
 
@@ -136,6 +137,16 @@ namespace BangBang.Core.Network
             return Task.FromResult(true);
         }
 
+        public Task<bool> RemoveBotAsync()
+        {
+            if (_currentSnapshot == null) return Task.FromResult(false);
+            var bot = _currentSnapshot.players.FindLast(player => player.isBot);
+            if (bot == null) return Task.FromResult(false);
+            _currentSnapshot.players.Remove(bot);
+            BroadcastSnapshot();
+            return Task.FromResult(true);
+        }
+
         public Task<bool> StartGameAsync()
         {
             if (_currentSnapshot == null) return Task.FromResult(false);
@@ -144,11 +155,23 @@ namespace BangBang.Core.Network
             return Task.FromResult(true);
         }
 
+        public Task<bool> PickRoleAsync(int slotId)
+        {
+            return Task.FromResult(_currentSnapshot != null && _currentSnapshot.state == ServerGameState.ROLE_DRAFT);
+        }
+
+        public Task<bool> PickCharacterSlotAsync(int slotId)
+        {
+            return Task.FromResult(_currentSnapshot != null && _currentSnapshot.state == ServerGameState.CHARACTER_DRAFT);
+        }
+
         private IEnumerator MockGameLifecycleCoroutine()
         {
             // ── Phase 1: DEALING ROLES ──────────────────────────────
             _currentSnapshot.state = ServerGameState.ROLE_DRAFT;
             _currentSnapshot.activeInteraction = null;
+            _currentSnapshot.draftSlotCount = _currentSnapshot.players.Count;
+            _currentSnapshot.lockedDraftSlots = new List<int>();
 
             // Shuffle roles properly using Fisher-Yates
             string[] rolePool = { "sheriff", "outlaw", "outlaw", "deputy", "renegade" };
@@ -165,10 +188,12 @@ namespace BangBang.Core.Network
             for (int i = 0; i < _currentSnapshot.players.Count; i++)
             {
                 var p = _currentSnapshot.players[i];
+                _currentSnapshot.lockedDraftSlots.Add(i);
                 string r = shuffled[i % shuffled.Length];
                 
                 if (p.id == LocalPlayerId) {
                     _currentSnapshot.privateState.roleId = r;
+                    _currentSnapshot.privateState.draftRoleSlot = i;
                 }
                 p.publicRoleId = r;
                 p.isAlive = true;
@@ -194,6 +219,10 @@ namespace BangBang.Core.Network
 
             // ── Phase 2: SELECTING CHARACTER ────────────────────────
             _currentSnapshot.state = ServerGameState.CHARACTER_DRAFT;
+            _currentSnapshot.draftSlotCount = _currentSnapshot.players.Count * 2;
+            _currentSnapshot.lockedDraftSlots = new List<int> { 0, 1 };
+            _currentSnapshot.privateState.draftCharacterSlots = new List<int> { 0, 1 };
+            _currentSnapshot.privateState.draftCharacterOptions = new List<string> { "willy_the_kid", "calamity_janet" };
             _currentSnapshot.activeInteraction = new InteractionPromptDTO
             {
                 interactionId = Guid.NewGuid().ToString(),
@@ -258,6 +287,8 @@ namespace BangBang.Core.Network
             // ── Phase 3: INITIALIZING ───────────────────────────────
             _currentSnapshot.state = ServerGameState.INITIAL_DEAL;
             _currentSnapshot.activeInteraction = null;
+            _currentSnapshot.draftSlotCount = 0;
+            _currentSnapshot.lockedDraftSlots.Clear();
 
             var deckList = _cardPool.OrderBy(_ => UnityEngine.Random.value).ToList();
             while (deckList.Count < 80) deckList.AddRange(_cardPool.OrderBy(_ => UnityEngine.Random.value));

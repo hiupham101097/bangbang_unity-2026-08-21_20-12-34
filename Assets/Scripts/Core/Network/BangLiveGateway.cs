@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -38,6 +39,10 @@ namespace BangBang.Core.Network
         private ClientWebSocket _webSocket;
         private CancellationTokenSource _cts;
         private string _displayName;
+        private string _deviceId;
+        private bool _intentionalDisconnect;
+        private readonly ConcurrentQueue<string> _incomingMessages = new ConcurrentQueue<string>();
+        private readonly ConcurrentQueue<ConnectionState> _connectionChanges = new ConcurrentQueue<ConnectionState>();
         
         // Dictionary to track request callbacks
         private Dictionary<string, Action<string>> _pendingRequests = new Dictionary<string, Action<string>>();
@@ -46,9 +51,11 @@ namespace BangBang.Core.Network
         {
             LocalPlayerId = string.IsNullOrEmpty(deviceId) ? Guid.NewGuid().ToString("N").Substring(0, 16) : deviceId;
             _displayName = displayName ?? "Player";
+            _deviceId = LocalPlayerId;
+            _intentionalDisconnect = false;
             
             CurrentConnectionState = ConnectionState.Connecting;
-            OnConnectionStateChanged?.Invoke(CurrentConnectionState);
+            _connectionChanges.Enqueue(CurrentConnectionState);
 
             DisconnectWebSocket();
             _cts = new CancellationTokenSource();
@@ -73,14 +80,14 @@ namespace BangBang.Core.Network
                 }));
                 
                 CurrentConnectionState = ConnectionState.Connected;
-                OnConnectionStateChanged?.Invoke(CurrentConnectionState);
+                _connectionChanges.Enqueue(CurrentConnectionState);
                 return true;
             }
             catch (Exception ex)
             {
                 OnErrorMessage?.Invoke("Lỗi kết nối WebSocket: " + ex.Message);
                 CurrentConnectionState = ConnectionState.Disconnected;
-                OnConnectionStateChanged?.Invoke(CurrentConnectionState);
+                _connectionChanges.Enqueue(CurrentConnectionState);
                 return false;
             }
         }
@@ -95,8 +102,16 @@ namespace BangBang.Core.Network
                     var result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cts.Token);
                     if (result.MessageType == WebSocketMessageType.Close) break;
 
-                    string json = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    HandleServerMessage(json);
+                    using (var message = new System.IO.MemoryStream())
+                    {
+                        message.Write(buffer, 0, result.Count);
+                        while (!result.EndOfMessage)
+                        {
+                            result = await _webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), _cts.Token);
+                            message.Write(buffer, 0, result.Count);
+                        }
+                        _incomingMessages.Enqueue(Encoding.UTF8.GetString(message.ToArray()));
+                    }
                 }
                 catch (Exception)
                 {
@@ -105,7 +120,34 @@ namespace BangBang.Core.Network
             }
             
             CurrentConnectionState = ConnectionState.Disconnected;
-            OnConnectionStateChanged?.Invoke(CurrentConnectionState);
+            _connectionChanges.Enqueue(CurrentConnectionState);
+
+            if (!_intentionalDisconnect && isActiveAndEnabled)
+            {
+                _ = ReconnectAsync();
+            }
+        }
+
+        private void Update()
+        {
+            while (_connectionChanges.TryDequeue(out var state)) OnConnectionStateChanged?.Invoke(state);
+            while (_incomingMessages.TryDequeue(out var json)) HandleServerMessage(json);
+        }
+
+        private async Task ReconnectAsync()
+        {
+            CurrentConnectionState = ConnectionState.Reconnecting;
+            _connectionChanges.Enqueue(CurrentConnectionState);
+            for (int attempt = 0; attempt < 5 && !_intentionalDisconnect; attempt++)
+            {
+                await Task.Delay(1000 * (attempt + 1));
+                if (await InitializeSessionAsync(_deviceId, _displayName))
+                {
+                    if (!string.IsNullOrEmpty(CurrentRoomId))
+                        await SendEventAsync("game.resync", "{}");
+                    return;
+                }
+            }
         }
 
         private void HandleServerMessage(string jsonRaw)
@@ -201,7 +243,8 @@ namespace BangBang.Core.Network
             var res = await SendRequestAsync("room.list");
             if (res != null)
             {
-                // In a real app we'd parse this list. For now we assume success if response isn't null.
+                var wrapped = JsonUtility.FromJson<RoomSummaryListDTO>("{\"items\":" + res + "}");
+                OnRoomListUpdated?.Invoke(wrapped != null ? wrapped.items : new List<RoomSummaryDTO>());
                 return true;
             }
             return false;
@@ -209,7 +252,8 @@ namespace BangBang.Core.Network
 
         public async Task<bool> CreateRoomAsync(string roomName, int maxPlayers, bool isPrivate, string password, int turnSeconds)
         {
-            string payload = "{\"playerName\":\"" + _displayName + "\",\"maxPlayers\":" + maxPlayers + "}";
+            string safeName = (_displayName ?? "Player").Replace("\\", "\\\\").Replace("\"", "\\\"");
+            string payload = "{\"playerName\":\"" + safeName + "\",\"roomName\":\"" + (roomName ?? "Saloon").Replace("\"", "\\\"") + "\",\"maxPlayers\":" + Mathf.Clamp(maxPlayers, 4, 8) + ",\"turnTimeSec\":" + turnSeconds + ",\"startingHandMode\":\"FIXED_7\"}";
             var res = await SendRequestAsync("room.create", payload);
             if (res != null)
             {
@@ -246,8 +290,8 @@ namespace BangBang.Core.Network
 
         public Task<bool> LeaveRoomAsync()
         {
-            DisconnectWebSocket();
-            return Task.FromResult(true);
+            CurrentRoomId = null;
+            return SendEventAsync("room.leave");
         }
 
         public Task<bool> ToggleReadyAsync(bool isReady)
@@ -260,9 +304,26 @@ namespace BangBang.Core.Network
             return SendEventAsync("room.addBot", JsonUtility.ToJson(CreateActionRequest()));
         }
 
+        public Task<bool> RemoveBotAsync()
+        {
+            return SendEventAsync("room.removeBot", JsonUtility.ToJson(CreateActionRequest()));
+        }
+
         public Task<bool> StartGameAsync()
         {
             return SendEventAsync("game.start");
+        }
+
+        public Task<bool> PickRoleAsync(int slotId)
+        {
+            var req = CreateActionRequest();
+            return SendEventAsync("draft.role.pick", "{\"slotId\":" + slotId + ",\"actionId\":\"" + req.actionId + "\",\"stateRevision\":" + req.stateRevision + "}");
+        }
+
+        public Task<bool> PickCharacterSlotAsync(int slotId)
+        {
+            var req = CreateActionRequest();
+            return SendEventAsync("draft.character.pick", "{\"slotId\":" + slotId + ",\"actionId\":\"" + req.actionId + "\",\"stateRevision\":" + req.stateRevision + "}");
         }
 
         public Task<bool> SelectCharacterAsync(string characterId)
@@ -288,12 +349,21 @@ namespace BangBang.Core.Network
 
         public Task<bool> SubmitInteractionAsync(string interactionId, string action, List<string> selectedPlayers = null, List<string> selectedCards = null, int optionIndex = 0)
         {
+            var snapshot = GameStateStore.Instance?.CurrentSnapshot;
+            if (snapshot != null && snapshot.state == ServerGameState.DISCARD)
+                return EndTurnAsync(selectedCards ?? new List<string>());
+
             var req = CreateActionRequest();
             req.interactionId = interactionId;
             req.action = action;
             req.targetPlayerIds = selectedPlayers;
             req.selectedCardIds = selectedCards;
             req.optionIndex = optionIndex;
+            if (snapshot != null && string.Equals(snapshot.currentPhase, "GENERAL_STORE", StringComparison.OrdinalIgnoreCase))
+            {
+                string card = selectedCards != null && selectedCards.Count > 0 ? selectedCards[0] : "";
+                return SendEventAsync("effect.generalStorePick", "{\"cardInstanceId\":\"" + card + "\",\"actionId\":\"" + req.actionId + "\",\"stateRevision\":" + req.stateRevision + "}");
+            }
             return SendEventAsync("game.action.respond", JsonUtility.ToJson(req));
         }
 
@@ -345,6 +415,7 @@ namespace BangBang.Core.Network
         
         private void OnDestroy()
         {
+            _intentionalDisconnect = true;
             DisconnectWebSocket();
         }
     }

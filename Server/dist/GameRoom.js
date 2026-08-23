@@ -42,6 +42,9 @@ class GameRoom {
     duelResponderIndex = 0;
     effectBeforeLethal = '';
     actorBeforeLethal = '';
+    judgementCard = '';
+    judgementEffect = '';
+    judgementResult = '';
     rules;
     constructor(roomId, wss, config) {
         this.roomId = roomId;
@@ -59,6 +62,12 @@ class GameRoom {
     get maxPlayers() { return this.rules.maxPlayers; }
     getPlayers() { return Array.from(this.players.values()); }
     getState() { return this.state; }
+    dispose() {
+        if (this.timerHandle)
+            clearTimeout(this.timerHandle);
+        this.timerHandle = null;
+        this.sockets.clear();
+    }
     joinPlayer(ws, name, isHost = false) {
         if (this.players.size >= this.rules.maxPlayers)
             return false;
@@ -147,6 +156,9 @@ class GameRoom {
                 p.isReady = data.isReady;
                 this.broadcastSnapshot();
             }
+        }
+        else if (type === 'room.leave') {
+            this.handleDisconnect(socketId);
         }
         else if (type === 'game.start') {
             if (socketId === this.hostId && this.state === GameState_1.ServerGameState.WAITING) {
@@ -259,7 +271,11 @@ class GameRoom {
             privateState = {
                 roleId: targetPlayer.roleId,
                 hand: targetPlayer.hand,
-                draftCharacterOptions: targetPlayer.draftCharacterOptions
+                draftCharacterOptions: targetPlayer.draftCharacterOptions,
+                draftRoleSlot: targetPlayer.draftRoleSlot,
+                draftCharacterSlots: [targetPlayer.draftCharacterSlot1, targetPlayer.draftCharacterSlot2]
+                    .filter((slot) => slot !== undefined),
+                selectedCharacterId: targetPlayer.characterId
             };
         }
         return {
@@ -269,6 +285,15 @@ class GameRoom {
             state: this.state,
             phaseId: this.phaseId,
             deadlineAt: this.deadlineAt,
+            draftSlotCount: this.state === GameState_1.ServerGameState.ROLE_DRAFT || this.state === GameState_1.ServerGameState.ROLE_LOCK_WAIT
+                ? this.rolePool.length
+                : this.state === GameState_1.ServerGameState.CHARACTER_DRAFT ? this.characterPool.length : 0,
+            lockedDraftSlots: this.state === GameState_1.ServerGameState.ROLE_DRAFT || this.state === GameState_1.ServerGameState.ROLE_LOCK_WAIT
+                ? Array.from(this.roleSlotLocks.keys())
+                : this.state === GameState_1.ServerGameState.CHARACTER_DRAFT ? Array.from(this.characterSlotLocks.keys()) : [],
+            judgementCard: this.judgementCard || undefined,
+            judgementEffect: this.judgementEffect || undefined,
+            judgementResult: this.judgementResult || undefined,
             turnNumber: this.turnNumber,
             currentTurnPlayerId: this.currentTurnPlayerId,
             currentPhase: this.currentPhase,
@@ -391,6 +416,22 @@ class GameRoom {
             [this.rolePool[i], this.rolePool[j]] = [this.rolePool[j], this.rolePool[i]];
         }
         this.roleSlotLocks.clear();
+        for (const player of this.players.values()) {
+            player.draftRoleSlot = undefined;
+            player.draftCharacterSlot1 = undefined;
+            player.draftCharacterSlot2 = undefined;
+            player.draftCharacterOptions = undefined;
+            player.roleId = undefined;
+            player.characterId = undefined;
+            player.isRoleRevealed = false;
+        }
+        const roleSlots = this.rolePool.map((_, index) => index);
+        for (const bot of Array.from(this.players.values()).filter(player => player.isBot)) {
+            const slot = roleSlots.splice(Math.floor(Math.random() * roleSlots.length), 1)[0];
+            this.roleSlotLocks.set(slot, bot.id);
+            bot.draftRoleSlot = slot;
+            bot.roleId = this.rolePool[slot];
+        }
         this.deadlineAt = Date.now() + this.rules.roleDraftSec * 1000;
         this.broadcastSnapshot();
         this.timerHandle = setTimeout(() => {
@@ -420,6 +461,7 @@ class GameRoom {
         p.roleId = this.rolePool[slotId];
         this.broadcastMessage('draft.role.slotLocked', { slotId });
         this.sendPrivateMessage(socketId, 'draft.role.assigned', { roleId: p.roleId });
+        this.broadcastSnapshot();
         // Check if all picked
         const allPicked = Array.from(this.players.values()).every(player => player.draftRoleSlot !== undefined);
         if (allPicked) {
@@ -479,6 +521,17 @@ class GameRoom {
         }
         this.characterPool = charPoolRaw.slice(0, totalCards);
         this.characterSlotLocks.clear();
+        const characterSlots = this.characterPool.map((_, index) => index);
+        for (const bot of Array.from(this.players.values()).filter(player => player.isBot)) {
+            const first = characterSlots.splice(Math.floor(Math.random() * characterSlots.length), 1)[0];
+            const second = characterSlots.splice(Math.floor(Math.random() * characterSlots.length), 1)[0];
+            bot.draftCharacterSlot1 = first;
+            bot.draftCharacterSlot2 = second;
+            bot.draftCharacterOptions = [this.characterPool[first], this.characterPool[second]];
+            bot.characterId = bot.draftCharacterOptions[Math.floor(Math.random() * 2)];
+            this.characterSlotLocks.set(first, bot.id);
+            this.characterSlotLocks.set(second, bot.id);
+        }
         this.deadlineAt = Date.now() + this.rules.characterDraftSec * 1000;
         this.broadcastSnapshot();
         this.timerHandle = setTimeout(() => {
@@ -512,6 +565,7 @@ class GameRoom {
             this.sendPrivateMessage(socketId, 'draft.character.options', { options: p.draftCharacterOptions, deadlineAt: this.deadlineAt });
         }
         this.broadcastMessage('draft.character.slotLocked', { slotId });
+        this.broadcastSnapshot();
     }
     handleCharacterConfirm(socketId, characterId) {
         if (this.state !== GameState_1.ServerGameState.CHARACTER_DRAFT)
@@ -521,6 +575,7 @@ class GameRoom {
             return;
         p.characterId = characterId;
         this.sendPrivateMessage(socketId, 'draft.character.assigned', { characterId: characterId });
+        this.broadcastSnapshot();
         // Check if all confirmed
         const allConfirmed = Array.from(this.players.values()).every(player => player.characterId != null);
         if (allConfirmed) {
@@ -635,6 +690,9 @@ class GameRoom {
         this.currentPhase = "START";
         this.state = GameState_1.ServerGameState.TURN_START;
         this.bangCardsPlayedThisTurn = 0;
+        this.judgementCard = '';
+        this.judgementEffect = '';
+        this.judgementResult = '';
         this.deadlineAt = Date.now() + 600;
         this.broadcastSnapshot();
         this.timerHandle = setTimeout(() => this.startJudgementPhase(), 600);
@@ -652,11 +710,15 @@ class GameRoom {
         const dynamite = player.equipment.find(c => this.cardType(c) === 'dynamite');
         if (dynamite) {
             const judgement = this.drawJudgement(player, card => !(this.cardSuit(card) === 'spades' && this.isRankBetween(card, 2, 9)));
+            this.judgementCard = judgement.card;
+            this.judgementEffect = 'DYNAMITE';
+            this.judgementResult = judgement.matched ? 'CHUYỂN TIẾP' : 'PHÁT NỔ: -3 HP';
             this.broadcastMessage('judgement.cardRevealed', { playerId: player.id, effect: 'dynamite', card: judgement.card });
             if (!judgement.matched) {
                 player.equipment.splice(player.equipment.indexOf(dynamite), 1);
                 this.discardPile.push(dynamite);
                 this.applyDamage(player, 3);
+                this.broadcastSnapshot();
                 if (this.getState() === GameState_1.ServerGameState.GAME_OVER)
                     return;
                 if (this.getState() === GameState_1.ServerGameState.RESPONSE)
@@ -664,19 +726,25 @@ class GameRoom {
             }
             else {
                 this.passDynamite(player, dynamite);
+                this.broadcastSnapshot();
             }
         }
         const jail = player.equipment.find(c => this.cardType(c) === 'jail');
         if (jail && player.isAlive) {
             const judgement = this.drawJudgement(player, card => this.cardSuit(card) === 'hearts');
+            this.judgementCard = judgement.card;
+            this.judgementEffect = 'JAIL';
+            this.judgementResult = judgement.matched ? 'THOÁT TÙ' : 'MẤT LƯỢT';
             player.equipment.splice(player.equipment.indexOf(jail), 1);
             this.discardPile.push(jail);
             this.broadcastMessage('judgement.cardRevealed', { playerId: player.id, effect: 'jail', card: judgement.card });
             if (!judgement.matched) {
                 this.broadcastMessage('judgement.resolved', { playerId: player.id, effect: 'jail', result: 'SKIP_TURN' });
                 this.timerHandle = setTimeout(() => this.nextTurn(), 900);
+                this.broadcastSnapshot();
                 return;
             }
+            this.broadcastSnapshot();
         }
         this.timerHandle = setTimeout(() => this.startDrawPhase(), 900);
     }
@@ -968,6 +1036,7 @@ class GameRoom {
         this.currentPhase = 'RESPONSE';
         this.pendingEffectType = effect;
         this.pendingEffectActorId = actorId;
+        const target = this.players.get(targetId);
         this.activeInteraction = {
             interactionId: `${effect}_${Date.now()}_${targetId}`,
             type: effect === 'duello' ? 'DUEL' : 'RESPOND',
@@ -979,15 +1048,14 @@ class GameRoom {
             requiredCount,
             requiredCardType: requiredType,
             validPlayerIds: [],
-            validCardIds: [`${requiredType}_.*`],
-            options: ['USE_CARDS', 'PASS'],
+            validCardIds: target ? target.hand.filter(card => this.responseCardMatches(target, card, requiredType)) : [],
+            options: ['PASS'],
             canCancel: true,
             defaultAction: 'PASS',
             expiresAt: Date.now() + this.rules.responseTimeSec * 1000
         };
         this.deadlineAt = this.activeInteraction.expiresAt;
         this.broadcastSnapshot();
-        const target = this.players.get(targetId);
         if (target?.isBot)
             this.timerHandle = setTimeout(() => this.resolveBotResponse(target), 350);
         else
@@ -1059,6 +1127,21 @@ class GameRoom {
         this.state = GameState_1.ServerGameState.RESPONSE;
         this.currentPhase = 'GENERAL_STORE';
         this.deadlineAt = Date.now() + this.rules.responseTimeSec * 1000;
+        this.activeInteraction = {
+            interactionId: `general_store_${Date.now()}_${pickerId}`,
+            type: 'CHOOSE_CARD',
+            actorPlayerId: pickerId,
+            title: 'GENERAL STORE',
+            message: 'Chọn một lá bài công khai.',
+            minSelections: 1,
+            maxSelections: 1,
+            validPlayerIds: [],
+            validCardIds: [...this.generalStoreCards],
+            options: [],
+            canCancel: false,
+            defaultAction: 'AUTO',
+            expiresAt: this.deadlineAt
+        };
         this.broadcastMessage('effect.generalStoreUpdated', { cards: this.generalStoreCards, currentPickerId: pickerId, deadlineAt: this.deadlineAt });
         const picker = this.players.get(pickerId);
         if (this.timerHandle)
@@ -1079,6 +1162,12 @@ class GameRoom {
         this.promptGeneralStorePicker();
     }
     handleRespond(socketId, data) {
+        if (this.state === GameState_1.ServerGameState.RESPONSE && this.currentPhase === 'GENERAL_STORE' && this.activeInteraction?.actorPlayerId === socketId) {
+            const card = (data.selectedCardIds || [])[0];
+            if (card)
+                this.handleGeneralStorePick(socketId, card);
+            return;
+        }
         if (this.state === GameState_1.ServerGameState.RESPONSE && this.activeInteraction && this.activeInteraction.actorPlayerId === socketId) {
             const { action, selectedCardIds } = data;
             const p = this.players.get(socketId);
@@ -1205,6 +1294,21 @@ class GameRoom {
         this.state = GameState_1.ServerGameState.DISCARD;
         this.currentPhase = 'DISCARD';
         this.deadlineAt = Date.now() + 15000;
+        this.activeInteraction = {
+            interactionId: `discard_${Date.now()}_${p.id}`,
+            type: 'DISCARD',
+            actorPlayerId: p.id,
+            title: 'BỎ BÀI DƯ',
+            message: `Chọn đúng ${excess} lá để bỏ.`,
+            minSelections: excess,
+            maxSelections: excess,
+            validPlayerIds: [],
+            validCardIds: [...p.hand],
+            options: [],
+            canCancel: false,
+            defaultAction: 'AUTO',
+            expiresAt: this.deadlineAt
+        };
         this.sendPrivateMessage(p.id, 'discard.required', { count: excess, deadlineAt: this.deadlineAt });
         this.broadcastSnapshot();
         this.timerHandle = setTimeout(() => this.autoDiscardAndAdvance(), 15000);
@@ -1226,6 +1330,7 @@ class GameRoom {
         }
         if (this.timerHandle)
             clearTimeout(this.timerHandle);
+        this.activeInteraction = null;
         this.broadcastMessage('discard.completed', { playerId: socketId, count: cardIds.length });
         this.nextTurn();
     }
@@ -1238,6 +1343,7 @@ class GameRoom {
                 this.discardPile.push(p.hand.splice(index, 1)[0]);
             }
         }
+        this.activeInteraction = null;
         this.nextTurn();
     }
     applyDamage(target, amount, killerId) {

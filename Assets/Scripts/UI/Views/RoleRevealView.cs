@@ -1,183 +1,118 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using BangBang.Core.Audio;
 using BangBang.Core.Data;
 using BangBang.Core.Network;
 using BangBang.Core.State;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace BangBang.UI.Views
 {
-    public class RoleRevealView : MonoBehaviour
+    public sealed class RoleRevealView : MonoBehaviour
     {
-        [Header("Containers & Texts")]
         public Transform roleCardsContainer;
-        public Text roleTitleText;
-        public Text roleGoalText;
-        public Button continueButton;
-        public Text timerCountdownText;
+        public UnityEngine.UI.Text roleTitleText;
+        public UnityEngine.UI.Text roleGoalText;
+        public UnityEngine.UI.Button continueButton;
+        public UnityEngine.UI.Text timerCountdownText;
 
-        private bool _isFlipped;
-        private readonly List<GameObject> _cardObjects = new List<GameObject>();
-
-        private void OnEnable()
-        {
-            _isFlipped = false;
-            if (continueButton != null) continueButton.gameObject.SetActive(false);
-            if (roleTitleText != null) roleTitleText.text = "CHẠM VÀO THẺ CỦA BẠN ĐỂ LẬT";
-            if (roleGoalText != null) roleGoalText.text = "";
-            RenderRoleCards();
-        }
+        private readonly List<GameObject> _cards = new List<GameObject>();
+        private MatchStateSnapshotDTO _snapshot;
 
         private void Start()
         {
-            if (continueButton != null)
-            {
-                continueButton.onClick.AddListener(() =>
-                {
-                    AudioManager.Instance?.PlaySFX("button_tap");
-                    if (continueButton != null)
-                    {
-                        continueButton.interactable = false;
-                        continueButton.GetComponentInChildren<Text>().text = "ĐANG CHỜ MÁY CHỦ...";
-                    }
-                });
-            }
+            if (continueButton != null) continueButton.gameObject.SetActive(false);
+            if (GameStateStore.Instance != null) GameStateStore.Instance.OnStateSnapshotUpdated += Render;
         }
 
-        private void RenderRoleCards()
+        private void OnEnable()
         {
-            var snapshot = GameStateStore.Instance?.CurrentSnapshot;
-            if (snapshot == null || snapshot.players == null) return;
+            Render(GameStateStore.Instance != null ? GameStateStore.Instance.CurrentSnapshot : null);
+        }
+
+        private void OnDestroy()
+        {
+            if (GameStateStore.Instance != null) GameStateStore.Instance.OnStateSnapshotUpdated -= Render;
+        }
+
+        private void Update()
+        {
+            if (_snapshot == null || timerCountdownText == null) return;
+            long now = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            int seconds = Mathf.Max(0, Mathf.CeilToInt((_snapshot.deadlineAt - now) / 1000f));
+            timerCountdownText.text = _snapshot.state == ServerGameState.ROLE_DRAFT
+                ? "Còn " + seconds + " giây để chọn"
+                : "Chọn nhân vật sau " + seconds + " giây";
+        }
+
+        private void Render(MatchStateSnapshotDTO snapshot)
+        {
+            if (snapshot == null || (snapshot.state != ServerGameState.ROLE_DRAFT && snapshot.state != ServerGameState.ROLE_LOCK_WAIT)) return;
+            _snapshot = snapshot;
+            var privateState = snapshot.privateState;
+            bool assigned = privateState != null && !string.IsNullOrEmpty(privateState.roleId);
+            if (roleTitleText != null)
+                roleTitleText.text = snapshot.state == ServerGameState.ROLE_DRAFT
+                    ? (assigned ? "VAI TRÒ CỦA BẠN" : "BƯỚC 1/3 — CHỌN VAI TRÒ")
+                    : "CẢNH SÁT TRƯỞNG ĐÃ LỘ DIỆN";
+            if (roleGoalText != null)
+                roleGoalText.text = assigned ? GoalFor(privateState.roleId) : "Chọn một lá úp. Máy chủ sẽ khóa lựa chọn và giữ bí mật vai trò.";
 
             if (roleCardsContainer == null) return;
-            foreach (var c in _cardObjects) Destroy(c);
-            _cardObjects.Clear();
-
-            string localId = GameStateStore.Instance.LocalPlayerId;
-            var privateState = GameStateStore.Instance.LocalPrivateState;
-            string roleKey = privateState != null && !string.IsNullOrEmpty(privateState.roleId) ? privateState.roleId.ToLower() : "outlaw";
-            bool isSheriff = roleKey == "sheriff";
-
-            int playerCount = snapshot.players.Count;
-
-            for (int i = 0; i < playerCount; i++)
-            {
-                var p = snapshot.players[i];
-                bool isLocal = p.id == localId;
-
-                var cardObj = new GameObject("RoleCard_" + p.id, typeof(RectTransform), typeof(Image), typeof(Button));
-                cardObj.transform.SetParent(roleCardsContainer, false);
-                var rt = cardObj.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(200, 300);
-
-                var bgImg = cardObj.GetComponent<Image>();
-                bgImg.sprite = CardCatalogDatabase.LoadSprite("card_back");
-                bgImg.color = Color.white;
-
-                var frontContainer = new GameObject("FrontContent", typeof(RectTransform), typeof(Image));
-                frontContainer.transform.SetParent(cardObj.transform, false);
-                var fRt = frontContainer.GetComponent<RectTransform>();
-                fRt.anchorMin = Vector2.zero; fRt.anchorMax = Vector2.one; fRt.sizeDelta = Vector2.zero;
-                string roleSpriteKey = roleKey == "outlaw" ? "raider" :
-                                       roleKey == "renegade" ? "traitor" :
-                                       roleKey;
-                var fImg = frontContainer.GetComponent<Image>();
-                fImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/" + roleSpriteKey + "_card");
-                fImg.color = Color.white;
-                frontContainer.SetActive(false);
-
-                Outline outline = null;
-                if (isLocal)
-                {
-                    outline = cardObj.AddComponent<Outline>();
-                    outline.effectColor = Color.yellow;
-                    outline.effectDistance = new Vector2(4, -4);
-                }
-
-                var btn = cardObj.GetComponent<Button>();
-                btn.interactable = isLocal;
-                btn.onClick.AddListener(() =>
-                {
-                    if (isLocal && !_isFlipped)
-                    {
-                        _isFlipped = true;
-                        AudioManager.Instance?.PlaySFX("button_tap");
-                        StartCoroutine(FlipRoleCardCoroutine(cardObj, bgImg, frontContainer, roleKey));
-                        if (outline != null) Destroy(outline);
-                    }
-                });
-
-                _cardObjects.Add(cardObj);
-
-                // Auto flip if sheriff
-                if (isLocal && isSheriff)
-                {
-                    _isFlipped = true;
-                    if (outline != null) Destroy(outline);
-                    StartCoroutine(AutoFlipSheriffCoroutine(cardObj, bgImg, frontContainer, roleKey));
-                }
-            }
+            foreach (var card in _cards) Destroy(card);
+            _cards.Clear();
+            int count = snapshot.draftSlotCount > 0 ? snapshot.draftSlotCount : snapshot.players.Count;
+            int ownSlot = privateState != null ? privateState.draftRoleSlot : -1;
+            for (int i = 0; i < count; i++)
+                CreateSlot(i, ownSlot, assigned, snapshot.lockedDraftSlots != null && snapshot.lockedDraftSlots.Contains(i));
         }
 
-        private IEnumerator AutoFlipSheriffCoroutine(GameObject cardObj, Image bgImg, GameObject frontContainer, string roleKey)
+        private void CreateSlot(int slot, int ownSlot, bool assigned, bool locked)
         {
-            yield return new WaitForSeconds(1.0f);
-            yield return StartCoroutine(FlipRoleCardCoroutine(cardObj, bgImg, frontContainer, roleKey));
+            var card = new GameObject("RoleSlot_" + slot, typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
+            card.transform.SetParent(roleCardsContainer, false);
+            card.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 225);
+            var image = card.GetComponent<UnityEngine.UI.Image>();
+            bool isMine = slot == ownSlot;
+            image.sprite = isMine && assigned
+                ? CardCatalogDatabase.LoadSprite("role_cards/" + RoleSprite(GameStateStore.Instance.LocalPrivateState.roleId) + "_card")
+                : CardCatalogDatabase.LoadSprite("card_back");
+            image.color = locked && !isMine ? new Color(0.35f, 0.35f, 0.35f, 0.72f) : Color.white;
+            if (isMine)
+            {
+                var outline = card.AddComponent<UnityEngine.UI.Outline>();
+                outline.effectColor = new Color(1f, 0.78f, 0.2f);
+                outline.effectDistance = new Vector2(4, -4);
+            }
+
+            var button = card.GetComponent<UnityEngine.UI.Button>();
+            button.interactable = !locked && ownSlot < 0 && _snapshot.state == ServerGameState.ROLE_DRAFT && !GameStateStore.Instance.IsRequestPending;
+            int capturedSlot = slot;
+            button.onClick.AddListener(async () =>
+            {
+                AudioManager.Instance?.PlaySFX("card_draw");
+                GameStateStore.Instance.SetRequestPending(true);
+                bool sent = await GameStateStore.Instance.Gateway.PickRoleAsync(capturedSlot);
+                if (!sent) GameStateStore.Instance.SetRequestPending(false);
+            });
+            _cards.Add(card);
         }
 
-        private IEnumerator FlipRoleCardCoroutine(GameObject cardObj, Image bgImg, GameObject frontContainer, string roleKey)
+        private static string RoleSprite(string role)
         {
-            AudioManager.Instance?.PlaySFX("card_draw");
-            for (float t = 1f; t >= 0f; t -= Time.deltaTime * 6f)
+            if (role == "outlaw") return "raider";
+            if (role == "renegade") return "traitor";
+            return role;
+        }
+
+        private static string GoalFor(string role)
+        {
+            switch (role)
             {
-                cardObj.transform.localScale = new Vector3(t, 1f, 1f);
-                yield return null;
+                case "sheriff": return "CẢNH SÁT TRƯỞNG — Loại toàn bộ Outlaw và Renegade.";
+                case "deputy": return "PHÓ CẢNH SÁT — Bảo vệ Sheriff và loại phe đối địch.";
+                case "outlaw": return "OUTLAW — Hạ Sheriff để giành chiến thắng.";
+                default: return "RENEGADE — Trở thành người sống sót cuối cùng và hạ Sheriff sau cùng.";
             }
-
-            bgImg.sprite = null;
-            bgImg.color = Color.white;
-            frontContainer.SetActive(true);
-
-            for (float t = 0f; t <= 1f; t += Time.deltaTime * 6f)
-            {
-                cardObj.transform.localScale = new Vector3(t, 1f, 1f);
-                yield return null;
-            }
-            cardObj.transform.localScale = Vector3.one;
-
-            AudioManager.Instance?.PlaySFX("card_play");
-
-            if (roleTitleText != null)
-            {
-                roleTitleText.text = roleKey == "sheriff" ? "⭐ CẢNH SÁT TRƯỞNG" :
-                                    roleKey == "deputy" ? "🛡️ PHÓ CẢNH SÁT" :
-                                    roleKey == "outlaw" ? "💀 NGOÀI VÒNG PHÁP LUẬT" : "🗡️ KẺ PHẢN BỘI";
-                roleTitleText.color = roleKey == "sheriff" ? new Color(1f, 0.85f, 0.2f) :
-                                      roleKey == "deputy" ? new Color(0.3f, 0.7f, 1f) :
-                                      roleKey == "outlaw" ? new Color(1f, 0.3f, 0.3f) : new Color(0.7f, 0.4f, 1f);
-            }
-
-            if (roleGoalText != null)
-            {
-                roleGoalText.text = roleKey == "sheriff" ? "Mục tiêu: Tiêu diệt toàn bộ Cướp và Kẻ Phản Bội để bảo vệ thị trấn!" :
-                                    roleKey == "deputy" ? "Mục tiêu: Bảo vệ Cảnh Sát Trưởng bằng mọi giá và tiêu diệt bọn Cướp!" :
-                                    roleKey == "outlaw" ? "Mục tiêu: Tiêu diệt Cảnh Sát Trưởng để chiếm đoạt thị trấn!" :
-                                    "Mục tiêu: Trở thành người sống sót cuối cùng và hạ gục Cảnh Sát Trưởng sau cùng!";
-            }
-
-            if (continueButton != null) continueButton.gameObject.SetActive(true);
-
-            // Start countdown
-            for (int sec = 8; sec >= 0; sec--)
-            {
-                if (timerCountdownText != null) timerCountdownText.text = "Tự động tiếp tục sau " + sec + "s...";
-                yield return new WaitForSeconds(1.0f);
-            }
-
-            if (timerCountdownText != null) timerCountdownText.text = "Đang chờ máy chủ...";
         }
     }
 }

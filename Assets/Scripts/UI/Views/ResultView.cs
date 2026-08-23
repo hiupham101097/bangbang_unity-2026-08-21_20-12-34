@@ -185,6 +185,7 @@ namespace BangBang.UI.Views
             {
                 await GameStateStore.Instance.Gateway.LeaveRoomAsync();
             }
+            GameStateStore.Instance?.SetRequestPending(false);
             GameFlowController.Instance?.TransitionToState(ServerGameState.LOBBY);
         }
     }

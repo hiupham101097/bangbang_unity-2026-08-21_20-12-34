@@ -33,6 +33,7 @@ export class ServerEngine {
                         room.handleDisconnect((ws as any).id);
                         if (room.isEmpty()) {
                             console.log(`[ROOM] Closing empty room ${roomId}`);
+                            room.dispose();
                             this.rooms.delete(roomId);
                         }
                     }
@@ -86,9 +87,14 @@ export class ServerEngine {
         else if (type === 'room.list') {
             const list = Array.from(this.rooms.values()).map(r => ({
                 roomId: r.roomId,
-                playerCount: r.getPlayers().length,
+                roomCode: r.roomId,
+                roomName: `Saloon ${r.roomId}`,
+                currentPlayers: r.getPlayers().length,
                 maxPlayers: r.maxPlayers,
-                state: r.getState()
+                state: r.getState(),
+                turnTimeSeconds: 30,
+                pingMs: 0,
+                isPrivate: false
             }));
             if (reqId) ws.send(JSON.stringify({ reqId, type: 'room.listResponse', data: JSON.stringify(list) }));
         }

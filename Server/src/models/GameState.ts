@@ -39,6 +39,9 @@ export interface PrivatePlayerState {
     roleId?: string;
     hand: string[];
     draftCharacterOptions?: string[];
+    draftRoleSlot?: number;
+    draftCharacterSlots?: number[];
+    selectedCharacterId?: string;
 }
 
 export interface InteractionPromptDTO {
@@ -76,6 +79,11 @@ export interface MatchStateSnapshotDTO {
     state: ServerGameState;
     phaseId?: string;
     deadlineAt?: number;
+    draftSlotCount: number;
+    lockedDraftSlots: number[];
+    judgementCard?: string;
+    judgementEffect?: string;
+    judgementResult?: string;
     currentTurnPlayerId?: string;
     currentPhase?: string; 
     turnNumber: number;

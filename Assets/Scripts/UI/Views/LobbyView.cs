@@ -137,7 +137,7 @@ namespace BangBang.UI.Views
         private async void HandleCreateRoomConfirmed()
         {
             string rName = roomNameInput != null && !string.IsNullOrEmpty(roomNameInput.text) ? roomNameInput.text : "Quán Rượu Saloon";
-            int maxP = maxPlayersDropdown != null ? maxPlayersDropdown.value + 4 : 7;
+            int maxP = maxPlayersDropdown != null ? maxPlayersDropdown.value + 4 : 8;
             bool isPriv = privateRoomToggle != null && privateRoomToggle.isOn;
             string pass = passwordInput != null ? passwordInput.text : "";
             int turnSec = turnTimeDropdown != null ? (turnTimeDropdown.value + 1) * 15 : 30;
@@ -147,7 +147,8 @@ namespace BangBang.UI.Views
 
             if (GameStateStore.Instance?.Gateway != null)
             {
-                await GameStateStore.Instance.Gateway.CreateRoomAsync(rName, maxP, isPriv, pass, turnSec);
+                bool ok = await GameStateStore.Instance.Gateway.CreateRoomAsync(rName, maxP, isPriv, pass, turnSec);
+                if (!ok) GameStateStore.Instance.SetRequestPending(false);
             }
         }
 
@@ -161,7 +162,8 @@ namespace BangBang.UI.Views
 
             if (GameStateStore.Instance?.Gateway != null)
             {
-                await GameStateStore.Instance.Gateway.JoinRoomAsync(pin);
+                bool ok = await GameStateStore.Instance.Gateway.JoinRoomAsync(pin);
+                if (!ok) GameStateStore.Instance.SetRequestPending(false);
             }
         }
 
@@ -255,7 +257,8 @@ namespace BangBang.UI.Views
                 GameStateStore.Instance?.SetRequestPending(true);
                 if (GameStateStore.Instance?.Gateway != null)
                 {
-                    await GameStateStore.Instance.Gateway.JoinRoomAsync(room.roomId);
+                    bool ok = await GameStateStore.Instance.Gateway.JoinRoomAsync(room.roomId);
+                    if (!ok) GameStateStore.Instance.SetRequestPending(false);
                 }
             });
 

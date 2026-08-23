@@ -69,12 +69,13 @@ namespace BangBang.UI
                 }
             }
 
-            var parts = id.Split('_');
-            if (parts.Length >= 4 && suitRankText != null)
+            var instanceParts = id.Split(new[] { "__" }, StringSplitOptions.None);
+            if (instanceParts.Length >= 4 && suitRankText != null)
             {
-                string suitSymbol = parts[2].ToLower() == "heart" ? "♥" : parts[2].ToLower() == "diamond" ? "♦" : parts[2].ToLower() == "spade" ? "♠" : "♣";
-                suitRankText.text = parts[3].ToUpper() + " " + suitSymbol;
-                suitRankText.color = (parts[2].ToLower() == "heart" || parts[2].ToLower() == "diamond") ? new Color(0.85f, 0.15f, 0.15f) : new Color(0.15f, 0.15f, 0.15f);
+                string suit = instanceParts[2].ToLowerInvariant();
+                string suitSymbol = suit == "hearts" ? "♥" : suit == "diamonds" ? "♦" : suit == "spades" ? "♠" : "♣";
+                suitRankText.text = instanceParts[3].ToUpperInvariant() + " " + suitSymbol;
+                suitRankText.color = (suit == "hearts" || suit == "diamonds") ? new Color(0.85f, 0.15f, 0.15f) : new Color(0.15f, 0.15f, 0.15f);
             }
 
             SetHighlight(false);

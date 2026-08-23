@@ -146,20 +146,25 @@ namespace BangBang.UI.Views
             bool isMyTurn = snapshot.currentTurnPlayerId == localId;
             if (turnPhaseStatusText != null)
             {
-                turnPhaseStatusText.text = isMyTurn ? "🟢 LƯỢT CỦA BẠN" : "⏳ LƯỢT ĐỐI THỦ";
+                turnPhaseStatusText.text = snapshot.state == ServerGameState.JUDGEMENT && !string.IsNullOrEmpty(snapshot.judgementCard)
+                    ? "PHÁN XÉT " + snapshot.judgementEffect + ": " + snapshot.judgementCard.Replace("__", " ") + " — " + snapshot.judgementResult
+                    : (isMyTurn ? "🟢 LƯỢT CỦA BẠN" : "⏳ LƯỢT ĐỐI THỦ");
                 turnPhaseStatusText.color = isMyTurn ? new Color(0.3f, 1f, 0.4f) : Color.white;
             }
 
             // 2. Buttons State
             if (drawCardButton != null)
             {
-                drawCardButton.gameObject.SetActive(isMyTurn && snapshot.currentPhase == "draw");
-                drawCardButton.interactable = !GameStateStore.Instance.IsRequestPending;
+                bool drawing = isMyTurn && string.Equals(snapshot.currentPhase, "DRAW", StringComparison.OrdinalIgnoreCase);
+                drawCardButton.gameObject.SetActive(drawing);
+                drawCardButton.interactable = false;
+                var drawLabel = drawCardButton.GetComponentInChildren<Text>();
+                if (drawLabel != null) drawLabel.text = "ĐANG RÚT BÀI…";
             }
 
             if (endTurnButton != null)
             {
-                endTurnButton.interactable = isMyTurn && snapshot.currentPhase == "play" && !GameStateStore.Instance.IsRequestPending;
+                endTurnButton.interactable = isMyTurn && string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) && !GameStateStore.Instance.IsRequestPending;
             }
 
             // 3. Local Dashboard
@@ -434,7 +439,7 @@ namespace BangBang.UI.Views
             if (card == null || GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
 
             var snapshot = GameStateStore.Instance.CurrentSnapshot;
-            if (snapshot == null || snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId) return;
+            if (snapshot == null || snapshot.state != ServerGameState.PLAY || !string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) || snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId) return;
 
             AudioManager.Instance?.PlaySFX("button_tap");
             _selectedCardUI = card;
@@ -577,7 +582,7 @@ namespace BangBang.UI.Views
             if (GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
 
             var snapshot = GameStateStore.Instance.CurrentSnapshot;
-            if (snapshot == null || snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId) return;
+            if (snapshot == null || snapshot.state != ServerGameState.PLAY || !string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) || snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId) return;
 
             string targetId = null;
             if (card.info.requiresTarget)

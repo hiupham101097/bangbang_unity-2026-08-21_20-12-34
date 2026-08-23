@@ -136,6 +136,22 @@ namespace BangBang.UI.Interaction
             if (optionsContainer == null) return;
             foreach (Transform child in optionsContainer) Destroy(child.gameObject);
 
+            if (prompt.validCardIds != null)
+            {
+                foreach (string cardId in prompt.validCardIds)
+                {
+                    var info = CardCatalogDatabase.GetCardInfo(cardId);
+                    var cardButton = CreateOptionButton("Card_" + cardId, info.name, new Color(0.55f, 0.32f, 0.12f));
+                    cardButton.onClick.AddListener(() =>
+                    {
+                        AudioManager.Instance?.PlaySFX("button_tap");
+                        SelectCard(cardId);
+                        var image = cardButton.GetComponent<Image>();
+                        if (image != null) image.color = _selectedCardIds.Contains(cardId) ? new Color(0.85f, 0.62f, 0.16f) : new Color(0.55f, 0.32f, 0.12f);
+                    });
+                }
+            }
+
             if (prompt.options != null && prompt.options.Count > 0)
             {
                 for (int i = 0; i < prompt.options.Count; i++)
@@ -143,28 +159,7 @@ namespace BangBang.UI.Interaction
                     int optIdx = i;
                     string optName = prompt.options[i];
 
-                    var btnObj = new GameObject("Opt_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
-                    btnObj.transform.SetParent(optionsContainer, false);
-                    var rt = btnObj.GetComponent<RectTransform>();
-                    rt.sizeDelta = new Vector2(260, 55);
-
-                    var img = btnObj.GetComponent<Image>();
-                    img.color = new Color(0.2f, 0.45f, 0.25f);
-
-                    var txtObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
-                    txtObj.transform.SetParent(btnObj.transform, false);
-                    var txtRt = txtObj.GetComponent<RectTransform>();
-                    txtRt.anchorMin = Vector2.zero;
-                    txtRt.anchorMax = Vector2.one;
-                    var txt = txtObj.GetComponent<Text>();
-                    txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    txt.fontSize = 16;
-                    txt.fontStyle = FontStyle.Bold;
-                    txt.alignment = TextAnchor.MiddleCenter;
-                    txt.color = Color.white;
-                    txt.text = optName.ToUpper();
-
-                    var btn = btnObj.GetComponent<Button>();
+                    var btn = CreateOptionButton("Opt_" + i, optName.ToUpperInvariant(), optName == "PASS" ? new Color(0.45f, 0.18f, 0.16f) : new Color(0.2f, 0.45f, 0.25f));
                     btn.onClick.AddListener(() =>
                     {
                         AudioManager.Instance?.PlaySFX("button_tap");
@@ -173,6 +168,20 @@ namespace BangBang.UI.Interaction
                     });
                 }
             }
+        }
+
+        private Button CreateOptionButton(string objectName, string label, Color color)
+        {
+            var btnObj = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
+            btnObj.transform.SetParent(optionsContainer, false);
+            btnObj.GetComponent<RectTransform>().sizeDelta = new Vector2(170, 58);
+            btnObj.GetComponent<Image>().color = color;
+            var txtObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            txtObj.transform.SetParent(btnObj.transform, false);
+            var txtRt = txtObj.GetComponent<RectTransform>(); txtRt.anchorMin = Vector2.zero; txtRt.anchorMax = Vector2.one; txtRt.sizeDelta = Vector2.zero;
+            var txt = txtObj.GetComponent<Text>();
+            txt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); txt.fontSize = 15; txt.fontStyle = FontStyle.Bold; txt.alignment = TextAnchor.MiddleCenter; txt.color = Color.white; txt.text = label; txt.raycastTarget = false;
+            return btnObj.GetComponent<Button>();
         }
 
         public void SelectCard(string cardId)
@@ -218,9 +227,10 @@ namespace BangBang.UI.Interaction
             if (confirmButton == null || _currentPrompt == null) return;
 
             bool isValid = true;
-            if (_currentPrompt.type == "SELECT_CARDS" || _currentPrompt.type == "DISCARD")
+            if (_currentPrompt.type == "SELECT_CARDS" || _currentPrompt.type == "DISCARD" || _currentPrompt.type == "RESPOND" || _currentPrompt.type == "DUEL" || _currentPrompt.type == "CHOOSE_CARD")
             {
                 isValid = _selectedCardIds.Count >= _currentPrompt.minSelections && _selectedCardIds.Count <= _currentPrompt.maxSelections;
+                if ((_currentPrompt.type == "RESPOND" || _currentPrompt.type == "DUEL") && _selectedCardIds.Count != _currentPrompt.requiredCount) isValid = false;
                 if (confirmButtonText != null)
                 {
                     confirmButtonText.text = "XÁC NHẬN (" + _selectedCardIds.Count + "/" + _currentPrompt.maxSelections + ")";

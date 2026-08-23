@@ -22,6 +22,9 @@ namespace BangBang.Core.Data
         public static string GetTypeOf(string cardId)
         {
             if (string.IsNullOrEmpty(cardId)) return "";
+            int instanceSeparator = cardId.IndexOf("__", StringComparison.Ordinal);
+            if (instanceSeparator >= 0) return cardId.Substring(0, instanceSeparator);
+            if (Cards.ContainsKey(cardId)) return cardId;
             var parts = cardId.Split('_');
             if (parts.Length > 2 && parts[0].ToLower() == "gun" && parts[1].ToLower() == "range")
             {
