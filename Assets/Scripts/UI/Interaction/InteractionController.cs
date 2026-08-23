@@ -43,6 +43,7 @@ namespace BangBang.UI.Interaction
             {
                 GameStateStore.Instance.OnActiveInteractionChanged += HandleInteractionChanged;
                 GameStateStore.Instance.OnRequestPendingChanged += HandleRequestPendingChanged;
+                GameStateStore.Instance.OnStateSnapshotUpdated += HandleSnapshotChanged;
             }
 
             if (confirmButton != null)
@@ -64,6 +65,7 @@ namespace BangBang.UI.Interaction
             {
                 GameStateStore.Instance.OnActiveInteractionChanged -= HandleInteractionChanged;
                 GameStateStore.Instance.OnRequestPendingChanged -= HandleRequestPendingChanged;
+                GameStateStore.Instance.OnStateSnapshotUpdated -= HandleSnapshotChanged;
             }
         }
 
@@ -85,6 +87,12 @@ namespace BangBang.UI.Interaction
 
         private void HandleInteractionChanged(InteractionPromptDTO prompt)
         {
+            var snapshot = GameStateStore.Instance?.CurrentSnapshot;
+            if (snapshot == null || snapshot.state != ServerGameState.RESPONSE)
+            {
+                HideModal();
+                return;
+            }
             _currentPrompt = prompt;
             if (prompt == null)
             {
@@ -101,6 +109,12 @@ namespace BangBang.UI.Interaction
             }
 
             ShowModal(prompt);
+        }
+
+        private void HandleSnapshotChanged(MatchStateSnapshotDTO snapshot)
+        {
+            if (snapshot == null || snapshot.state != ServerGameState.RESPONSE || snapshot.activeInteraction == null)
+                HideModal();
         }
 
         private void HandleRequestPendingChanged(bool pending)

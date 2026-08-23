@@ -78,8 +78,14 @@ namespace BangBang.Core.Network
                 try
                 {
                     var envelope = JsonUtility.FromJson<WsEnvelope>(raw);
-                    if (envelope != null && envelope.room != null) Publish(envelope.room);
-                    else if (envelope != null && !string.IsNullOrEmpty(envelope.error)) OnErrorMessage?.Invoke(envelope.error);
+                    if (envelope != null && envelope.room != null)
+                    {
+                        bool belongsToCurrentRoom = !string.IsNullOrEmpty(CurrentRoomId) &&
+                            (envelope.room.id == CurrentRoomId || envelope.room.code == CurrentRoomId);
+                        if (belongsToCurrentRoom) Publish(envelope.room);
+                    }
+                    else if (envelope != null && !string.IsNullOrEmpty(envelope.error) && !string.IsNullOrEmpty(CurrentRoomId))
+                        OnErrorMessage?.Invoke(envelope.error);
                 }
                 catch (Exception exception) { Debug.LogWarning("[CloudflareGateway] Invalid WebSocket message: " + exception.Message); }
             }
@@ -281,7 +287,7 @@ namespace BangBang.Core.Network
                 isRoleRevealed = !string.IsNullOrEmpty(player.revealedRole), handCount = player.cardCount,
                 equipment = player.equipment ?? new List<string>(), effectiveDistanceToLocal = 1
             }).ToList();
-            snapshot.activeInteraction = ConvertInteraction(room.pendingBang);
+            snapshot.activeInteraction = room.phase == "waiting_response" ? ConvertInteraction(room.pendingBang) : null;
             return snapshot;
         }
 
@@ -350,6 +356,8 @@ namespace BangBang.Core.Network
         {
             try { _socketCts?.Cancel(); _socket?.Dispose(); } catch { }
             _socketCts = null; _socket = null;
+            while (_incoming.TryDequeue(out _)) { }
+            _room = null;
         }
 
         private struct HttpResult { public bool ok; public string body; public string error; }
