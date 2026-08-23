@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using BangBang.Core.Audio;
 using BangBang.Core.Data;
 using BangBang.Core.Network;
@@ -58,26 +57,32 @@ namespace BangBang.UI.Views
             _snapshot = snapshot;
             var privateState = snapshot.privateState;
             bool assigned = privateState != null && !string.IsNullOrEmpty(privateState.roleId);
-            bool publicReveal = snapshot.state == ServerGameState.ROLE_LOCK_WAIT;
-            var sheriff = snapshot.players?.FirstOrDefault(player => player.publicRoleId == "sheriff");
+            bool roleLocked = snapshot.state == ServerGameState.ROLE_LOCK_WAIT;
 
             if (roleTitleText != null)
-                roleTitleText.text = publicReveal ? "CẢNH SÁT TRƯỞNG ĐÃ LỘ DIỆN" : (assigned ? "VAI TRÒ CỦA BẠN" : "BƯỚC 1/3 — CHỌN VAI TRÒ");
+                roleTitleText.text = roleLocked ? "VAI TRÒ CỦA BẠN ĐÃ KHÓA" : (assigned ? "VAI TRÒ RIÊNG CỦA BẠN" : "BƯỚC 1/3 — CHỌN VAI TRÒ");
             if (roleGoalText != null)
-                roleGoalText.text = publicReveal
-                    ? (assigned ? "Vai trò của bạn vẫn bí mật • " + GoalFor(privateState.roleId) : "Các vai trò còn lại vẫn được giữ bí mật.")
-                    : (assigned ? GoalFor(privateState.roleId) : "Chọn một lá úp. Máy chủ sẽ khóa lựa chọn và giữ bí mật vai trò.");
+                roleGoalText.text = assigned
+                    ? GoalFor(privateState.roleId) + "\nĐang chờ những người chơi còn lại…"
+                    : "Chọn một lá úp. Máy chủ sẽ khóa lựa chọn và giữ bí mật vai trò.";
 
-            if (roleCardsContainer != null) roleCardsContainer.gameObject.SetActive(!publicReveal);
-            RenderSheriffReveal(publicReveal, sheriff);
-            if (publicReveal || roleCardsContainer == null) return;
+            if (roleCardsContainer != null) roleCardsContainer.gameObject.SetActive(true);
+            RenderSheriffReveal(false, null);
+            if (roleCardsContainer == null) return;
 
             foreach (var card in _cards) Destroy(card);
             _cards.Clear();
-            int count = snapshot.draftSlotCount > 0 ? snapshot.draftSlotCount : snapshot.players.Count;
             int ownSlot = privateState != null ? privateState.draftRoleSlot : -1;
-            for (int i = 0; i < count; i++)
-                CreateSlot(i, ownSlot, assigned, snapshot.lockedDraftSlots != null && snapshot.lockedDraftSlots.Contains(i));
+            if (assigned && ownSlot >= 0)
+            {
+                CreateSlot(ownSlot, ownSlot, true, true);
+            }
+            else if (!roleLocked)
+            {
+                int count = snapshot.draftSlotCount > 0 ? snapshot.draftSlotCount : snapshot.players.Count;
+                for (int i = 0; i < count; i++)
+                    CreateSlot(i, ownSlot, false, snapshot.lockedDraftSlots != null && snapshot.lockedDraftSlots.Contains(i));
+            }
         }
 
         private void RenderSheriffReveal(bool show, PlayerSnapshotDTO sheriff)
@@ -117,9 +122,9 @@ namespace BangBang.UI.Views
         {
             var card = new GameObject("RoleSlot_" + slot, typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(roleCardsContainer, false);
-            card.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 225);
-            var image = card.GetComponent<Image>();
             bool isMine = slot == ownSlot;
+            card.GetComponent<RectTransform>().sizeDelta = isMine && assigned ? new Vector2(230, 345) : new Vector2(150, 225);
+            var image = card.GetComponent<Image>();
             image.sprite = isMine && assigned
                 ? CardCatalogDatabase.LoadSprite("role_cards/" + RoleSprite(GameStateStore.Instance.LocalPrivateState.roleId) + "_card")
                 : CardCatalogDatabase.LoadSprite("UI/Cards/role_card_back_v2");

@@ -747,10 +747,35 @@ namespace BangBang.UI
 
                 var introRoot = CreateFullScreenPanel("MatchStartOverlay", tableObj.transform);
                 introRoot.GetComponent<Image>().color = new Color(0.035f, 0.025f, 0.02f, 0.96f);
-                var introTitle = CreateText("IntroTitle", "BƯỚC 3/3 — PHÁT BÀI", new Vector2(0, 55), new Vector2(900, 80), 38, BangUITheme.Brass, introRoot.transform).GetComponent<Text>();
-                var introSubtitle = CreateText("IntroSubtitle", "Máy chủ đang chia bài…", new Vector2(0, -35), new Vector2(900, 50), 20, Color.white, introRoot.transform).GetComponent<Text>();
+                var introHalo = new GameObject("SheriffIntroHalo", typeof(RectTransform), typeof(Image), typeof(Outline));
+                introHalo.transform.SetParent(introRoot.transform, false);
+                introHalo.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 105f);
+                introHalo.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 300);
+                introHalo.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+                introHalo.GetComponent<Image>().type = Image.Type.Sliced;
+                introHalo.GetComponent<Image>().color = new Color(BangUITheme.Brass.r, BangUITheme.Brass.g, BangUITheme.Brass.b, 0.24f);
+                introHalo.GetComponent<Outline>().effectColor = BangUITheme.Brass;
+                introHalo.GetComponent<Outline>().effectDistance = new Vector2(5, -5);
+
+                var introAvatarObj = new GameObject("SheriffIntroAvatar", typeof(RectTransform), typeof(Image));
+                introAvatarObj.transform.SetParent(introRoot.transform, false);
+                introAvatarObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 105f);
+                introAvatarObj.GetComponent<RectTransform>().sizeDelta = new Vector2(260, 260);
+                var introAvatar = introAvatarObj.GetComponent<Image>();
+                introAvatar.preserveAspect = true;
+
+                var introBadge = new GameObject("SheriffIntroBadge", typeof(RectTransform), typeof(Image));
+                introBadge.transform.SetParent(introRoot.transform, false);
+                introBadge.GetComponent<RectTransform>().anchoredPosition = new Vector2(145f, 15f);
+                introBadge.GetComponent<RectTransform>().sizeDelta = new Vector2(98, 138);
+                introBadge.GetComponent<Image>().sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+                introBadge.GetComponent<Image>().preserveAspect = true;
+
+                var introTitle = CreateText("IntroTitle", "CẢNH SÁT TRƯỞNG ĐÃ LỘ DIỆN", new Vector2(0, 350f), new Vector2(1000, 72), 36, BangUITheme.Brass, introRoot.transform).GetComponent<Text>();
+                var introSubtitle = CreateText("IntroSubtitle", "SHERIFF  •  +1 MÁU  •  ĐI LƯỢT ĐẦU", new Vector2(0, -105f), new Vector2(1000, 50), 21, Color.white, introRoot.transform).GetComponent<Text>();
+                var introCountdown = CreateText("IntroCountdown", "TRẬN ĐẤU BẮT ĐẦU SAU 5 GIÂY", new Vector2(0, -175f), new Vector2(700, 42), 18, BangUITheme.Muted, introRoot.transform).GetComponent<Text>();
                 var introController = tableObj.AddComponent<MatchStartSequenceUI>();
-                introController.Initialize(introRoot, introTitle, introSubtitle);
+                introController.Initialize(introRoot, introTitle, introSubtitle, introCountdown, introAvatar);
                 introRoot.SetActive(false);
 
                 flowController.gameTableView = gameTableView;

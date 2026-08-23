@@ -299,6 +299,7 @@ namespace BangBang.Core.Network
                 case "role_selection": return ServerGameState.ROLE_DRAFT;
                 case "role_reveal": return ServerGameState.ROLE_LOCK_WAIT;
                 case "character_selection": case "choosing_character": return ServerGameState.CHARACTER_DRAFT;
+                case "match_intro": return ServerGameState.INITIAL_DEAL;
                 case "turn_start": return ServerGameState.TURN_START;
                 case "play_phase": return ServerGameState.PLAY;
                 case "waiting_response": return ServerGameState.RESPONSE;

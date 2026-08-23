@@ -187,6 +187,9 @@ var BangBangMatch = class extends DurableObject {
       state.publicLog.push("Het gio chon nhan vat: he thong da chon ngau nhien.");
       await this.finalizeCharacters(state);
       await this.save(state);
+    } else if (state.status === "starting" && state.phase === "match_intro" && state.characterSelectionDeadline && Date.now() >= state.characterSelectionDeadline) {
+      await this.beginFirstTurn(state);
+      await this.save(state);
     } else if (state.phase === "waiting_response" && state.pendingBang && Date.now() >= state.pendingBang.deadline) {
       const pending = state.pendingBang;
       if (pending.actionType === "rescue") {
@@ -332,7 +335,7 @@ var BangBangMatch = class extends DurableObject {
   async startRoleReveal(state) {
     this.normalizeRoles(state);
     state.phase = "role_reveal";
-    state.characterSelectionDeadline = Date.now() + 1e4;
+    state.characterSelectionDeadline = Date.now() + 3e3;
     state.publicLog.push("Vai tro da duoc lat. Chuan bi chon nhan vat sau 10 giay.");
     void this.ctx.storage.setAlarm(state.characterSelectionDeadline);
   }
@@ -439,8 +442,8 @@ var BangBangMatch = class extends DurableObject {
     }
     state.deck = cards;
     state.discard = [];
-    state.status = "playing";
-    state.phase = "turn_start";
+    state.status = "starting";
+    state.phase = "match_intro";
     state.turnOrder = state.players.slice().sort((a, b) => a.seat - b.seat).map((player) => player.id);
     const sheriff = state.players.find((player) => player.role === "sheriff");
     state.currentPlayerIndex = state.turnOrder.indexOf(sheriff.id);
@@ -448,6 +451,16 @@ var BangBangMatch = class extends DurableObject {
     state.roundNumber = 1;
     state.turnNumber = 1;
     state.bangUsedThisTurn = 0;
+    state.publicLog.push(`Sheriff ${sheriff.name} da lo dien.`);
+    state.characterSelectionDeadline = Date.now() + 5e3;
+    void this.ctx.storage.setAlarm(state.characterSelectionDeadline);
+  }
+  async beginFirstTurn(state) {
+    const sheriff = state.players.find((player) => player.role === "sheriff");
+    state.characterSelectionDeadline = void 0;
+    state.status = "playing";
+    state.phase = "turn_start";
+    state.currentTurnPlayerId = sheriff.id;
     state.publicLog.push("Tr\u1EADn \u0111\u1EA5u b\u1EAFt \u0111\u1EA7u.");
     state.publicLog.push("Sheriff di luot dau tien.");
     state.turnDeadline = Date.now() + state.turnDurationSeconds * 1e3;
@@ -1363,7 +1376,7 @@ var BangBangMatch = class extends DurableObject {
       characterDeck: this.setupDeckFor(state.characterDeck, userId),
       players: state.players.map(({ hand, role, characterOptions, characterChosen, ...player }) => ({
         ...player,
-        revealedRole: role === "sheriff" && state.phase !== "role_selection" || !player.alive ? role : void 0,
+        revealedRole: role === "sheriff" && (state.phase === "match_intro" || state.status === "playing" || state.status === "finished") || !player.alive ? role : void 0,
         role: player.id === userId ? role : void 0,
         hand: player.id === userId ? hand : void 0,
         characterOptions: player.id === userId ? characterOptions : void 0,
