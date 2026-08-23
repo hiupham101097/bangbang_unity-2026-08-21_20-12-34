@@ -353,27 +353,71 @@ namespace BangBang.UI
                 lobbyView.backgroundImage = lobbyObj.GetComponent<Image>();
 
                 // Back to Home Button
-                lobbyView.backToHomeButton = CreateButton("BackHomeBtn", "TRANG CHỦ", new Vector2(-820f, 480f), BangUITheme.SurfaceRaised, lobbyObj.transform, new Vector2(190, 52));
+                lobbyView.backToHomeButton = CreateButton("BackHomeBtn", "QUAY LẠI", new Vector2(-845f, 485f), BangUITheme.SurfaceRaised, lobbyObj.transform, new Vector2(180, 50));
 
                 // Header Title
-                var headObj = CreateText("Header", "DANH SÁCH PHÒNG", new Vector2(0, 475f), new Vector2(600, 54), 30, BangUITheme.Ivory, lobbyObj.transform);
+                var headObj = CreateText("Header", "PHÒNG ĐANG HOẠT ĐỘNG", new Vector2(-280f, 470f), new Vector2(700, 54), 30, BangUITheme.Ivory, lobbyObj.transform);
                 lobbyView.titleText = headObj.GetComponent<Text>();
-                lobbyView.connectionStatusText = CreateText("ConnectionStatus", "ĐANG ĐỒNG BỘ MÁY CHỦ", new Vector2(0, 432f), new Vector2(440, 30), 14, BangUITheme.Muted, lobbyObj.transform).GetComponent<Text>();
+                lobbyView.titleText.alignment = TextAnchor.MiddleLeft;
+                lobbyView.connectionStatusText = CreateText("ConnectionStatus", "ĐANG ĐỒNG BỘ MÁY CHỦ", new Vector2(730f, 485f), new Vector2(360, 30), 13, BangUITheme.Muted, lobbyObj.transform).GetComponent<Text>();
 
                 // Actions Bottom
-                lobbyView.openCreateRoomPopupButton = CreateButton("CreateRoomBtn", "TẠO PHÒNG", new Vector2(-210f, -445f), BangUITheme.Brass, lobbyObj.transform, new Vector2(300, 68));
-                lobbyView.joinByPinButton = CreateButton("JoinPinBtn", "VÀO BẰNG MÃ", new Vector2(210f, -445f), BangUITheme.SurfaceRaised, lobbyObj.transform, new Vector2(300, 68));
+                lobbyView.openCreateRoomPopupButton = CreateButton("CreateRoomBtn", "TẠO PHÒNG MỚI", new Vector2(720f, 425f), BangUITheme.Brass, lobbyObj.transform, new Vector2(300, 62));
+
+                var finderSurface = CreateSurface("RoomFinderSurface", new Vector2(-755f, -25f), new Vector2(300, 790), lobbyObj.transform);
+                var finderTitle = CreateText("FinderTitle", "VÀO NHANH", new Vector2(0, 330f), new Vector2(240, 34), 20, BangUITheme.Ivory, finderSurface.transform).GetComponent<Text>();
+                finderTitle.alignment = TextAnchor.MiddleLeft;
+                CreateText("FinderHint", "Nhập mã phòng được bạn bè chia sẻ", new Vector2(0, 282f), new Vector2(240, 52), 13, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.UpperLeft;
+                lobbyView.roomPinInput = CreateInputField("RoomPinInput", "MÃ PHÒNG", new Vector2(0, 220f), new Vector2(240, 56), finderSurface.transform);
+                lobbyView.joinByPinButton = CreateButton("JoinPinBtn", "THAM GIA", new Vector2(0, 150f), BangUITheme.Brass, finderSurface.transform, new Vector2(240, 56));
+                CreateText("FilterLabel", "BỘ LỌC", new Vector2(0, 65f), new Vector2(240, 28), 13, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FilterAll", "TẤT CẢ PHÒNG", new Vector2(0, 20f), new Vector2(240, 42), 15, BangUITheme.Ivory, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FilterWaiting", "CÒN CHỖ", new Vector2(0, -25f), new Vector2(240, 42), 15, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FilterPrivate", "PHÒNG RIÊNG", new Vector2(0, -70f), new Vector2(240, 42), 15, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
 
                 // Room List Container
-                var listSurface = CreateSurface("RoomListSurface", new Vector2(0, 0), new Vector2(1160, 760), lobbyObj.transform);
-                var listContainer = new GameObject("RoomListContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
-                listContainer.transform.SetParent(listSurface.transform, false);
+                var listSurface = CreateSurface("RoomListSurface", new Vector2(205f, -25f), new Vector2(1240, 790), lobbyObj.transform);
+                var scrollView = new GameObject("RoomScrollView", typeof(RectTransform), typeof(UnityEngine.UI.ScrollRect));
+                scrollView.transform.SetParent(listSurface.transform, false);
+                var scrollRt = scrollView.GetComponent<RectTransform>();
+                scrollRt.anchorMin = Vector2.zero;
+                scrollRt.anchorMax = Vector2.one;
+                scrollRt.offsetMin = new Vector2(28, 28);
+                scrollRt.offsetMax = new Vector2(-28, -28);
+
+                var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Mask));
+                viewport.transform.SetParent(scrollView.transform, false);
+                var viewportRt = viewport.GetComponent<RectTransform>();
+                viewportRt.anchorMin = Vector2.zero;
+                viewportRt.anchorMax = Vector2.one;
+                viewportRt.sizeDelta = Vector2.zero;
+                viewport.GetComponent<UnityEngine.UI.Image>().color = new Color(1, 1, 1, 0.01f);
+                viewport.GetComponent<UnityEngine.UI.Mask>().showMaskGraphic = false;
+
+                var listContainer = new GameObject("RoomListContent", typeof(RectTransform), typeof(UnityEngine.UI.VerticalLayoutGroup), typeof(UnityEngine.UI.ContentSizeFitter));
+                listContainer.transform.SetParent(viewport.transform, false);
                 var listRt = listContainer.GetComponent<RectTransform>();
-                listRt.anchoredPosition = new Vector2(0, -10f);
-                listRt.sizeDelta = new Vector2(1080, 680);
-                var vlg = listContainer.GetComponent<VerticalLayoutGroup>();
+                listRt.anchorMin = new Vector2(0, 1);
+                listRt.anchorMax = new Vector2(1, 1);
+                listRt.pivot = new Vector2(0.5f, 1);
+                listRt.sizeDelta = Vector2.zero;
+                var vlg = listContainer.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
                 vlg.childAlignment = TextAnchor.UpperCenter;
-                vlg.spacing = 15f;
+                vlg.spacing = 12f;
+                vlg.padding = new RectOffset(4, 4, 4, 4);
+                vlg.childControlHeight = false;
+                vlg.childControlWidth = true;
+                vlg.childForceExpandHeight = false;
+                vlg.childForceExpandWidth = true;
+                var fitter = listContainer.GetComponent<UnityEngine.UI.ContentSizeFitter>();
+                fitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
+                var scroll = scrollView.GetComponent<UnityEngine.UI.ScrollRect>();
+                scroll.viewport = viewportRt;
+                scroll.content = listRt;
+                scroll.horizontal = false;
+                scroll.vertical = true;
+                scroll.movementType = UnityEngine.UI.ScrollRect.MovementType.Elastic;
+                scroll.scrollSensitivity = 32f;
                 lobbyView.roomListContentTransform = listContainer.transform;
 
                 // Create Room Popup (with bot option)

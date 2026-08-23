@@ -120,7 +120,7 @@ namespace BangBang.UI.Views
         {
             if (backgroundImage != null)
             {
-                var townSprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/lobby_v2");
+                var townSprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/lobby_browser_v3");
                 if (townSprite != null)
                 {
                     backgroundImage.sprite = townSprite;
@@ -207,7 +207,21 @@ namespace BangBang.UI.Views
             foreach (var item in _roomItems) Destroy(item);
             _roomItems.Clear();
 
-            if (rooms == null) return;
+            if (rooms == null || rooms.Count == 0)
+            {
+                var empty = new GameObject("EmptyRooms", typeof(RectTransform), typeof(Text), typeof(LayoutElement));
+                empty.transform.SetParent(roomListContentTransform, false);
+                empty.GetComponent<RectTransform>().sizeDelta = new Vector2(0, 240);
+                empty.GetComponent<LayoutElement>().preferredHeight = 240;
+                var emptyText = empty.GetComponent<Text>();
+                emptyText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                emptyText.fontSize = 18;
+                emptyText.alignment = TextAnchor.MiddleCenter;
+                emptyText.color = BangUITheme.Muted;
+                emptyText.text = "CHƯA CÓ PHÒNG PHÙ HỢP\nHãy tạo phòng mới hoặc thử lại sau.";
+                _roomItems.Add(empty);
+                return;
+            }
 
             foreach (var r in rooms)
             {
@@ -219,9 +233,10 @@ namespace BangBang.UI.Views
 
         private GameObject CreateRoomListItem(RoomSummaryDTO room)
         {
-            var itemObj = new GameObject("Room_" + room.roomCode, typeof(RectTransform), typeof(Image), typeof(Outline));
+            var itemObj = new GameObject("Room_" + room.roomCode, typeof(RectTransform), typeof(Image), typeof(Outline), typeof(LayoutElement));
             var rt = itemObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(1040, 94);
+            rt.sizeDelta = new Vector2(0, 104);
+            itemObj.GetComponent<LayoutElement>().preferredHeight = 104;
 
             var img = itemObj.GetComponent<Image>();
             img.color = BangUITheme.SurfaceRaised;
@@ -235,8 +250,8 @@ namespace BangBang.UI.Views
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
             nameObj.transform.SetParent(itemObj.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
-            nameRt.anchoredPosition = new Vector2(-300f, 14f);
-            nameRt.sizeDelta = new Vector2(380, 34);
+            nameRt.anchoredPosition = new Vector2(-375f, 16f);
+            nameRt.sizeDelta = new Vector2(390, 34);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             nameTxt.fontSize = 18;
@@ -248,7 +263,7 @@ namespace BangBang.UI.Views
             var codeObj = new GameObject("Code", typeof(RectTransform), typeof(Text));
             codeObj.transform.SetParent(itemObj.transform, false);
             var codeRt = codeObj.GetComponent<RectTransform>();
-            codeRt.anchoredPosition = new Vector2(-300f, -18f);
+            codeRt.anchoredPosition = new Vector2(-375f, -20f);
             codeRt.sizeDelta = new Vector2(380, 24);
             var codeTxt = codeObj.GetComponent<Text>();
             codeTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -261,20 +276,33 @@ namespace BangBang.UI.Views
             var infoObj = new GameObject("Info", typeof(RectTransform), typeof(Text));
             infoObj.transform.SetParent(itemObj.transform, false);
             var infoRt = infoObj.GetComponent<RectTransform>();
-            infoRt.anchoredPosition = new Vector2(115f, 0);
-            infoRt.sizeDelta = new Vector2(260, 40);
+            infoRt.anchoredPosition = new Vector2(80f, 16f);
+            infoRt.sizeDelta = new Vector2(300, 32);
             var infoTxt = infoObj.GetComponent<Text>();
             infoTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             infoTxt.fontSize = 15;
             infoTxt.alignment = TextAnchor.MiddleCenter;
             infoTxt.color = BangUITheme.Muted;
-            infoTxt.text = room.currentPlayers + "/" + room.maxPlayers + " NGƯỜI   •   " + room.pingMs + " MS";
+            infoTxt.text = room.currentPlayers + "/" + room.maxPlayers + " NGƯỜI   •   " + room.turnTimeSeconds + " GIÂY/LƯỢT";
+
+            var statusObj = new GameObject("Status", typeof(RectTransform), typeof(Text));
+            statusObj.transform.SetParent(itemObj.transform, false);
+            var statusRt = statusObj.GetComponent<RectTransform>();
+            statusRt.anchoredPosition = new Vector2(80f, -20f);
+            statusRt.sizeDelta = new Vector2(300, 26);
+            var statusTxt = statusObj.GetComponent<Text>();
+            statusTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            statusTxt.fontSize = 13;
+            statusTxt.alignment = TextAnchor.MiddleCenter;
+            bool full = room.currentPlayers >= room.maxPlayers;
+            statusTxt.color = full ? BangUITheme.Danger : BangUITheme.Success;
+            statusTxt.text = (full ? "ĐÃ ĐẦY" : "CÒN CHỖ") + (room.isPrivate ? "   •   PHÒNG RIÊNG" : "   •   CÔNG KHAI") + "   •   " + room.pingMs + " MS";
 
             // Join Button
             var joinObj = new GameObject("JoinBtn", typeof(RectTransform), typeof(Image), typeof(Button));
             joinObj.transform.SetParent(itemObj.transform, false);
             var joinRt = joinObj.GetComponent<RectTransform>();
-            joinRt.anchoredPosition = new Vector2(405f, 0);
+            joinRt.anchoredPosition = new Vector2(490f, 0);
             joinRt.sizeDelta = new Vector2(170, 54);
             var jImg = joinObj.GetComponent<Image>();
             jImg.color = BangUITheme.Brass;
@@ -295,6 +323,8 @@ namespace BangBang.UI.Views
             jTxt.text = "VÀO BÀN";
 
             var btn = joinObj.GetComponent<Button>();
+            btn.interactable = !full;
+            jTxt.text = full ? "ĐÃ ĐẦY" : "VÀO PHÒNG";
             btn.onClick.AddListener(async () =>
             {
                 AudioManager.Instance?.PlaySFX("button_tap");
