@@ -219,48 +219,67 @@ namespace BangBang.UI.Views
 
         private GameObject CreateRoomListItem(RoomSummaryDTO room)
         {
-            var itemObj = new GameObject("Room_" + room.roomCode, typeof(RectTransform), typeof(Image));
+            var itemObj = new GameObject("Room_" + room.roomCode, typeof(RectTransform), typeof(Image), typeof(Outline));
             var rt = itemObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(880, 80);
+            rt.sizeDelta = new Vector2(1040, 94);
 
             var img = itemObj.GetComponent<Image>();
-            img.color = new Color(0.18f, 0.12f, 0.08f, 0.95f);
+            img.color = BangUITheme.SurfaceRaised;
+            img.sprite = BangUITheme.RoundedSprite;
+            img.type = Image.Type.Sliced;
+            var outline = itemObj.GetComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.08f);
+            outline.effectDistance = new Vector2(1, -1);
 
             // Name
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
             nameObj.transform.SetParent(itemObj.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
-            nameRt.anchoredPosition = new Vector2(-230f, 0);
-            nameRt.sizeDelta = new Vector2(340, 40);
+            nameRt.anchoredPosition = new Vector2(-300f, 14f);
+            nameRt.sizeDelta = new Vector2(380, 34);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             nameTxt.fontSize = 18;
             nameTxt.fontStyle = FontStyle.Bold;
             nameTxt.alignment = TextAnchor.MiddleLeft;
-            nameTxt.color = new Color(0.95f, 0.85f, 0.5f);
+            nameTxt.color = BangUITheme.Ivory;
             nameTxt.text = room.roomName;
+
+            var codeObj = new GameObject("Code", typeof(RectTransform), typeof(Text));
+            codeObj.transform.SetParent(itemObj.transform, false);
+            var codeRt = codeObj.GetComponent<RectTransform>();
+            codeRt.anchoredPosition = new Vector2(-300f, -18f);
+            codeRt.sizeDelta = new Vector2(380, 24);
+            var codeTxt = codeObj.GetComponent<Text>();
+            codeTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            codeTxt.fontSize = 13;
+            codeTxt.alignment = TextAnchor.MiddleLeft;
+            codeTxt.color = BangUITheme.Muted;
+            codeTxt.text = "MÃ PHÒNG  " + room.roomCode;
 
             // Player count & Ping
             var infoObj = new GameObject("Info", typeof(RectTransform), typeof(Text));
             infoObj.transform.SetParent(itemObj.transform, false);
             var infoRt = infoObj.GetComponent<RectTransform>();
-            infoRt.anchoredPosition = new Vector2(100f, 0);
-            infoRt.sizeDelta = new Vector2(200, 40);
+            infoRt.anchoredPosition = new Vector2(115f, 0);
+            infoRt.sizeDelta = new Vector2(260, 40);
             var infoTxt = infoObj.GetComponent<Text>();
             infoTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             infoTxt.fontSize = 15;
             infoTxt.alignment = TextAnchor.MiddleCenter;
-            infoTxt.color = Color.white;
-            infoTxt.text = room.currentPlayers + "/" + room.maxPlayers + " • 🟢 " + room.pingMs + "ms";
+            infoTxt.color = BangUITheme.Muted;
+            infoTxt.text = room.currentPlayers + "/" + room.maxPlayers + " NGƯỜI   •   " + room.pingMs + " MS";
 
             // Join Button
             var joinObj = new GameObject("JoinBtn", typeof(RectTransform), typeof(Image), typeof(Button));
             joinObj.transform.SetParent(itemObj.transform, false);
             var joinRt = joinObj.GetComponent<RectTransform>();
-            joinRt.anchoredPosition = new Vector2(330f, 0);
-            joinRt.sizeDelta = new Vector2(140, 50);
+            joinRt.anchoredPosition = new Vector2(405f, 0);
+            joinRt.sizeDelta = new Vector2(170, 54);
             var jImg = joinObj.GetComponent<Image>();
-            jImg.color = new Color(0.2f, 0.6f, 0.25f);
+            jImg.color = BangUITheme.Brass;
+            jImg.sprite = BangUITheme.RoundedSprite;
+            jImg.type = Image.Type.Sliced;
 
             var jTxtObj = new GameObject("Txt", typeof(RectTransform), typeof(Text));
             jTxtObj.transform.SetParent(joinObj.transform, false);
@@ -272,7 +291,7 @@ namespace BangBang.UI.Views
             jTxt.fontSize = 16;
             jTxt.fontStyle = FontStyle.Bold;
             jTxt.alignment = TextAnchor.MiddleCenter;
-            jTxt.color = Color.white;
+            jTxt.color = BangUITheme.Ink;
             jTxt.text = "VÀO BÀN";
 
             var btn = joinObj.GetComponent<Button>();

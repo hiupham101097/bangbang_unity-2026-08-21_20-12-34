@@ -151,7 +151,7 @@ namespace BangBang.UI
                 var scaler = canvasObj.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1920, 1080);
-                scaler.matchWidthOrHeight = 1.0f; // Landscape: match height
+                scaler.matchWidthOrHeight = 0.5f; // Balanced scaling across 16:9, 18:9 and tablet landscape
 
                 if (FindAnyObjectByType<Camera>() == null)
                 {
@@ -193,23 +193,47 @@ namespace BangBang.UI
                 homeScreen = homeObj.AddComponent<HomeScreenUI>();
                 homeScreen.backgroundImage = homeObj.GetComponent<Image>();
 
+                var leftScrim = new GameObject("LeftScrim", typeof(RectTransform), typeof(Image));
+                leftScrim.transform.SetParent(homeObj.transform, false);
+                var scrimRt = leftScrim.GetComponent<RectTransform>();
+                scrimRt.anchorMin = new Vector2(0, 0);
+                scrimRt.anchorMax = new Vector2(0, 1);
+                scrimRt.pivot = new Vector2(0, 0.5f);
+                scrimRt.sizeDelta = new Vector2(860, 0);
+                leftScrim.GetComponent<Image>().color = BangUITheme.Scrim;
+                leftScrim.GetComponent<Image>().raycastTarget = false;
+
                 // Logo Banner
                 var logoObj = new GameObject("LogoBanner", typeof(RectTransform), typeof(Image));
                 logoObj.transform.SetParent(homeObj.transform, false);
                 var logoRt = logoObj.GetComponent<RectTransform>();
-                logoRt.anchoredPosition = new Vector2(0, 300f);
-                logoRt.sizeDelta = new Vector2(500, 240);
+                logoRt.anchoredPosition = new Vector2(-545f, 245f);
+                logoRt.sizeDelta = new Vector2(650, 300);
                 homeScreen.logoImage = logoObj.GetComponent<Image>();
+                homeScreen.logoImage.raycastTarget = false;
 
-                var homeMenu = CreateSurface("MainMenuSurface", new Vector2(0, -35f), new Vector2(470, 390), homeObj.transform);
+                var profile = CreateSurface("ProfileSurface", new Vector2(-690f, 468f), new Vector2(410, 74), homeObj.transform);
+                var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
+                avatarObj.transform.SetParent(profile.transform, false);
+                avatarObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(-164, 0);
+                avatarObj.GetComponent<RectTransform>().sizeDelta = new Vector2(54, 54);
+                avatarObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+                avatarObj.GetComponent<Image>().type = Image.Type.Sliced;
+                homeScreen.avatarImage = avatarObj.GetComponent<Image>();
+                homeScreen.playerNameText = CreateText("PlayerName", "Cao bồi", new Vector2(18, 12), new Vector2(290, 26), 17, BangUITheme.Ivory, profile.transform).GetComponent<Text>();
+                homeScreen.playerNameText.alignment = TextAnchor.MiddleLeft;
+                homeScreen.playerBountyText = CreateText("PlayerBounty", "Tân binh • $0", new Vector2(18, -14), new Vector2(290, 22), 13, BangUITheme.Muted, profile.transform).GetComponent<Text>();
+                homeScreen.playerBountyText.alignment = TextAnchor.MiddleLeft;
+
+                var homeMenu = CreateSurface("MainMenuSurface", new Vector2(-555f, -165f), new Vector2(500, 430), homeObj.transform);
                 CreateText("MenuEyebrow", "MULTIPLAYER • 4–8 NGƯỜI", new Vector2(0, 145f), new Vector2(400, 30), 14, BangUITheme.Muted, homeMenu.transform);
-                homeScreen.startButton = CreateButton("StartBtn", "CHƠI ONLINE", new Vector2(0, 82f), BangUITheme.Brass, homeMenu.transform, new Vector2(390, 68));
-                homeScreen.galleryButton = CreateButton("GalleryBtn", "THƯ VIỆN THẺ", new Vector2(0, 5f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(390, 58));
-                homeScreen.questsButton = CreateButton("QuestsBtn", "NHIỆM VỤ", new Vector2(0, -62f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(390, 58));
-                homeScreen.guideButton = CreateButton("GuideBtn", "HƯỚNG DẪN CHƠI", new Vector2(0, -129f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(390, 58));
+                homeScreen.startButton = CreateButton("StartBtn", "CHƠI ONLINE", new Vector2(0, 78f), BangUITheme.Brass, homeMenu.transform, new Vector2(420, 72));
+                homeScreen.galleryButton = CreateButton("GalleryBtn", "THƯ VIỆN THẺ", new Vector2(0, -5f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(420, 60));
+                homeScreen.questsButton = CreateButton("QuestsBtn", "NHIỆM VỤ", new Vector2(0, -76f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(420, 60));
+                homeScreen.guideButton = CreateButton("GuideBtn", "HƯỚNG DẪN CHƠI", new Vector2(0, -147f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(420, 60));
 
                 // Audio Toggle Top Right
-                homeScreen.audioToggleButton = CreateButton("AudioBtn", "ÂM THANH", new Vector2(800f, 485f), BangUITheme.SurfaceRaised, homeObj.transform, new Vector2(180, 48));
+                homeScreen.audioToggleButton = CreateButton("AudioBtn", "ÂM THANH", new Vector2(830f, 490f), BangUITheme.SurfaceRaised, homeObj.transform, new Vector2(190, 48));
                 homeScreen.audioToggleText = homeScreen.audioToggleButton.GetComponentInChildren<Text>();
 
                 // Quests Popup
@@ -748,6 +772,8 @@ namespace BangBang.UI
             var bRt = boxObj.GetComponent<RectTransform>();
             bRt.sizeDelta = new Vector2(700, 440);
             boxObj.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.08f, 0.98f);
+            boxObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+            boxObj.GetComponent<Image>().type = Image.Type.Sliced;
 
             CreateText("Title", title, new Vector2(0, 160f), new Vector2(600, 40), 22, Color.yellow, boxObj.transform);
             CreateText("Content", content, new Vector2(0, 30f), new Vector2(620, 200), 15, Color.white, boxObj.transform);
@@ -764,8 +790,10 @@ namespace BangBang.UI
             var boxObj = new GameObject("Box", typeof(RectTransform), typeof(Image));
             boxObj.transform.SetParent(popupRoot.transform, false);
             var bRt = boxObj.GetComponent<RectTransform>();
-            bRt.sizeDelta = new Vector2(700, 440);
-            boxObj.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.08f, 0.98f);
+            bRt.sizeDelta = new Vector2(760, 480);
+            boxObj.GetComponent<Image>().color = BangUITheme.Surface;
+            boxObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+            boxObj.GetComponent<Image>().type = Image.Type.Sliced;
 
             CreateText("Title", title, new Vector2(0, 160f), new Vector2(600, 40), 22, Color.yellow, boxObj.transform);
             CreateText("Content", content, new Vector2(0, 105f), new Vector2(620, 34), 14, BangUITheme.Muted, boxObj.transform);
@@ -797,6 +825,8 @@ namespace BangBang.UI
             rt.anchoredPosition = position;
             rt.sizeDelta = size;
             surface.GetComponent<Image>().color = new Color(BangUITheme.Surface.r, BangUITheme.Surface.g, BangUITheme.Surface.b, 0.94f);
+            surface.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+            surface.GetComponent<Image>().type = Image.Type.Sliced;
             var outline = surface.GetComponent<Outline>();
             outline.effectColor = new Color(BangUITheme.Brass.r, BangUITheme.Brass.g, BangUITheme.Brass.b, 0.24f);
             outline.effectDistance = new Vector2(1f, -1f);
@@ -811,6 +841,8 @@ namespace BangBang.UI
             rt.anchoredPosition = position;
             rt.sizeDelta = size;
             root.GetComponent<Image>().color = BangUITheme.Ink;
+            root.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+            root.GetComponent<Image>().type = Image.Type.Sliced;
             root.GetComponent<Outline>().effectColor = new Color(1f, 1f, 1f, 0.12f);
             var value = CreateText("Text", string.Empty, Vector2.zero, size - new Vector2(32, 0), 16, BangUITheme.Ivory, root.transform).GetComponent<Text>();
             value.alignment = TextAnchor.MiddleLeft;
@@ -831,6 +863,8 @@ namespace BangBang.UI
             rt.anchoredPosition = position;
             rt.sizeDelta = size;
             root.GetComponent<Image>().color = BangUITheme.Ink;
+            root.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
+            root.GetComponent<Image>().type = Image.Type.Sliced;
             root.GetComponent<Outline>().effectColor = new Color(1f, 1f, 1f, 0.12f);
             var label = CreateText("Label", options[selected], new Vector2(-10, 0), size - new Vector2(42, 0), 16, BangUITheme.Ivory, root.transform).GetComponent<Text>();
             label.alignment = TextAnchor.MiddleLeft;
@@ -905,6 +939,8 @@ namespace BangBang.UI
 
             var img = btnObj.GetComponent<Image>();
             img.color = color;
+            img.sprite = BangUITheme.RoundedSprite;
+            img.type = Image.Type.Sliced;
             var shadow = btnObj.GetComponent<Shadow>();
             shadow.effectColor = new Color(0f, 0f, 0f, 0.42f);
             shadow.effectDistance = new Vector2(0f, -4f);

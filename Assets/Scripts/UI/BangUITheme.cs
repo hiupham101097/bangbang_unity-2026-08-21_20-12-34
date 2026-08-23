@@ -19,6 +19,17 @@ namespace BangBang.UI
         public static readonly Color Muted = new Color32(190, 174, 151, 255);
         public static readonly Color Success = new Color32(67, 169, 119, 255);
         public static readonly Color Danger = new Color32(186, 68, 57, 255);
+        public static readonly Color Scrim = new Color32(10, 8, 7, 205);
+
+        private static Sprite _runtimeRoundedSprite;
+        public static Sprite RoundedSprite
+        {
+            get
+            {
+                if (_runtimeRoundedSprite == null) _runtimeRoundedSprite = BuildRoundedSprite();
+                return _runtimeRoundedSprite;
+            }
+        }
 
         [SerializeField] private Sprite roundedPanelSprite;
         private bool _applied;
@@ -43,11 +54,8 @@ namespace BangBang.UI
             var image = button.targetGraphic as Image ?? button.GetComponent<Image>();
             if (image != null)
             {
-                if (roundedPanelSprite != null)
-                {
-                    image.sprite = roundedPanelSprite;
-                    image.type = Image.Type.Sliced;
-                }
+                image.sprite = roundedPanelSprite != null ? roundedPanelSprite : RoundedSprite;
+                image.type = Image.Type.Sliced;
 
                 bool destructive = button.name.Contains("Leave") || button.name.Contains("Cancel");
                 bool primary = button.name.Contains("Start") || button.name.Contains("Confirm") || button.name.Contains("PlayCard");
@@ -69,6 +77,36 @@ namespace BangBang.UI
 
             var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
             layout.minHeight = 52f;
+        }
+
+        private static Sprite BuildRoundedSprite()
+        {
+            const int size = 64;
+            const float radius = 14f;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "BangUI_RoundedRect",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Max(Mathf.Abs(x - (size - 1) * 0.5f) - ((size - 1) * 0.5f - radius), 0f);
+                    float dy = Mathf.Max(Mathf.Abs(y - (size - 1) * 0.5f) - ((size - 1) * 0.5f - radius), 0f);
+                    float alpha = Mathf.Clamp01(radius + 0.5f - Mathf.Sqrt(dx * dx + dy * dy));
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            var sprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(16, 16, 16, 16));
+            sprite.name = "BangUI_RoundedRect";
+            sprite.hideFlags = HideFlags.HideAndDontSave;
+            return sprite;
         }
 
         private static void StyleText(Text text)

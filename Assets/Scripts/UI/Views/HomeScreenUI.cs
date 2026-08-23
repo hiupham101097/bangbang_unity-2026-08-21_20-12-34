@@ -92,7 +92,7 @@ namespace BangBang.UI.Views
                         AudioManager.Instance.ToggleMute();
                         if (audioToggleText != null)
                         {
-                            audioToggleText.text = AudioManager.Instance.IsMuted ? "🔇 TẮT TIẾNG" : "🔊 BẬT TIẾNG";
+                            audioToggleText.text = AudioManager.Instance.IsMuted ? "ÂM THANH: TẮT" : "ÂM THANH: BẬT";
                         }
                     }
                 });
@@ -168,7 +168,7 @@ namespace BangBang.UI.Views
             }
 
             if (playerNameText != null) playerNameText.text = "Cao bồi của bạn";
-            if (playerBountyText != null) playerBountyText.text = "Tiền thưởng: $15,000 🪙";
+            if (playerBountyText != null) playerBountyText.text = "TÂN BINH  •  $15,000";
         }
     }
 }
