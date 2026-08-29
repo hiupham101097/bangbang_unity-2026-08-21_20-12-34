@@ -26,10 +26,10 @@ namespace BangBang.UI
             _lastScreenSize = new Vector2Int(Screen.width, Screen.height);
             var scaler = GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1760f, 1080f);
+            scaler.referenceResolution = new Vector2(1280f, 720f);
 
             float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 16f / 9f;
-            scaler.matchWidthOrHeight = aspect >= 2f ? 1f : 0.55f;
+            scaler.matchWidthOrHeight = aspect >= 2f ? 1f : 0.5f;
             scaler.referencePixelsPerUnit = 100f;
 
             if (!restyleChildren) return;
@@ -42,7 +42,7 @@ namespace BangBang.UI
             bool isButton = text.transform.parent != null && text.transform.parent.GetComponent<Button>() != null;
             bool isHeading = text.name.Contains("Title") || text.name.Contains("Header") ||
                              text.name.Contains("TurnPhase") || text.name.Contains("Winner");
-            int minimum = isHeading ? 20 : isButton ? 18 : 16;
+            int minimum = isHeading ? 28 : isButton ? 22 : 18;
             text.fontSize = Mathf.Max(text.fontSize, minimum);
             text.raycastTarget = false;
         }
@@ -52,8 +52,8 @@ namespace BangBang.UI
             var rect = button.GetComponent<RectTransform>();
             if (rect == null) return;
             var size = rect.sizeDelta;
-            if (rect.anchorMin.y == rect.anchorMax.y) size.y = Mathf.Max(size.y, 58f);
-            if (rect.anchorMin.x == rect.anchorMax.x) size.x = Mathf.Max(size.x, 110f);
+            if (rect.anchorMin.y == rect.anchorMax.y) size.y = Mathf.Max(size.y, 72f);
+            if (rect.anchorMin.x == rect.anchorMax.x) size.x = Mathf.Max(size.x, 140f);
             rect.sizeDelta = size;
         }
     }

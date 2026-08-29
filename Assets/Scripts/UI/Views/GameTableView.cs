@@ -347,7 +347,7 @@ namespace BangBang.UI.Views
                 options = new List<string>(),
                 canCancel = true,
                 expiresAt = 0
-            });
+            }, isLocalOnly: true);
         }
 
         private void RenderBulletHealth(int current, int max)
@@ -434,13 +434,14 @@ namespace BangBang.UI.Views
                     maxHealth = p.maxHealth,
                     characterId = p.characterId,
                     character = string.IsNullOrEmpty(p.characterId) ? null : CardCatalogDatabase.GetCharacterInfo(p.characterId),
-                    role = p.isRoleRevealed
-                        ? (p.publicRoleId == "sheriff" ? RoleType.Sheriff
+                    role = p.hiddenRole == "hidden"
+                        ? RoleType.Unknown
+                        : (p.publicRoleId == "sheriff" ? RoleType.Sheriff
                             : p.publicRoleId == "deputy" ? RoleType.Deputy
                             : p.publicRoleId == "outlaw" ? RoleType.Outlaw
-                            : RoleType.Renegade)
-                        : RoleType.Unknown,
-                    isRoleRevealed = p.isRoleRevealed,
+                            : p.publicRoleId == "renegade" ? RoleType.Renegade
+                            : RoleType.Unknown),
+                    isRoleRevealed = p.isRoleRevealed || p.hiddenRole != "hidden",
                     cardCount = p.handCount,
                     equipment = p.equipment ?? new List<string>(),
                     hand = new List<string>()
@@ -462,11 +463,12 @@ namespace BangBang.UI.Views
 
         private Vector2 GetOpponentSeatPosition(int totalPlayers, int index)
         {
-            float w = 0.78f; // Mid-Left / Mid-Right X
-            float tw = 0.44f; // Top-Left / Top-Right X
-            float th = 0.30f; // Top row Y
-            float mh = 0.05f; // Mid row Y
-            float bh = -0.24f; // Bottom row Y
+            // Normalized positions: x in [-1..1], y in [-0.5..0.5] of usable play area
+            float w = 0.76f;   // Mid-Left / Mid-Right X
+            float tw = 0.42f;  // Top-Left / Top-Right X
+            float th = 0.28f;  // Top row Y
+            float mh = 0.06f;  // Mid row Y
+            float bh = -0.22f; // Bottom row Y (for 7-8 player)
 
             Vector2[] boxPositions = new Vector2[]
             {
@@ -480,27 +482,33 @@ namespace BangBang.UI.Views
 
             Vector2[][] layouts =
             {
-                // 4 players (3 opponents) -> Top-Left, Top-Mid, Top-Right
+                // 4 players (3 opponents): Top-Left, Top-Mid, Top-Right
                 new[] { boxPositions[1], boxPositions[2], boxPositions[3] },
-                // 5 players (4 opponents) -> Mid-Left, Top-Left, Top-Right, Mid-Right
+                // 5 players (4 opponents): Mid-Left, Top-Left, Top-Right, Mid-Right
                 new[] { boxPositions[0], boxPositions[1], boxPositions[3], boxPositions[4] },
-                // 6 players (5 opponents) -> Mid-Left, Top-Left, Top-Mid, Top-Right, Mid-Right
+                // 6 players (5 opponents): Mid-Left, Top-Left, Top-Mid, Top-Right, Mid-Right
                 new[] { boxPositions[0], boxPositions[1], boxPositions[2], boxPositions[3], boxPositions[4] },
-                // 7 players (6 opponents) -> All 6 boxes
+                // 7 players (6 opponents): All 6 boxes
                 new[] { boxPositions[0], boxPositions[1], boxPositions[2], boxPositions[3], boxPositions[4], boxPositions[5] },
-                // 8 players (7 opponents) -> 6 boxes + squeeze top row
-                new[] { boxPositions[0], new Vector2(-0.55f, th), new Vector2(-0.18f, th), new Vector2(0.18f, th), new Vector2(0.55f, th), boxPositions[4], boxPositions[5] }
+                // 8 players (7 opponents): squeeze top row
+                new[] { boxPositions[0], new Vector2(-0.54f, th), new Vector2(-0.18f, th), new Vector2(0.18f, th), new Vector2(0.54f, th), boxPositions[4], boxPositions[5] }
             };
 
             int capacityIndex = Mathf.Clamp(totalPlayers, 4, 8) - 4;
             var layout = layouts[capacityIndex];
             Vector2 norm = layout[Mathf.Clamp(index, 0, layout.Length - 1)];
 
-            var container = opponentSeatsContainer != null ? opponentSeatsContainer.GetComponent<RectTransform>() : (RectTransform)transform;
-            // Use container height for both axes to ensure the layout matches the background's preserved aspect ratio
-            float referenceSize = container.rect.height; 
-            
-            return new Vector2(norm.x * referenceSize, norm.y * referenceSize);
+            // Use the container rect if already laid out, otherwise fall back to Screen dimensions
+            // so positions are correct on the very first frame before Unity finishes layout.
+            var container = opponentSeatsContainer != null
+                ? opponentSeatsContainer.GetComponent<RectTransform>()
+                : (RectTransform)transform;
+
+            float refW = container.rect.width > 10f ? container.rect.width : Screen.width;
+            float refH = container.rect.height > 10f ? container.rect.height : Screen.height;
+
+            // Use separate axes so the horizontal spread matches widescreen properly
+            return new Vector2(norm.x * refW * 0.5f, norm.y * refH * 0.72f);
         }
 
         /// <summary>Creates a fully-built PlayerSeatUI with all child components wired up.</summary>
@@ -783,11 +791,51 @@ namespace BangBang.UI.Views
             string cardId = _selectedCardUI.cardId;
             string targetId = _selectedTargetId;
             var info = _selectedCardUI.info;
+            var cardRect = _selectedCardUI.GetComponent<RectTransform>();
+
+            // Determine center canvas position for throw target
+            Canvas canvas = GetComponentInParent<Canvas>();
+            Vector2 centerScreen = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+
+            // Play audio immediately
+            string sfxKey = (cardId != null && cardId.StartsWith("bang")) ? "bang_shot" : "card_play";
+            AudioManager.Instance?.PlaySFX(sfxKey);
+
+            // Play card throw animation (non-blocking — runs parallel to below)
+            if (cardRect != null && canvas != null)
+            {
+                // Convert center screen to canvas-local for throw target
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvas.transform as RectTransform, centerScreen, null, out Vector2 centerLocal);
+                UIAnimator.Instance.PlayCardThrowAnimation(cardRect, centerLocal, canvas, null);
+            }
+
+            // Determine target seat screen position for directional FX
+            Vector2 targetSeatScreen = centerScreen;
+            if (!string.IsNullOrEmpty(targetId))
+            {
+                var tSeat = _seatUIs.Find(s => s.playerId == targetId);
+                if (tSeat != null) targetSeatScreen = tSeat.GetScreenCenterPosition();
+            }
+
+            // Play card-specific animation
+            bool isBang = cardId != null && (cardId.StartsWith("bang") || cardId.StartsWith("gatling") || cardId.StartsWith("duel"));
+            bool isNe = cardId != null && cardId.StartsWith("missed");
+            if (isBang && canvas != null && !string.IsNullOrEmpty(targetId))
+            {
+                UIAnimator.Instance.PlayBangAnimation(canvas,
+                    new Vector2(Screen.width * 0.15f, Screen.height * 0.2f),
+                    targetSeatScreen, null);
+            }
+            else if (!isBang && !isNe && canvas != null)
+            {
+                UIAnimator.Instance.PlayGenericCardAnimation(canvas, centerScreen,
+                    info?.vietnameseName ?? info?.name ?? cardId, null);
+            }
 
             CancelCardSelection();
 
             GameStateStore.Instance.SetRequestPending(true);
-            AudioManager.Instance?.PlaySFX(info.id == "bang" ? "bang_shot" : "card_play");
 
             if (GameStateStore.Instance?.Gateway != null)
             {

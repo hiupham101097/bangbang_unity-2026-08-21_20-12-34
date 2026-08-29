@@ -288,11 +288,16 @@ export class GameRoom {
         }
         else if (type === 'game.start') {
             if (socketId === this.hostId && this.state === ServerGameState.WAITING) {
+                const count = this.players.size;
                 const allReady = Array.from(this.players.values()).every(p => p.isReady);
-                if (allReady && this.players.size >= 4) { 
-                    this.startGame();
+                if (!allReady) {
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Tất cả người chơi phải sẵn sàng trước khi bắt đầu.') }));
+                } else if (count < 4) {
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Cần ít nhất 4 người chơi để bắt đầu trận.') }));
+                } else if (count > 8) {
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Tối đa 8 người chơi mỗi trận.') }));
                 } else {
-                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Not all players ready or not enough players (min 4).') }));
+                    this.startGame();
                 }
             }
         }
@@ -425,6 +430,12 @@ export class GameRoom {
     public getSnapshotFor(targetSocketId: string): MatchStateSnapshotDTO {
         const targetPlayer = this.players.get(targetSocketId);
         const publicPlayers: PlayerSnapshotDTO[] = Array.from(this.players.values()).map(p => {
+            // Role sanitization: a player can only see:
+            //   - their own role (via privateState, not here)
+            //   - SHERIFF (always revealed)
+            //   - any role that was explicitly revealed (e.g. on death)
+            // All others must be hidden from the snapshot to prevent client-side cheating.
+            const showRole = p.isRoleRevealed;
             return {
                 id: p.id,
                 name: p.name,
@@ -437,11 +448,12 @@ export class GameRoom {
                 currentHealth: p.currentHealth,
                 maxHealth: p.maxHealth,
                 characterId: this.isCharacterPublic() ? p.characterId : undefined,
-                publicRoleId: p.isRoleRevealed ? p.roleId : undefined,
+                publicRoleId: showRole ? p.roleId : undefined,
+                hiddenRole: !showRole ? 'hidden' : undefined,  // tells client to show 'VAI TRÒ BÍ MẬT'
                 isRoleRevealed: p.isRoleRevealed,
                 handCount: p.hand.length,
                 equipment: p.equipment,
-                effectiveDistanceToLocal: this.calculateDistance(targetPlayer, p), 
+                effectiveDistanceToLocal: this.calculateDistance(targetPlayer, p),
                 isTargetable: this.isTargetable(targetPlayer, p)
             };
         });
@@ -449,7 +461,7 @@ export class GameRoom {
         let privateState: PrivatePlayerState | undefined = undefined;
         if (targetPlayer) {
             privateState = {
-                roleId: targetPlayer.roleId,
+                roleId: targetPlayer.roleId,    // only the owner receives their real role here
                 hand: targetPlayer.hand,
                 draftCharacterOptions: targetPlayer.draftCharacterOptions,
                 draftRoleSlot: targetPlayer.draftRoleSlot,
@@ -593,49 +605,64 @@ export class GameRoom {
         this.currentTurnPlayerId = '';
         this.currentPhase = '';
         this.phaseId = uuidv4();
-        this.state = ServerGameState.ROLE_DRAFT;
-        console.log(`[ROOM ${this.roomId}] Starting game, ROLE_DRAFT`);
-        this.addCombatLog('Trận đấu mới bắt đầu. Đang chọn vai trò.');
-        
-        // Setup Role Pool
+        console.log(`[ROOM ${this.roomId}] Starting game — ${this.players.size} players`);
+        this.addCombatLog('Trận đấu mới bắt đầu. Đang phân vai trò.');
+
+        // ── ROLE POOL by player count ────────────────────────────────────
         const numPlayers = this.players.size;
-        this.rolePool = [];
-        if (numPlayers === 4) this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw'];
-        else if (numPlayers === 5) this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw', 'deputy'];
-        else if (numPlayers === 6) this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy'];
-        else if (numPlayers === 7) this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy', 'deputy'];
-        else if (numPlayers >= 8) this.rolePool = ['sheriff', 'renegade', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy', 'deputy'];
-        else this.rolePool = ['sheriff', 'outlaw', 'renegade', 'deputy'].slice(0, numPlayers);
-        
-        // Shuffle role pool
+        const clampedCount = Math.max(4, Math.min(8, numPlayers));
+        const rolePools: Record<number, string[]> = {
+            4: ['sheriff', 'outlaw', 'outlaw', 'renegade'],
+            5: ['sheriff', 'deputy', 'outlaw', 'outlaw', 'renegade'],
+            6: ['sheriff', 'deputy', 'outlaw', 'outlaw', 'outlaw', 'renegade'],
+            7: ['sheriff', 'deputy', 'deputy', 'outlaw', 'outlaw', 'outlaw', 'renegade'],
+            8: ['sheriff', 'deputy', 'deputy', 'outlaw', 'outlaw', 'outlaw', 'renegade', 'renegade']
+        };
+        this.rolePool = [...rolePools[clampedCount]];
+
+        // ── SHUFFLE role pool (Fisher-Yates) ─────────────────────────────
         for (let i = this.rolePool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [this.rolePool[i], this.rolePool[j]] = [this.rolePool[j], this.rolePool[i]];
         }
 
+        // ── ASSIGN roles — server decides, players do NOT choose ─────────
+        // Reset all players then distribute one role per player by seat order.
         this.roleSlotLocks.clear();
-        for (const player of this.players.values()) {
+        const playersBySeat = Array.from(this.players.values()).sort((a, b) => a.seat - b.seat);
+        for (const player of playersBySeat) {
             player.draftRoleSlot = undefined;
             player.draftCharacterSlot1 = undefined;
             player.draftCharacterSlot2 = undefined;
             player.draftCharacterOptions = undefined;
-            player.roleId = undefined;
             player.characterId = undefined;
             player.isRoleRevealed = false;
         }
-        const roleSlots = this.rolePool.map((_, index) => index);
-        for (const bot of Array.from(this.players.values()).filter(player => player.isBot)) {
-            const slot = roleSlots.splice(Math.floor(Math.random() * roleSlots.length), 1)[0];
-            this.roleSlotLocks.set(slot, bot.id);
-            bot.draftRoleSlot = slot;
-            bot.roleId = this.rolePool[slot];
+        for (let i = 0; i < playersBySeat.length; i++) {
+            const player = playersBySeat[i];
+            player.roleId = this.rolePool[i];
+            player.draftRoleSlot = i;
+            this.roleSlotLocks.set(i, player.id);
+            // Notify each player privately of their own role
+            if (!player.isBot) {
+                this.sendPrivateMessage(player.id, 'draft.role.assigned', { roleId: player.roleId });
+            }
         }
-        this.deadlineAt = Date.now() + this.rules.roleDraftSec * 1000;
-        this.broadcastSnapshot();
 
-        this.timerHandle = setTimeout(() => {
-            this.handleRoleDraftTimeout();
-        }, this.rules.roleDraftSec * 1000);
+        // ── REVEAL SHERIFF publicly ───────────────────────────────────────
+        let sheriffId = '';
+        for (const player of this.players.values()) {
+            if (player.roleId === 'sheriff') {
+                player.isRoleRevealed = true;
+                sheriffId = player.id;
+            }
+        }
+
+        this.broadcastMessage('draft.role.complete', { sheriffPlayerId: sheriffId, transitionAt: Date.now() + 3000 });
+        this.state = ServerGameState.ROLE_LOCK_WAIT;
+        this.deadlineAt = Date.now() + 3000;
+        this.broadcastSnapshot();
+        this.timerHandle = setTimeout(() => this.startCharacterDraft(), 3000);
     }
 
     private handleRolePick(socketId: string, slotId: number) {
@@ -1898,20 +1925,31 @@ export class GameRoom {
     private checkWinCondition(): boolean {
         const alive = Array.from(this.players.values()).filter(p => p.isAlive);
         const sheriffAlive = alive.some(p => p.roleId === 'sheriff');
+        const outlawAlive = alive.some(p => p.roleId === 'outlaw');
+        const renegadeAlive = alive.some(p => p.roleId === 'renegade');
+
         let winnerTeam: string | undefined;
         let winnerRole: string | undefined;
+        let winnerPlayerId: string | undefined;
 
-        if (!sheriffAlive) {
-            if (alive.length === 1 && alive[0].roleId === 'renegade') {
-                winnerRole = 'renegade';
-                winnerTeam = 'RENEGADE';
-            } else {
-                winnerRole = 'outlaw';
-                winnerTeam = 'OUTLAWS';
-            }
-        } else if (!alive.some(p => p.roleId === 'outlaw' || p.roleId === 'renegade')) {
+        // CASE 1: Solo Renegade victory — must be the only surviving player.
+        // Works for both 1-renegade AND 2-renegade (8-player) games.
+        // In 8-player games the two Renegades compete individually;
+        // only the last one standing can claim victory — NOT as a shared team win.
+        if (alive.length === 1 && alive[0].roleId === 'renegade') {
+            winnerRole = 'renegade';
+            winnerTeam = 'RENEGADE';
+            winnerPlayerId = alive[0].id;
+        }
+        // CASE 2: Sheriff + Deputies win — Sheriff alive and all threats eliminated.
+        else if (sheriffAlive && !outlawAlive && !renegadeAlive) {
             winnerRole = 'sheriff';
             winnerTeam = 'SHERIFF_DEPUTIES';
+        }
+        // CASE 3: Outlaw victory — Sheriff is dead and it is NOT a solo Renegade win.
+        else if (!sheriffAlive) {
+            winnerRole = 'outlaw';
+            winnerTeam = 'OUTLAWS';
         }
 
         if (!winnerTeam) return false;
@@ -1923,7 +1961,7 @@ export class GameRoom {
         this.currentPhase = 'GAME_OVER';
         this.deadlineAt = 0;
         for (const p of this.players.values()) p.isRoleRevealed = true;
-        this.broadcastMessage('game.ended', { winnerType: winnerTeam, winnerRole, reason: 'WIN_CONDITION' });
+        this.broadcastMessage('game.ended', { winnerType: winnerTeam, winnerRole, winnerPlayerId, reason: 'WIN_CONDITION' });
         this.onGameEnded?.(Array.from(this.players.values()), winnerTeam);
         this.broadcastSnapshot();
         return true;

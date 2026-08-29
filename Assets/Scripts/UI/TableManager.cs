@@ -223,21 +223,21 @@ namespace BangBang.UI
             seatObj.transform.SetParent(tableContainer != null ? tableContainer : transform, false);
 
             var rt = seatObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(130, 150);
+            rt.sizeDelta = new Vector2(180, 200);
 
             // Circular Wooden Frame & Avatar
             var frameObj = new GameObject("AvatarFrame", typeof(RectTransform), typeof(Image));
             frameObj.transform.SetParent(seatObj.transform, false);
             var frameRt = frameObj.GetComponent<RectTransform>();
-            frameRt.sizeDelta = new Vector2(90, 90);
-            frameRt.anchoredPosition = new Vector2(0, 15f);
+            frameRt.sizeDelta = new Vector2(130, 130);
+            frameRt.anchoredPosition = new Vector2(0, 20f);
             var frameImg = frameObj.GetComponent<Image>();
             frameImg.color = new Color(0.4f, 0.25f, 0.12f); // Wood brown ring
 
             var avatarObj = new GameObject("AvatarMask", typeof(RectTransform), typeof(Image), typeof(Mask));
             avatarObj.transform.SetParent(frameObj.transform, false);
             var avatarRt = avatarObj.GetComponent<RectTransform>();
-            avatarRt.sizeDelta = new Vector2(80, 80);
+            avatarRt.sizeDelta = new Vector2(118, 118);
             var avatarImg = avatarObj.GetComponent<Image>();
             avatarImg.preserveAspect = true;
 
@@ -245,8 +245,8 @@ namespace BangBang.UI
             var starObj = new GameObject("SheriffStar", typeof(RectTransform), typeof(Image));
             starObj.transform.SetParent(frameObj.transform, false);
             var starRt = starObj.GetComponent<RectTransform>();
-            starRt.anchoredPosition = new Vector2(-36f, -32f);
-            starRt.sizeDelta = new Vector2(32, 32);
+            starRt.anchoredPosition = new Vector2(-50f, -46f);
+            starRt.sizeDelta = new Vector2(44, 44);
             var starImg = starObj.GetComponent<Image>();
             starImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
             starObj.SetActive(false);
@@ -255,8 +255,8 @@ namespace BangBang.UI
             var heartObj = new GameObject("HeartHpBadge", typeof(RectTransform), typeof(Image));
             heartObj.transform.SetParent(frameObj.transform, false);
             var heartRt = heartObj.GetComponent<RectTransform>();
-            heartRt.anchoredPosition = new Vector2(34f, -32f);
-            heartRt.sizeDelta = new Vector2(30, 30);
+            heartRt.anchoredPosition = new Vector2(48f, -46f);
+            heartRt.sizeDelta = new Vector2(42, 42);
             var heartImg = heartObj.GetComponent<Image>();
             heartImg.color = new Color(0.85f, 0.15f, 0.15f); // Crimson red heart
 
@@ -267,7 +267,7 @@ namespace BangBang.UI
             hpTxtRt.anchorMax = Vector2.one;
             var hpTxt = hpTxtObj.GetComponent<Text>();
             hpTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            hpTxt.fontSize = 15;
+            hpTxt.fontSize = 20;
             hpTxt.fontStyle = FontStyle.Bold;
             hpTxt.alignment = TextAnchor.MiddleCenter;
             hpTxt.color = Color.white;
@@ -277,11 +277,11 @@ namespace BangBang.UI
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
             nameObj.transform.SetParent(seatObj.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
-            nameRt.anchoredPosition = new Vector2(0, 68f);
-            nameRt.sizeDelta = new Vector2(160, 22);
+            nameRt.anchoredPosition = new Vector2(0, 92f);
+            nameRt.sizeDelta = new Vector2(200, 28);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameTxt.fontSize = 13;
+            nameTxt.fontSize = 18;
             nameTxt.fontStyle = FontStyle.Bold;
             nameTxt.alignment = TextAnchor.MiddleCenter;
             nameTxt.color = Color.white;
@@ -290,11 +290,11 @@ namespace BangBang.UI
             var roleObj = new GameObject("Role", typeof(RectTransform), typeof(Text));
             roleObj.transform.SetParent(seatObj.transform, false);
             var roleRt = roleObj.GetComponent<RectTransform>();
-            roleRt.anchoredPosition = new Vector2(0, -42f);
-            roleRt.sizeDelta = new Vector2(140, 20);
+            roleRt.anchoredPosition = new Vector2(0, -58f);
+            roleRt.sizeDelta = new Vector2(180, 24);
             var roleTxt = roleObj.GetComponent<Text>();
             roleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            roleTxt.fontSize = 12;
+            roleTxt.fontSize = 16;
             roleTxt.alignment = TextAnchor.MiddleCenter;
             roleTxt.color = new Color(0.9f, 0.8f, 0.4f);
 
@@ -302,8 +302,8 @@ namespace BangBang.UI
             var eqObj = new GameObject("EquipmentShelf", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             eqObj.transform.SetParent(seatObj.transform, false);
             var eqRt = eqObj.GetComponent<RectTransform>();
-            eqRt.anchoredPosition = new Vector2(85f, 15f);
-            eqRt.sizeDelta = new Vector2(100, 65);
+            eqRt.anchoredPosition = new Vector2(110f, 20f);
+            eqRt.sizeDelta = new Vector2(130, 90);
             var hlg = eqObj.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleLeft;
             hlg.spacing = 4f;
@@ -312,7 +312,7 @@ namespace BangBang.UI
             var crosshairObj = new GameObject("Crosshair", typeof(RectTransform), typeof(Image), typeof(Button));
             crosshairObj.transform.SetParent(seatObj.transform, false);
             var crossRt = crosshairObj.GetComponent<RectTransform>();
-            crossRt.sizeDelta = new Vector2(100, 100);
+            crossRt.sizeDelta = new Vector2(140, 140);
             var crossImg = crosshairObj.GetComponent<Image>();
             crossImg.color = new Color(1f, 0.2f, 0.2f, 0.5f);
             crosshairObj.SetActive(false);

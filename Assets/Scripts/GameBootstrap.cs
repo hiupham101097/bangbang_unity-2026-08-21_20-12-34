@@ -166,8 +166,8 @@ namespace BangBang.UI
 
                 var scaler = canvasObj.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1760, 1080);
-                scaler.matchWidthOrHeight = 0.55f;
+                scaler.referenceResolution = new Vector2(1280, 720);
+                scaler.matchWidthOrHeight = 0.5f;
 
                 if (FindAnyObjectByType<Camera>() == null)
                 {
@@ -662,21 +662,21 @@ namespace BangBang.UI
                 var discTxtObj = CreateText("Count", "0", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, discObj.transform);
                 gameTableView.discardPileCountText = discTxtObj.GetComponent<Text>();
 
-                // Turn phase status (top center)
-                var phaseObj = CreateText("TurnPhase", "ĐANG CHỜ LƯỢT", new Vector2(-590f, 455f), new Vector2(430, 42), 20, BangUITheme.Ivory, tableObj.transform);
+                // Turn phase status (top-left)
+                var phaseObj = CreateText("TurnPhase", "ĐANG CHỜ LƯỢT", new Vector2(-370f, 310f), new Vector2(430, 42), 20, BangUITheme.Ivory, tableObj.transform);
                 gameTableView.turnPhaseStatusText = phaseObj.GetComponent<Text>();
                 gameTableView.turnPhaseStatusText.alignment = TextAnchor.MiddleLeft;
 
-                // Combat log (bottom center, above hand)
-                var logObj = CreateText("LogText", "Bàn đấu đang sẵn sàng…", new Vector2(0, -112f), new Vector2(760, 34), 15, BangUITheme.Muted, tableObj.transform);
+                // Combat log (center bottom, above hand)
+                var logObj = CreateText("LogText", "Bàn đấu đang sẵn sàng…", new Vector2(0, -88f), new Vector2(720, 34), 15, BangUITheme.Muted, tableObj.transform);
                 gameTableView.combatLogText = logObj.GetComponent<Text>();
 
-                // Local Player Dashboard (bottom-left)
+                // Local Player Dashboard (bottom-left, anchored within 1280x720)
                 var localDashObj = new GameObject("LocalPlayerDash", typeof(RectTransform), typeof(Image), typeof(Outline));
                 localDashObj.transform.SetParent(tableObj.transform, false);
                 var ldRt = localDashObj.GetComponent<RectTransform>();
-                ldRt.anchoredPosition = new Vector2(-745f, -400f);
-                ldRt.sizeDelta = new Vector2(320, 180);
+                ldRt.anchoredPosition = new Vector2(-430f, -270f);
+                ldRt.sizeDelta = new Vector2(300, 175);
                 localDashObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
                 localDashObj.GetComponent<Image>().type = Image.Type.Sliced;
                 localDashObj.GetComponent<Image>().color = new Color(0.055f, 0.035f, 0.022f, 0.92f);
@@ -735,12 +735,12 @@ namespace BangBang.UI
                 gameTableView.handCardLayout.cardSpacing = 150f;
                 gameTableView.handCardLayout.horizontalPadding = 480f;
 
-                // Target Banner (top center)
+                // Target Banner (below center zone)
                 var tBannerObj = new GameObject("TargetBanner", typeof(RectTransform), typeof(Image));
                 tBannerObj.transform.SetParent(tableObj.transform, false);
                 var tbRt = tBannerObj.GetComponent<RectTransform>();
-                tbRt.anchoredPosition = new Vector2(0, 205f);
-                tbRt.sizeDelta = new Vector2(680, 54);
+                tbRt.anchoredPosition = new Vector2(0, 185f);
+                tbRt.sizeDelta = new Vector2(620, 52);
                 tBannerObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
                 tBannerObj.GetComponent<Image>().type = Image.Type.Sliced;
                 tBannerObj.GetComponent<Image>().color = new Color(0.36f, 0.16f, 0.08f, 0.96f);
@@ -748,27 +748,32 @@ namespace BangBang.UI
                 gameTableView.targetBannerObj = tBannerObj;
                 gameTableView.targetBannerText = tbTxtObj.GetComponent<Text>();
 
-                // Card Preview Tooltip
+                // Card Preview Tooltip (just above hand cards)
                 var ttObj = new GameObject("CardPreviewTooltip", typeof(RectTransform), typeof(Image));
                 ttObj.transform.SetParent(tableObj.transform, false);
                 var ttRt = ttObj.GetComponent<RectTransform>();
-                ttRt.anchoredPosition = new Vector2(0, -72f);
-                ttRt.sizeDelta = new Vector2(820, 52);
+                ttRt.anchoredPosition = new Vector2(0, -60f);
+                ttRt.sizeDelta = new Vector2(760, 50);
                 ttObj.GetComponent<Image>().color = new Color(0.12f, 0.08f, 0.05f, 0.9f);
-                var ttTxtObj = CreateText("Text", "Chọn một lá bài để xem công dụng", Vector2.zero, new Vector2(780, 46), 15, new Color(1f, 0.9f, 0.6f), ttObj.transform);
+                var ttTxtObj = CreateText("Text", "Chọn một lá bài để xem công dụng", Vector2.zero, new Vector2(720, 44), 15, new Color(1f, 0.9f, 0.6f), ttObj.transform);
                 gameTableView.cardPreviewTooltipObj = ttObj;
                 gameTableView.cardPreviewTooltipText = ttTxtObj.GetComponent<Text>();
 
-                // Action Buttons (right side)
-                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "1  •  RÚT 2 LÁ", new Vector2(770f, 30f), BangUITheme.Brass, tableObj.transform, new Vector2(200, 60));
-                gameTableView.playCardButton = CreateButton("PlayCardBtn", "2  •  ĐÁNH BÀI", new Vector2(770f, -42f), BangUITheme.Brass, tableObj.transform, new Vector2(200, 60));
+                // Action Buttons — right column, all within x ≤ 560 (half of 1280/canvas)
+                // DrawCard shown during DRAW phase (step 1)
+                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "1  •  RÚT 2 LÁ", new Vector2(480f, 180f), BangUITheme.Brass, tableObj.transform, new Vector2(220, 64));
+                // PlayCard shown after selecting a card (step 2)
+                gameTableView.playCardButton = CreateButton("PlayCardBtn", "2  •  ĐÁNH BÀI", new Vector2(480f, 105f), BangUITheme.Brass, tableObj.transform, new Vector2(220, 64));
                 gameTableView.playCardButtonText = gameTableView.playCardButton.GetComponentInChildren<Text>();
-                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "HỦY CHỌN", new Vector2(770f, -114f), BangUITheme.Danger, tableObj.transform, new Vector2(190, 52));
-                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "3  •  KẾT THÚC LƯỢT", new Vector2(755f, -390f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(240, 64));
-                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(770f, -320f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(190, 56));
+                // Cancel shown alongside PlayCard
+                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "HỦY CHỌN", new Vector2(480f, 28f), BangUITheme.Danger, tableObj.transform, new Vector2(210, 56));
+                // EndTurn always visible during PLAY phase (step 3)
+                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "3  •  KẾT THÚC LƯỢT", new Vector2(480f, -260f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(240, 64));
+                // Ability button (Sid Ketchum only)
+                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(480f, -188f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(210, 56));
                 gameTableView.abilityButton.gameObject.SetActive(false);
 
-                var micButton = CreateButton("VoiceMicBtn", "MIC: TẮT", new Vector2(-785f, 390f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(160, 50));
+                var micButton = CreateButton("VoiceMicBtn", "MIC: TẮT", new Vector2(-490f, 310f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(160, 50));
                 var voice = FindAnyObjectByType<VoiceChatManager>();
                 if (voice != null) voice.Initialize(micButton);
 

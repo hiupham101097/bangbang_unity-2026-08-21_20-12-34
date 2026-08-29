@@ -101,6 +101,7 @@ namespace BangBang.Core.Network
         public int maxHealth;
         public string characterId;
         public string publicRoleId;
+        public string hiddenRole;
         public bool isRoleRevealed;
         public int handCount;
         public List<string> equipment = new List<string>();
@@ -156,6 +157,7 @@ namespace BangBang.Core.Network
         public InteractionPromptDTO activeInteraction;
         public string winnerRole; // Populate when FINISHED
         public string winnerTeam;
+        public string winnerPlayerId;
         public List<string> combatLogs = new List<string>();
         public long serverTime;
         public int sequence;

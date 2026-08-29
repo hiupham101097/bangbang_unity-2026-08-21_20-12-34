@@ -147,6 +147,8 @@ namespace BangBang.Core.Data
                 if (cleanPath.StartsWith("cards/", StringComparison.OrdinalIgnoreCase)) altPath = "Cards/" + cleanPath.Substring(6);
                 else if (cleanPath.StartsWith("characters/", StringComparison.OrdinalIgnoreCase)) altPath = "Characters/" + cleanPath.Substring(11);
                 else if (cleanPath.StartsWith("roles/", StringComparison.OrdinalIgnoreCase)) altPath = "Roles/" + cleanPath.Substring(6);
+                else if (cleanPath.StartsWith("role_cards/", StringComparison.OrdinalIgnoreCase)) altPath = "role_cards/" + cleanPath.Substring(11);
+                else if (cleanPath.StartsWith("ui/", StringComparison.OrdinalIgnoreCase)) altPath = "UI/" + cleanPath.Substring(3);
 
                 sprite = Resources.Load<Sprite>(altPath);
                 if (sprite == null)
@@ -155,6 +157,19 @@ namespace BangBang.Core.Data
                     if (tex != null)
                     {
                         sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                    }
+                }
+
+                // Also try with UI/ prefix prepended
+                if (sprite == null)
+                {
+                    string uiPath = "UI/" + cleanPath;
+                    sprite = Resources.Load<Sprite>(uiPath);
+                    if (sprite == null)
+                    {
+                        var tex = Resources.Load<Texture2D>(uiPath);
+                        if (tex != null)
+                            sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                     }
                 }
             }

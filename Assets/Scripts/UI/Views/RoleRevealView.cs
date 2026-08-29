@@ -162,9 +162,25 @@ namespace BangBang.UI.Views
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
             layout.spacing = count <= 5 ? 20f : 10f;
-            float availableWidth = Mathf.Max(640f, (roleCardsContainer as RectTransform)?.rect.width ?? 1100f);
-            float width = Mathf.Clamp((availableWidth - layout.spacing * (count - 1)) / count, 112f, 150f);
-            _draftCardSize = new Vector2(width, width * 1.5f);
+
+            // Scale card size based on screen height for responsive design
+            float screenH = Screen.height > 0 ? Screen.height : 1080f;
+            float baseH = Mathf.Clamp(screenH * 0.38f, 200f, 420f);
+            float baseW = baseH / 1.5f;
+
+            // On wide screens with many cards, shrink to fit
+            float containerW = (roleCardsContainer as RectTransform)?.rect.width ?? 900f;
+            if (containerW > 100f)
+            {
+                float maxWidthPerCard = (containerW - layout.spacing * (count - 1)) / count - 4f;
+                if (maxWidthPerCard < baseW)
+                {
+                    baseW = Mathf.Max(110f, maxWidthPerCard);
+                    baseH = baseW * 1.5f;
+                }
+            }
+
+            _draftCardSize = new Vector2(baseW, baseH);
         }
 
         private static string RoleSprite(string role)

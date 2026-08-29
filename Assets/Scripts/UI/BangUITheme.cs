@@ -76,7 +76,7 @@ namespace BangBang.UI
             button.navigation = navigation;
 
             var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = 52f;
+            layout.minHeight = 64f;
         }
 
         private static Sprite BuildRoundedSprite()
@@ -122,7 +122,7 @@ namespace BangBang.UI
                 bool primary = buttonName.Contains("Start") || buttonName.Contains("Confirm") || buttonName.Contains("CreateRoom");
                 text.color = primary ? Ink : Ivory;
                 text.fontStyle = FontStyle.Bold;
-                text.fontSize = Mathf.Max(text.fontSize, 16);
+                text.fontSize = Mathf.Max(text.fontSize, 20);
                 text.raycastTarget = false;
             }
             else if (text.name.Contains("Header") || text.name.Contains("Title") || text.name.Contains("TurnPhase"))

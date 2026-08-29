@@ -25,6 +25,7 @@ namespace BangBang.UI.Interaction
         public GameObject loadingSpinnerObj;
 
         private InteractionPromptDTO _currentPrompt;
+        private bool _isLocalOnlyModal; // true = triggered locally (not server-pushed), skips state-based auto-hide
         private readonly List<string> _selectedCardIds = new List<string>();
         private readonly List<string> _selectedPlayerIds = new List<string>();
         private int _selectedOptionIndex;
@@ -90,7 +91,8 @@ namespace BangBang.UI.Interaction
             var snapshot = GameStateStore.Instance?.CurrentSnapshot;
             if (snapshot == null || snapshot.state != ServerGameState.RESPONSE)
             {
-                HideModal();
+                // Do not auto-hide if a local-only modal is currently open
+                if (!_isLocalOnlyModal) HideModal();
                 return;
             }
             _currentPrompt = prompt;
@@ -108,11 +110,16 @@ namespace BangBang.UI.Interaction
                 return;
             }
 
+            _isLocalOnlyModal = false;
             ShowModal(prompt);
         }
 
         private void HandleSnapshotChanged(MatchStateSnapshotDTO snapshot)
         {
+            // Never auto-hide modals that the local player explicitly opened
+            // (e.g. Sid Ketchum ability) — those must be dismissed by the player.
+            if (_isLocalOnlyModal) return;
+
             if (snapshot == null || snapshot.state != ServerGameState.RESPONSE || snapshot.activeInteraction == null)
                 HideModal();
         }
@@ -124,13 +131,14 @@ namespace BangBang.UI.Interaction
             if (cancelButton != null) cancelButton.interactable = !pending;
         }
 
-        public void ShowModal(InteractionPromptDTO prompt)
+        public void ShowModal(InteractionPromptDTO prompt, bool isLocalOnly = false)
         {
             _selectedCardIds.Clear();
             _selectedPlayerIds.Clear();
             _selectedOptionIndex = 0;
+            _isLocalOnlyModal = isLocalOnly;
 
-            if (modalRootPanel != null) 
+            if (modalRootPanel != null)
             {
                 UIAnimator.Instance.ShowModal(modalRootPanel);
             }
@@ -145,7 +153,8 @@ namespace BangBang.UI.Interaction
         public void HideModal()
         {
             _currentPrompt = null;
-            if (modalRootPanel != null && modalRootPanel.activeSelf) 
+            _isLocalOnlyModal = false;
+            if (modalRootPanel != null && modalRootPanel.activeSelf)
             {
                 UIAnimator.Instance.HideModal(modalRootPanel);
             }

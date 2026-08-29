@@ -9,8 +9,8 @@ namespace BangBang.UI
     public class HandCardFanLayout : MonoBehaviour
     {
         [Header("Hand Cards Alignment")]
-        public Vector2 cardSize = new Vector2(205f, 300f);
-        public float cardSpacing = 150f;
+        public Vector2 cardSize = new Vector2(240f, 340f);
+        public float cardSpacing = 175f;
         public float maxFanAngle = 8f;
         public float arcHeight = 22f;
         public float horizontalPadding = 300f;

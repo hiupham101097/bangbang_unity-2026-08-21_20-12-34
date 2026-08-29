@@ -168,8 +168,8 @@ namespace BangBang.UI
                 var backObj = new GameObject("HandBack_" + i, typeof(RectTransform), typeof(Image));
                 backObj.transform.SetParent(handCardsBackTransform, false);
                 var rt = backObj.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(40, 58);
-                rt.anchoredPosition = new Vector2(i * 12f, 0);
+                rt.sizeDelta = new Vector2(56, 80);
+                rt.anchoredPosition = new Vector2(i * 16f, 0);
 
                 var img = backObj.GetComponent<Image>();
                 img.sprite = CardCatalogDatabase.LoadCardBackSprite();
@@ -182,7 +182,7 @@ namespace BangBang.UI
         {
             var cardObj = new GameObject("MiniCard_" + info.id, typeof(RectTransform), typeof(Image));
             var rt = cardObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(44, 62);
+            rt.sizeDelta = new Vector2(60, 84);
 
             var img = cardObj.GetComponent<Image>();
             img.sprite = CardCatalogDatabase.LoadSprite(info.resourcePath);
