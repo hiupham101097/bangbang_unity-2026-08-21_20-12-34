@@ -100,6 +100,7 @@ namespace BangBang.UI.Views
             if (playCardButton != null) playCardButton.gameObject.SetActive(false);
             if (cancelTargetButton != null) cancelTargetButton.gameObject.SetActive(false);
             if (combatLogText != null) combatLogText.text = "";
+            if (drawPileImage != null) drawPileImage.sprite = CardCatalogDatabase.LoadCardBackSprite();
             RenderTableSnapshot(GameStateStore.Instance != null ? GameStateStore.Instance.CurrentSnapshot : null);
         }
 
@@ -459,19 +460,22 @@ namespace BangBang.UI.Views
             }
         }
 
-        private static Vector2 GetOpponentSeatPosition(int totalPlayers, int index)
+        private Vector2 GetOpponentSeatPosition(int totalPlayers, int index)
         {
-            Vector2[][] positions =
+            Vector2[][] normalizedPositions =
             {
-                new[] { new Vector2(-500, 350), new Vector2(0, 350), new Vector2(500, 350) },
-                new[] { new Vector2(-500, 350), new Vector2(500, 350), new Vector2(-570, 65), new Vector2(570, 65) },
-                new[] { new Vector2(-500, 350), new Vector2(0, 350), new Vector2(500, 350), new Vector2(-570, 65), new Vector2(570, 65) },
-                new[] { new Vector2(-430, 350), new Vector2(430, 350), new Vector2(-570, 135), new Vector2(-570, -145), new Vector2(570, 135), new Vector2(570, -145) },
-                new[] { new Vector2(-500, 350), new Vector2(0, 350), new Vector2(500, 350), new Vector2(-570, 135), new Vector2(-570, -145), new Vector2(570, 135), new Vector2(570, -145) }
+                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0, 0.35f), new Vector2(0.4f, 0.35f) },
+                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0.4f, 0.35f), new Vector2(-0.45f, 0.1f), new Vector2(0.45f, 0.1f) },
+                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0, 0.35f), new Vector2(0.4f, 0.35f), new Vector2(-0.45f, 0.1f), new Vector2(0.45f, 0.1f) },
+                new[] { new Vector2(-0.35f, 0.35f), new Vector2(0.35f, 0.35f), new Vector2(-0.45f, 0.15f), new Vector2(-0.45f, -0.1f), new Vector2(0.45f, 0.15f), new Vector2(0.45f, -0.1f) },
+                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0, 0.35f), new Vector2(0.4f, 0.35f), new Vector2(-0.45f, 0.15f), new Vector2(-0.45f, -0.1f), new Vector2(0.45f, 0.15f), new Vector2(0.45f, -0.1f) }
             };
             int capacityIndex = Mathf.Clamp(totalPlayers, 4, 8) - 4;
-            var layout = positions[capacityIndex];
-            return layout[Mathf.Clamp(index, 0, layout.Length - 1)];
+            var layout = normalizedPositions[capacityIndex];
+            Vector2 norm = layout[Mathf.Clamp(index, 0, layout.Length - 1)];
+
+            var container = opponentSeatsContainer != null ? opponentSeatsContainer.GetComponent<RectTransform>() : (RectTransform)transform;
+            return new Vector2(norm.x * container.rect.width, norm.y * container.rect.height);
         }
 
         /// <summary>Creates a fully-built PlayerSeatUI with all child components wired up.</summary>

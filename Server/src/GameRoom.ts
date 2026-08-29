@@ -325,6 +325,9 @@ export class GameRoom {
         else if (type === 'game.action.endTurn') {
             this.handleEndTurn(socketId);
         }
+        else if (type === 'game.action.draw') {
+            this.handleRequestDraw(socketId);
+        }
         else if (type === 'discard.submit') {
             this.handleDiscardSubmit(socketId, data.cardIds || []);
         }
@@ -1104,16 +1107,41 @@ export class GameRoom {
                 p.hand.push(...top.slice(0, 2));
                 if (top[2]) this.deck.push(top[2]);
             } else {
-                const before = p.hand.length;
-                this.drawCards(p, 2);
-                if (p.characterId === 'black_jack') {
-                    const second = p.hand[before + 1];
-                    if (second && ['hearts','diamonds'].includes(this.cardSuit(second))) this.drawCards(p, 1);
+                if (p.isBot) {
+                    const before = p.hand.length;
+                    this.drawCards(p, 2);
+                    if (p.characterId === 'black_jack') {
+                        const second = p.hand[before + 1];
+                        if (second && ['hearts','diamonds'].includes(this.cardSuit(second))) this.drawCards(p, 1);
+                    }
                 }
             }
         }
         this.broadcastSnapshot();
-        this.timerHandle = setTimeout(() => this.startPlayPhase(), 450);
+        
+        if (p?.isBot) {
+            this.timerHandle = setTimeout(() => this.startPlayPhase(), 5000);
+        } else if (p && !['pedro_ramirez', 'jesse_jones', 'kit_carlson'].includes(p.characterId || '')) {
+            this.deadlineAt = Date.now() + this.rules.turnTimeSec * 1000;
+            this.timerHandle = setTimeout(() => this.handleEndTurn(this.currentTurnPlayerId), this.rules.turnTimeSec * 1000);
+        }
+    }
+
+    private handleRequestDraw(socketId: string) {
+        if (this.state !== ServerGameState.DRAW || this.currentTurnPlayerId !== socketId || this.currentPhase !== 'DRAW') return;
+        const p = this.players.get(socketId);
+        if (!p) return;
+        
+        if (this.timerHandle) clearTimeout(this.timerHandle);
+        
+        const before = p.hand.length;
+        this.drawCards(p, 2);
+        if (p.characterId === 'black_jack') {
+            const second = p.hand[before + 1];
+            if (second && ['hearts','diamonds'].includes(this.cardSuit(second))) this.drawCards(p, 1);
+        }
+        
+        this.startPlayPhase();
     }
 
     private openDrawAbilityChoice(player: ServerPlayerState) {
@@ -1186,7 +1214,7 @@ export class GameRoom {
         this.deadlineAt = Date.now() + (this.rules.turnTimeSec * 1000);
         this.broadcastSnapshot();
         const player = this.players.get(this.currentTurnPlayerId);
-        this.timerHandle = setTimeout(() => player?.isBot ? this.runBotTurn(player) : this.finishOrDiscardCurrentTurn(), player?.isBot ? 450 : this.rules.turnTimeSec * 1000);
+        this.timerHandle = setTimeout(() => player?.isBot ? this.runBotTurn(player) : this.finishOrDiscardCurrentTurn(), player?.isBot ? 5000 : this.rules.turnTimeSec * 1000);
     }
 
     private runBotTurn(bot: ServerPlayerState) {
@@ -1197,28 +1225,32 @@ export class GameRoom {
                 .sort((a, b) => this.botCardKeepValue(bot, a) - this.botCardKeepValue(bot, b))
                 .slice(0, 2);
             this.handleActivateAbility(bot.id, { cardIds: expendable });
+            if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+            return;
         }
-        if (this.state !== ServerGameState.PLAY) return;
 
         const beer = bot.hand.find(c => this.cardType(c) === 'beer');
         if (beer && bot.currentHealth < bot.maxHealth && this.alivePlayers().length > 2 && (bot.currentHealth <= 2 || bot.hand.length > bot.currentHealth)) {
+            const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: beer, targetPlayerIds: [] });
+            if (bot.hand.length < before) {
+                if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
         }
-        if (this.state !== ServerGameState.PLAY) return;
 
         const equipmentTypes = new Set(['volcanic', 'schofield', 'remington', 'rev_carabine', 'winchester', 'scope', 'mustang', 'barrel', 'dynamite']);
         let equipment = bot.hand
             .filter(c => equipmentTypes.has(this.cardType(c)))
             .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
-        while (equipment && this.state === ServerGameState.PLAY) {
+        if (equipment) {
             const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: equipment, targetPlayerIds: [] });
-            if (bot.hand.length >= before) break;
-            equipment = bot.hand
-                .filter(c => equipmentTypes.has(this.cardType(c)))
-                .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
+            if (bot.hand.length < before) {
+                if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
         }
-        if (this.state !== ServerGameState.PLAY) return;
 
         const target = this.chooseBotTarget(bot);
         const disrupt = bot.hand.find(c => ['jail', 'panico', 'cat_balou', 'duello'].includes(this.cardType(c)));
@@ -1226,20 +1258,49 @@ export class GameRoom {
             const type = this.cardType(disrupt);
             const valid = type !== 'jail' || (target.roleId !== 'sheriff' && !target.equipment.some(c => this.cardType(c) === 'jail'));
             const inRange = type !== 'panico' || this.calculateDistance(bot, target) <= 1;
-            if (valid && inRange) this.handlePlayCard(bot.id, { cardId: disrupt, targetPlayerIds: [target.id] });
+            if (valid && inRange) {
+                const before = bot.hand.length;
+                this.handlePlayCard(bot.id, { cardId: disrupt, targetPlayerIds: [target.id] });
+                if (bot.hand.length < before) {
+                    if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                    return;
+                }
+            }
         }
-        if (this.state !== ServerGameState.PLAY) return;
 
         const drawAction = bot.hand.find(c => ['dilizenza', 'wells_fargo'].includes(this.cardType(c)));
-        if (drawAction) this.handlePlayCard(bot.id, { cardId: drawAction, targetPlayerIds: [] });
-        if (this.state !== ServerGameState.PLAY) return;
+        if (drawAction) {
+            const before = bot.hand.length;
+            this.handlePlayCard(bot.id, { cardId: drawAction, targetPlayerIds: [] });
+            if (bot.hand.length < before) {
+                if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
+        }
 
         const bang = bot.hand.find(c => this.cardType(c) === 'bang');
-        if (bang && target) this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
-        if (this.state !== ServerGameState.PLAY) return;
+        if (bang && target) {
+            const unlimited = bot.equipment.some(e => this.cardType(e) === 'volcanic') || bot.characterId === 'willy_the_kid';
+            if (unlimited || this.bangCardsPlayedThisTurn === 0) {
+                const before = bot.hand.length;
+                this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
+                if (bot.hand.length < before) {
+                    if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                    return;
+                }
+            }
+        }
 
         const globalAction = bot.hand.find(c => this.shouldBotPlayGlobal(bot, this.cardType(c)));
-        if (globalAction) this.handlePlayCard(bot.id, { cardId: globalAction, targetPlayerIds: [] });
+        if (globalAction) {
+            const before = bot.hand.length;
+            this.handlePlayCard(bot.id, { cardId: globalAction, targetPlayerIds: [] });
+            if (bot.hand.length < before) {
+                if (this.state === ServerGameState.PLAY) this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
+        }
+
         if (this.state === ServerGameState.PLAY) this.finishOrDiscardCurrentTurn();
     }
 
@@ -1496,7 +1557,7 @@ export class GameRoom {
         };
         this.deadlineAt = this.activeInteraction.expiresAt;
         this.broadcastSnapshot();
-        if (target?.isBot) this.timerHandle = setTimeout(() => this.resolveBotResponse(target), 350);
+        if (target?.isBot) this.timerHandle = setTimeout(() => this.resolveBotResponse(target), 5000);
         else this.timerHandle = setTimeout(() => this.resolveResponseTimeout(), this.rules.responseTimeSec * 1000);
     }
 
@@ -1583,7 +1644,7 @@ export class GameRoom {
         this.timerHandle = setTimeout(() => {
             const card = this.generalStoreCards[Math.floor(Math.random() * this.generalStoreCards.length)];
             this.handleGeneralStorePick(pickerId, card);
-        }, picker?.isBot ? 350 : this.rules.responseTimeSec * 1000);
+        }, picker?.isBot ? 5000 : this.rules.responseTimeSec * 1000);
     }
 
     private handleGeneralStorePick(playerId: string, card: string) {
@@ -1693,7 +1754,7 @@ export class GameRoom {
         this.broadcastSnapshot();
         if (this.timerHandle) clearTimeout(this.timerHandle);
         const actor = this.players.get(this.currentTurnPlayerId);
-        this.timerHandle = setTimeout(() => actor?.isBot ? this.runBotTurn(actor) : this.finishOrDiscardCurrentTurn(), actor?.isBot ? 350 : this.rules.turnTimeSec * 1000);
+        this.timerHandle = setTimeout(() => actor?.isBot ? this.runBotTurn(actor) : this.finishOrDiscardCurrentTurn(), actor?.isBot ? 5000 : this.rules.turnTimeSec * 1000);
     }
 
     private handleEndTurn(socketId: string) {
