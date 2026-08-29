@@ -369,7 +369,9 @@ namespace BangBang.Core.Network
         public Task<bool> PlayCardAsync(string cardId, List<string> targetPlayerIds = null, List<string> selectedCardIds = null)
         {
             var local = _currentSnapshot?.players.Find(p => p.id == LocalPlayerId);
-            if (local == null || !MatchActionRules.CanSelectCard(_currentSnapshot, LocalPlayerId, cardId, out string blockedReason))
+            if (local == null)
+                return Reject("PLAY_CARD", "Người chơi không hợp lệ.");
+            if (!MatchActionRules.CanSelectCard(_currentSnapshot, LocalPlayerId, cardId, out string blockedReason))
                 return Reject("PLAY_CARD", string.IsNullOrEmpty(blockedReason) ? "Không thể đánh lá bài này." : blockedReason);
 
             bool requiresTarget = MatchActionRules.RequiresTarget(_currentSnapshot, LocalPlayerId, cardId);

@@ -58,8 +58,10 @@ namespace BangBang.Core.Network
         public string CurrentRoomId { get; private set; }
 
         public event Action<MatchStateSnapshotDTO> OnSnapshotReceived;
+#pragma warning disable CS0067
         public event Action<InteractionPromptDTO> OnInteractionReceived;
         public event Action<string, string> OnActionRejected;
+#pragma warning restore CS0067
         public event Action<List<RoomSummaryDTO>> OnRoomListUpdated;
         public event Action<ConnectionState> OnConnectionStateChanged;
         public event Action<string> OnErrorMessage;

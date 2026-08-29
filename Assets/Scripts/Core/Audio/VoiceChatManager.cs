@@ -44,12 +44,12 @@ namespace BangBang.Core.Audio
 
         private void FindGateway()
         {
-            var found = FindFirstObjectByType<BangLiveGateway>();
+            var found = FindAnyObjectByType<BangLiveGateway>();
             if (_gateway == found) return;
             if (_gateway != null) _gateway.OnVoiceFrame -= HandleVoiceFrame;
             _gateway = found;
             if (_gateway != null) _gateway.OnVoiceFrame += HandleVoiceFrame;
-            var cloudflare = FindFirstObjectByType<BangCloudflareGateway>();
+            var cloudflare = FindAnyObjectByType<BangCloudflareGateway>();
             if (_cloudflareGateway != cloudflare)
             {
                 if (_cloudflareGateway != null) _cloudflareGateway.OnVoiceFrame -= HandleVoiceFrame;
