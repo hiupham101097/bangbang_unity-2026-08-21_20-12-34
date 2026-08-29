@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using BangBang.Core.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -77,8 +78,31 @@ namespace BangBang.UI
                 }
             }
 
-            if (suitRankText != null && TryReadSuitAndRank(id, out string suit, out string rank))
+            if (TryReadSuitAndRank(id, out string suit, out string rank))
             {
+                if (suitRankText == null)
+                {
+                    var txtObj = new GameObject("DynamicSuitRankText", typeof(RectTransform), typeof(Text));
+                    txtObj.transform.SetParent(this.transform, false);
+                    var rect = txtObj.GetComponent<RectTransform>();
+                    rect.anchorMin = new Vector2(0.05f, 0.05f);
+                    rect.anchorMax = new Vector2(0.95f, 0.2f);
+                    rect.pivot = new Vector2(0, 0);
+                    rect.anchoredPosition = Vector2.zero;
+                    rect.sizeDelta = Vector2.zero;
+
+                    suitRankText = txtObj.GetComponent<Text>();
+                    suitRankText.font = Resources.GetBuiltinResource<Font>("Arial.ttf") ?? Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(f => f.name == "Arial");
+                    suitRankText.fontSize = 24;
+                    suitRankText.alignment = TextAnchor.LowerLeft;
+                    suitRankText.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    suitRankText.verticalOverflow = VerticalWrapMode.Overflow;
+
+                    var outline = txtObj.AddComponent<Outline>();
+                    outline.effectColor = new Color(1, 1, 1, 0.8f);
+                    outline.effectDistance = new Vector2(1, -1);
+                }
+
                 string suitSymbol = suit == "hearts" ? "♥" : suit == "diamonds" ? "♦" : suit == "spades" ? "♠" : "♣";
                 suitRankText.text = rank.ToUpperInvariant() + " " + suitSymbol;
                 suitRankText.color = (suit == "hearts" || suit == "diamonds") ? new Color(0.85f, 0.15f, 0.15f) : new Color(0.15f, 0.15f, 0.15f);

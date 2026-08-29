@@ -210,7 +210,7 @@ namespace BangBang.UI.Views
                 drawCardButton.gameObject.SetActive(drawing);
                 drawCardButton.interactable = drawing && GameStateStore.Instance != null && !GameStateStore.Instance.IsRequestPending;
                 var drawLabel = drawCardButton.GetComponentInChildren<Text>();
-                if (drawLabel != null) drawLabel.text = GameStateStore.Instance != null && GameStateStore.Instance.IsRequestPending ? "ĐANG RÚT BÀI…" : "1  •  RÚT 2 LÁ";
+                if (drawLabel != null) drawLabel.text = GameStateStore.Instance != null && GameStateStore.Instance.IsRequestPending ? "ĐANG RÚT BÀI…" : "🃏 RÚT BÀI";
             }
 
             if (endTurnButton != null)
@@ -219,7 +219,7 @@ namespace BangBang.UI.Views
                 endTurnButton.gameObject.SetActive(isMyTurn && phase == "PLAY");
                 endTurnButton.interactable = canEnd;
                 var endLabel = endTurnButton.GetComponentInChildren<Text>();
-                if (endLabel != null) endLabel.text = canEnd ? "3  •  KẾT THÚC LƯỢT" : "ĐANG XỬ LÝ…";
+                if (endLabel != null) endLabel.text = canEnd ? "🛑 KẾT THÚC" : "ĐANG XỬ LÝ…";
             }
 
             // 3. Local Dashboard
@@ -462,20 +462,45 @@ namespace BangBang.UI.Views
 
         private Vector2 GetOpponentSeatPosition(int totalPlayers, int index)
         {
-            Vector2[][] normalizedPositions =
+            float w = 0.78f; // Mid-Left / Mid-Right X
+            float tw = 0.44f; // Top-Left / Top-Right X
+            float th = 0.30f; // Top row Y
+            float mh = 0.05f; // Mid row Y
+            float bh = -0.24f; // Bottom row Y
+
+            Vector2[] boxPositions = new Vector2[]
             {
-                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0, 0.35f), new Vector2(0.4f, 0.35f) },
-                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0.4f, 0.35f), new Vector2(-0.45f, 0.1f), new Vector2(0.45f, 0.1f) },
-                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0, 0.35f), new Vector2(0.4f, 0.35f), new Vector2(-0.45f, 0.1f), new Vector2(0.45f, 0.1f) },
-                new[] { new Vector2(-0.35f, 0.35f), new Vector2(0.35f, 0.35f), new Vector2(-0.45f, 0.15f), new Vector2(-0.45f, -0.1f), new Vector2(0.45f, 0.15f), new Vector2(0.45f, -0.1f) },
-                new[] { new Vector2(-0.4f, 0.35f), new Vector2(0, 0.35f), new Vector2(0.4f, 0.35f), new Vector2(-0.45f, 0.15f), new Vector2(-0.45f, -0.1f), new Vector2(0.45f, 0.15f), new Vector2(0.45f, -0.1f) }
+                new Vector2(-w, mh),    // 0: Mid-Left
+                new Vector2(-tw, th),   // 1: Top-Left
+                new Vector2(0f, th),    // 2: Top-Mid
+                new Vector2(tw, th),    // 3: Top-Right
+                new Vector2(w, mh),     // 4: Mid-Right
+                new Vector2(tw, bh)     // 5: Bottom-Right
             };
+
+            Vector2[][] layouts =
+            {
+                // 4 players (3 opponents) -> Top-Left, Top-Mid, Top-Right
+                new[] { boxPositions[1], boxPositions[2], boxPositions[3] },
+                // 5 players (4 opponents) -> Mid-Left, Top-Left, Top-Right, Mid-Right
+                new[] { boxPositions[0], boxPositions[1], boxPositions[3], boxPositions[4] },
+                // 6 players (5 opponents) -> Mid-Left, Top-Left, Top-Mid, Top-Right, Mid-Right
+                new[] { boxPositions[0], boxPositions[1], boxPositions[2], boxPositions[3], boxPositions[4] },
+                // 7 players (6 opponents) -> All 6 boxes
+                new[] { boxPositions[0], boxPositions[1], boxPositions[2], boxPositions[3], boxPositions[4], boxPositions[5] },
+                // 8 players (7 opponents) -> 6 boxes + squeeze top row
+                new[] { boxPositions[0], new Vector2(-0.55f, th), new Vector2(-0.18f, th), new Vector2(0.18f, th), new Vector2(0.55f, th), boxPositions[4], boxPositions[5] }
+            };
+
             int capacityIndex = Mathf.Clamp(totalPlayers, 4, 8) - 4;
-            var layout = normalizedPositions[capacityIndex];
+            var layout = layouts[capacityIndex];
             Vector2 norm = layout[Mathf.Clamp(index, 0, layout.Length - 1)];
 
             var container = opponentSeatsContainer != null ? opponentSeatsContainer.GetComponent<RectTransform>() : (RectTransform)transform;
-            return new Vector2(norm.x * container.rect.width, norm.y * container.rect.height);
+            // Use container height for both axes to ensure the layout matches the background's preserved aspect ratio
+            float referenceSize = container.rect.height; 
+            
+            return new Vector2(norm.x * referenceSize, norm.y * referenceSize);
         }
 
         /// <summary>Creates a fully-built PlayerSeatUI with all child components wired up.</summary>
