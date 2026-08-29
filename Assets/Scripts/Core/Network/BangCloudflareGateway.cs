@@ -7,6 +7,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BangBang.Core.Data;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -284,7 +285,7 @@ namespace BangBang.Core.Network
             var snapshot = new MatchStateSnapshotDTO
             {
                 roomId = room.id, roomCode = room.code, hostPlayerId = room.hostId,
-                state = MapState(room), currentPhase = room.phase, currentTurnPlayerId = room.currentTurnPlayerId,
+                state = MapState(room), currentPhase = NormalizePhase(room.phase), currentTurnPlayerId = room.currentTurnPlayerId,
                 turnNumber = room.turnNumber,
                 deadlineAt = room.pendingBang?.deadline > 0 ? room.pendingBang.deadline : (room.characterSelectionDeadline > 0 ? room.characterSelectionDeadline : room.turnDeadline),
                 draftSlotCount = room.phase == "role_selection" ? room.roleDeck?.Count ?? 0 : room.characterDeck?.Count ?? 0,
@@ -308,10 +309,47 @@ namespace BangBang.Core.Network
                 isConnected = true, isAlive = player.alive, currentHealth = player.health, maxHealth = player.maxHealth,
                 characterId = player.characterId, publicRoleId = player.revealedRole,
                 isRoleRevealed = !string.IsNullOrEmpty(player.revealedRole), handCount = player.cardCount,
-                equipment = player.equipment ?? new List<string>(), effectiveDistanceToLocal = 1
+                equipment = player.equipment ?? new List<string>()
             }).ToList();
-            snapshot.activeInteraction = room.phase == "waiting_response" ? ConvertInteraction(room.pendingBang) : null;
+            ApplyLocalTargeting(snapshot, room, me);
+            snapshot.activeInteraction = room.phase == "waiting_response" ? ConvertInteraction(room.pendingBang, me, snapshot.privateState.hand) : null;
             return snapshot;
+        }
+
+        private static string NormalizePhase(string workerPhase)
+        {
+            switch (workerPhase)
+            {
+                case "turn_start": return "DRAW";
+                case "play_phase": return "PLAY";
+                case "waiting_response": return "RESPONSE";
+                case "discard_phase": return "DISCARD";
+                default: return (workerPhase ?? string.Empty).ToUpperInvariant();
+            }
+        }
+
+        private static void ApplyLocalTargeting(MatchStateSnapshotDTO snapshot, WorkerRoom room, WorkerPlayer local)
+        {
+            if (snapshot?.players == null) return;
+            var alive = (room.players ?? new List<WorkerPlayer>()).Where(player => player.alive).OrderBy(player => player.seat).ToList();
+            int localIndex = local != null ? alive.FindIndex(player => player.id == local.id) : -1;
+            foreach (var projected in snapshot.players)
+            {
+                projected.effectiveDistanceToLocal = projected.id == local?.id ? 0 : 99;
+                projected.isTargetable = false;
+                if (localIndex < 0 || !projected.isAlive || projected.id == local.id) continue;
+
+                int targetIndex = alive.FindIndex(player => player.id == projected.id);
+                if (targetIndex < 0) continue;
+                int direct = Mathf.Abs(localIndex - targetIndex);
+                int distance = Mathf.Min(direct, alive.Count - direct);
+                var target = alive[targetIndex];
+                if ((target.equipment ?? new List<string>()).Any(card => CardCatalogDatabase.GetTypeOf(card) == "mustang") || target.characterId == "paul_regret") distance++;
+                if ((local.equipment ?? new List<string>()).Any(card => CardCatalogDatabase.GetTypeOf(card) == "appaloosa") || local.characterId == "rose_oolan" || local.characterId == "rose_doolan") distance--;
+                projected.effectiveDistanceToLocal = Mathf.Max(1, distance);
+                projected.isTargetable = snapshot.currentTurnPlayerId == local.id && snapshot.currentPhase == "PLAY" &&
+                                         projected.effectiveDistanceToLocal <= Mathf.Max(1, local.attackRange);
+            }
         }
 
         private static ServerGameState MapState(WorkerRoom room)
@@ -322,7 +360,7 @@ namespace BangBang.Core.Network
                 case "role_reveal": return ServerGameState.ROLE_LOCK_WAIT;
                 case "character_selection": case "choosing_character": return ServerGameState.CHARACTER_DRAFT;
                 case "match_intro": return ServerGameState.INITIAL_DEAL;
-                case "turn_start": return ServerGameState.TURN_START;
+                case "turn_start": return ServerGameState.DRAW;
                 case "play_phase": return ServerGameState.PLAY;
                 case "waiting_response": return ServerGameState.RESPONSE;
                 case "discard_phase": return ServerGameState.DISCARD;
@@ -331,19 +369,49 @@ namespace BangBang.Core.Network
             }
         }
 
-        private static InteractionPromptDTO ConvertInteraction(WorkerPending pending)
+        private static InteractionPromptDTO ConvertInteraction(WorkerPending pending, WorkerPlayer local, List<string> privateHand)
         {
             if (pending == null) return null;
             string actorId = pending.actionType == "general_store" ? pending.currentPickerId :
                 (pending.actionType == "kit_carlson" || pending.actionType == "lucky_duke_judgment" ? pending.actorId : pending.targetId);
+            string actionType = pending.actionType ?? string.Empty;
+            string requiredType = actionType == "rescue" ? "beer" : pending.requiredCardType;
+            var hand = privateHand ?? local?.hand ?? new List<string>();
+            var validCards = actionType == "general_store" ? pending.openedCardIds ?? new List<string>() :
+                (actionType == "kit_carlson" || actionType == "lucky_duke_judgment") ? pending.choices ?? new List<string>() :
+                hand.Where(card => ResponseCardMatches(local, card, requiredType)).ToList();
+            int required = actionType == "kit_carlson" ? Mathf.Min(2, validCards.Count) :
+                actionType == "rescue" ? Mathf.Max(1, pending.requiredHealth) :
+                Mathf.Max(1, pending.requiredDodges);
             return new InteractionPromptDTO
             {
-                interactionId = pending.id, type = "RESPOND", actorPlayerId = actorId,
-                title = pending.actionType ?? "Phản ứng", message = "Chọn phản ứng hợp lệ hoặc Bỏ qua",
-                requiredCount = Math.Max(1, pending.requiredDodges), requiredCardType = pending.requiredCardType,
-                validCardIds = pending.choices ?? pending.openedCardIds ?? new List<string>(), expiresAt = pending.deadline,
-                canCancel = true, defaultAction = "PASS"
+                interactionId = pending.id,
+                type = actionType == "general_store" ? "CHOOSE_CARD" :
+                       (actionType == "kit_carlson" || actionType == "lucky_duke_judgment") ? "SELECT_CARDS" : "RESPOND",
+                actorPlayerId = actorId,
+                title = actionType.ToUpperInvariant(),
+                message = actionType == "general_store" ? "Chọn một lá bài." :
+                          actionType == "kit_carlson" ? "Chọn đúng 2 trong 3 lá bài." :
+                          "Chọn đủ bài phản ứng hoặc bỏ qua.",
+                minSelections = actionType == "general_store" ? 1 : required,
+                maxSelections = actionType == "general_store" ? 1 : required,
+                requiredCount = required,
+                requiredCardType = requiredType,
+                validCardIds = validCards,
+                options = actionType == "general_store" || actionType == "kit_carlson" || actionType == "lucky_duke_judgment"
+                    ? new List<string>() : new List<string> { "PASS" },
+                expiresAt = pending.deadline,
+                canCancel = actionType != "general_store" && actionType != "kit_carlson",
+                defaultAction = actionType == "general_store" || actionType == "kit_carlson" ? "AUTO" : "PASS"
             };
+        }
+
+        private static bool ResponseCardMatches(WorkerPlayer player, string card, string requiredType)
+        {
+            string type = CardCatalogDatabase.GetTypeOf(card);
+            if (type == requiredType) return true;
+            return player != null && player.characterId == "calamity_janet" &&
+                   ((requiredType == "dodge" && type == "bang") || (requiredType == "bang" && type == "dodge"));
         }
 
         private async Task ConnectRoomSocketAsync()

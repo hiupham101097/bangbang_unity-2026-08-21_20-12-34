@@ -9,14 +9,19 @@ namespace BangBang.UI
     public class HandCardFanLayout : MonoBehaviour
     {
         [Header("Hand Cards Alignment")]
-        public float cardSpacing = 115f;
-        public float maxFanAngle = 12f;
-        public float arcHeight = 15f;
+        public Vector2 cardSize = new Vector2(205f, 300f);
+        public float cardSpacing = 150f;
+        public float maxFanAngle = 8f;
+        public float arcHeight = 22f;
+        public float horizontalPadding = 300f;
         public float baseCenterX = 0f;
         public float baseCenterY = 0f;
         public GameObject cardPrefab;
 
         private readonly List<CardUI> _cardUIs = new List<CardUI>();
+        private float _lastLayoutWidth = -1f;
+
+        public IReadOnlyList<CardUI> Cards => _cardUIs;
 
         public event Action<CardUI> OnCardClicked;
         public event Action<CardUI, Vector2> OnCardDragging;
@@ -46,12 +51,21 @@ namespace BangBang.UI
             RecalculateFanPositions();
         }
 
+        private void OnRectTransformDimensionsChange()
+        {
+            if (!isActiveAndEnabled) return;
+            float width = (transform as RectTransform)?.rect.width ?? 0f;
+            if (Mathf.Abs(width - _lastLayoutWidth) > 1f) RecalculateFanPositions();
+        }
+
         public void RecalculateFanPositions()
         {
             int count = _cardUIs.Count;
             if (count == 0) return;
 
-            float maxAvailableWidth = 620f;
+            var container = transform as RectTransform;
+            float containerWidth = container != null ? container.rect.width : 0f;
+            float maxAvailableWidth = Mathf.Max(cardSize.x, containerWidth - horizontalPadding);
             float effectiveSpacing = count > 1 ? Mathf.Min(cardSpacing, maxAvailableWidth / (count - 1)) : 0f;
             float totalWidth = (count - 1) * effectiveSpacing;
             float startX = baseCenterX - (totalWidth / 2f);
@@ -71,7 +85,10 @@ namespace BangBang.UI
 
                 _cardUIs[i].targetAnchoredPosition = new Vector2(posX, posY);
                 _cardUIs[i].targetRotationZ = rotZ;
+                _cardUIs[i].transform.SetSiblingIndex(i);
             }
+
+            _lastLayoutWidth = containerWidth;
         }
 
         private GameObject CreateCardObject()
@@ -87,10 +104,10 @@ namespace BangBang.UI
             cardObj.transform.SetParent(transform, false);
 
             var rt = cardObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(124, 180);
+            rt.sizeDelta = cardSize;
 
             var bgImg = cardObj.GetComponent<Image>();
-            bgImg.color = new Color(0.96f, 0.93f, 0.88f); // Parchment
+            bgImg.color = new Color(0.04f, 0.025f, 0.015f, 0.96f);
 
             // Border
             var borderObj = new GameObject("Border", typeof(RectTransform), typeof(Image));
@@ -98,20 +115,22 @@ namespace BangBang.UI
             var borderRt = borderObj.GetComponent<RectTransform>();
             borderRt.anchorMin = Vector2.zero;
             borderRt.anchorMax = Vector2.one;
-            borderRt.sizeDelta = new Vector2(-4, -4);
+            borderRt.sizeDelta = new Vector2(7, 7);
             var borderImg = borderObj.GetComponent<Image>();
-            borderImg.color = new Color(0.45f, 0.28f, 0.15f);
+            borderImg.color = new Color(0.72f, 0.48f, 0.16f, 0.9f);
+            borderImg.raycastTarget = false;
 
             // Artwork
             var artObj = new GameObject("Artwork", typeof(RectTransform), typeof(Image));
             artObj.transform.SetParent(cardObj.transform, false);
             var artRt = artObj.GetComponent<RectTransform>();
-            artRt.anchorMin = new Vector2(0.08f, 0.32f);
-            artRt.anchorMax = new Vector2(0.92f, 0.92f);
+            artRt.anchorMin = Vector2.zero;
+            artRt.anchorMax = Vector2.one;
             artRt.offsetMin = Vector2.zero;
             artRt.offsetMax = Vector2.zero;
             var artImg = artObj.GetComponent<Image>();
             artImg.preserveAspect = true;
+            artImg.raycastTarget = false;
 
             // Title
             var titleObj = new GameObject("Title", typeof(RectTransform), typeof(Text));
@@ -127,6 +146,7 @@ namespace BangBang.UI
             titleTxt.fontStyle = FontStyle.Bold;
             titleTxt.alignment = TextAnchor.MiddleCenter;
             titleTxt.color = new Color(0.2f, 0.1f, 0.05f);
+            titleObj.SetActive(false);
 
             // Suit & Rank badge
             var suitObj = new GameObject("SuitRank", typeof(RectTransform), typeof(Text));
@@ -141,6 +161,7 @@ namespace BangBang.UI
             suitTxt.fontSize = 15;
             suitTxt.alignment = TextAnchor.MiddleCenter;
             suitTxt.color = Color.black;
+            suitTxt.raycastTarget = false;
 
             // Glowing Neon Green Outline
             var glowObj = new GameObject("NeonGlow", typeof(RectTransform), typeof(Image));
@@ -151,6 +172,7 @@ namespace BangBang.UI
             glowRt.sizeDelta = new Vector2(8, 8);
             var glowImg = glowObj.GetComponent<Image>();
             glowImg.color = new Color(0.3f, 1f, 0.3f, 0.85f);
+            glowImg.raycastTarget = false;
             glowObj.SetActive(false);
 
             var cardUI = cardObj.GetComponent<CardUI>();

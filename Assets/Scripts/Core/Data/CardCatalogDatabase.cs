@@ -23,14 +23,19 @@ namespace BangBang.Core.Data
         {
             if (string.IsNullOrEmpty(cardId)) return "";
             int instanceSeparator = cardId.IndexOf("__", StringComparison.Ordinal);
-            if (instanceSeparator >= 0) return cardId.Substring(0, instanceSeparator);
+            if (instanceSeparator >= 0) return NormalizeLegacyType(cardId.Substring(0, instanceSeparator));
             if (Cards.ContainsKey(cardId)) return cardId;
             var parts = cardId.Split('_');
             if (parts.Length > 2 && parts[0].ToLower() == "gun" && parts[1].ToLower() == "range")
             {
                 return parts[0] + "_" + parts[1] + "_" + parts[2];
             }
-            return parts[0];
+            return NormalizeLegacyType(parts[0]);
+        }
+
+        private static string NormalizeLegacyType(string cardType)
+        {
+            return string.Equals(cardType, "ne", StringComparison.OrdinalIgnoreCase) ? "dodge" : cardType;
         }
 
         private static void InitializeCards()
@@ -164,6 +169,13 @@ namespace BangBang.Core.Data
             }
 
             return sprite;
+        }
+
+        public static Sprite LoadCardBackSprite()
+        {
+            // All hidden cards use the same asset and the same procedural
+            // fallback, so role, character and opponent hands never disagree.
+            return LoadSprite("UI/Cards/role_card_back_v2") ?? LoadSprite("card_back");
         }
 
         private static Sprite GenerateCardBackSprite()

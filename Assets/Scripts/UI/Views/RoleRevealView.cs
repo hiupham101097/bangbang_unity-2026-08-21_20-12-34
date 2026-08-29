@@ -26,6 +26,7 @@ namespace BangBang.UI.Views
         private readonly List<GameObject> _cards = new List<GameObject>();
         private MatchStateSnapshotDTO _snapshot;
         private string _animatedSheriffId;
+        private Vector2 _draftCardSize = new Vector2(150f, 225f);
 
         private void Start()
         {
@@ -73,6 +74,8 @@ namespace BangBang.UI.Views
             foreach (var card in _cards) Destroy(card);
             _cards.Clear();
             int ownSlot = privateState != null ? privateState.draftRoleSlot : -1;
+            int visibleCount = assigned && ownSlot >= 0 ? 1 : Mathf.Max(1, snapshot.draftSlotCount > 0 ? snapshot.draftSlotCount : snapshot.players.Count);
+            ConfigureCardLayout(visibleCount);
             if (assigned && ownSlot >= 0)
             {
                 CreateSlot(ownSlot, ownSlot, true, true);
@@ -123,11 +126,12 @@ namespace BangBang.UI.Views
             var card = new GameObject("RoleSlot_" + slot, typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(roleCardsContainer, false);
             bool isMine = slot == ownSlot;
-            card.GetComponent<RectTransform>().sizeDelta = isMine && assigned ? new Vector2(230, 345) : new Vector2(150, 225);
+            card.GetComponent<RectTransform>().sizeDelta = isMine && assigned ? new Vector2(230, 345) : _draftCardSize;
             var image = card.GetComponent<Image>();
             image.sprite = isMine && assigned
                 ? CardCatalogDatabase.LoadSprite("role_cards/" + RoleSprite(GameStateStore.Instance.LocalPrivateState.roleId) + "_card")
-                : CardCatalogDatabase.LoadSprite("UI/Cards/role_card_back_v2");
+                : CardCatalogDatabase.LoadCardBackSprite();
+            image.preserveAspect = true;
             image.color = locked && !isMine ? new Color(0.35f, 0.35f, 0.35f, 0.72f) : Color.white;
             if (isMine)
             {
@@ -146,6 +150,21 @@ namespace BangBang.UI.Views
                 if (!sent) GameStateStore.Instance.SetRequestPending(false);
             });
             _cards.Add(card);
+        }
+
+        private void ConfigureCardLayout(int count)
+        {
+            if (roleCardsContainer == null) return;
+            var layout = roleCardsContainer.GetComponent<HorizontalLayoutGroup>();
+            if (layout == null) return;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.spacing = count <= 5 ? 20f : 10f;
+            float availableWidth = Mathf.Max(640f, (roleCardsContainer as RectTransform)?.rect.width ?? 1100f);
+            float width = Mathf.Clamp((availableWidth - layout.spacing * (count - 1)) / count, 112f, 150f);
+            _draftCardSize = new Vector2(width, width * 1.5f);
         }
 
         private static string RoleSprite(string role)

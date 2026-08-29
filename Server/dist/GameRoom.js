@@ -1383,6 +1383,10 @@ class GameRoom {
             this.reject(socketId, 'OUT_OF_RANGE');
             return;
         }
+        if ((type === 'panico' || type === 'cat_balou') && target && target.hand.length === 0 && target.equipment.length === 0) {
+            this.reject(socketId, 'TARGET_HAS_NO_CARDS');
+            return;
+        }
         if (type === 'jail' && (!target || target.roleId === 'sheriff' || target.equipment.some(c => this.cardType(c) === 'jail'))) {
             this.reject(socketId, 'INVALID_JAIL_TARGET');
             return;
@@ -1524,17 +1528,21 @@ class GameRoom {
         this.triggerEmptyHandAbility(target);
     }
     openBangResponse(actor, target) {
-        const hasBarrel = target.equipment.some(c => this.cardType(c) === 'barrel') || target.characterId === 'jourdonnais';
-        if (hasBarrel) {
+        const required = actor.characterId === 'slab_the_killer' ? 2 : 1;
+        const barrelAttempts = (target.equipment.some(c => this.cardType(c) === 'barrel') ? 1 : 0) +
+            (target.characterId === 'jourdonnais' ? 1 : 0);
+        let automaticDodges = 0;
+        for (let attempt = 0; attempt < barrelAttempts && automaticDodges < required; attempt++) {
             const judgement = this.drawJudgement(target, card => this.cardSuit(card) === 'hearts');
             this.broadcastMessage('judgement.cardRevealed', { playerId: target.id, effect: 'barrel', card: judgement.card });
-            if (judgement.matched) {
-                this.broadcastSnapshot();
-                return;
-            }
+            if (judgement.matched)
+                automaticDodges++;
         }
-        const required = actor.characterId === 'slab_the_killer' ? 2 : 1;
-        this.openCardResponse('bang', actor.id, target.id, 'dodge', required);
+        if (automaticDodges >= required) {
+            this.broadcastSnapshot();
+            return;
+        }
+        this.openCardResponse('bang', actor.id, target.id, 'dodge', required - automaticDodges);
     }
     openCardResponse(effect, actorId, targetId, requiredType, requiredCount) {
         if (this.timerHandle)
@@ -1917,6 +1925,10 @@ class GameRoom {
         const player = this.players.get(playerId);
         if (!player || !player.isAlive || player.characterId !== 'sid_ketchum')
             return;
+        if (this.state !== GameState_1.ServerGameState.PLAY || this.currentPhase !== 'PLAY' || this.currentTurnPlayerId !== playerId) {
+            this.reject(playerId, 'ABILITY_NOT_AVAILABLE');
+            return;
+        }
         const cards = data.cardIds || data.selectedCardIds || [];
         if (cards.length !== 2 || new Set(cards).size !== 2 || cards.some(c => !player.hand.includes(c)) || player.currentHealth >= player.maxHealth) {
             this.reject(playerId, 'INVALID_ABILITY_ACTION');

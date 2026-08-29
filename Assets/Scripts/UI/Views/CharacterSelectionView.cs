@@ -4,6 +4,7 @@ using BangBang.Core.Data;
 using BangBang.Core.Network;
 using BangBang.Core.State;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BangBang.UI.Views
 {
@@ -57,6 +58,7 @@ namespace BangBang.UI.Views
 
             if (snapshot.state == ServerGameState.CHARACTER_REVEAL)
             {
+                ConfigureGrid(170f, 250f, Mathf.Min(8, snapshot.players.Count));
                 if (waitingOthersOverlay != null) waitingOthersOverlay.SetActive(false);
                 foreach (var player in snapshot.players) CreateRevealedPlayerCard(player);
                 if (confirmSelectionButton != null) confirmSelectionButton.gameObject.SetActive(false);
@@ -69,6 +71,7 @@ namespace BangBang.UI.Views
             bool hasOptions = privateState != null && privateState.draftCharacterOptions != null && privateState.draftCharacterOptions.Count == 2;
             if (hasOptions)
             {
+                ConfigureGrid(300f, 420f, 2);
                 foreach (string id in privateState.draftCharacterOptions) CreateCharacterCard(id);
                 if (confirmSelectionButton != null) confirmSelectionButton.gameObject.SetActive(snapshot.state == ServerGameState.CHARACTER_DRAFT && !confirmed);
             }
@@ -76,6 +79,7 @@ namespace BangBang.UI.Views
             {
                 _selectedCharacterId = null;
                 int count = snapshot.draftSlotCount > 0 ? snapshot.draftSlotCount : snapshot.players.Count * 2;
+                ConfigureGrid(88f, 132f, Mathf.Min(8, count));
                 for (int slot = 0; slot < count; slot++) CreateDraftSlot(slot, privateState);
                 if (confirmSelectionButton != null) confirmSelectionButton.gameObject.SetActive(false);
             }
@@ -88,9 +92,10 @@ namespace BangBang.UI.Views
             bool mine = privateState != null && privateState.draftCharacterSlots != null && privateState.draftCharacterSlots.Contains(slot);
             var card = new GameObject("CharacterSlot_" + slot, typeof(RectTransform), typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
             card.transform.SetParent(candidatesContainer, false);
-            card.GetComponent<RectTransform>().sizeDelta = new Vector2(96, 144);
+            card.GetComponent<RectTransform>().sizeDelta = new Vector2(88, 132);
             var image = card.GetComponent<UnityEngine.UI.Image>();
-            image.sprite = CardCatalogDatabase.LoadSprite("card_back");
+            image.sprite = CardCatalogDatabase.LoadCardBackSprite();
+            image.preserveAspect = true;
             image.color = locked && !mine ? new Color(0.32f, 0.32f, 0.32f, 0.7f) : Color.white;
             if (mine)
             {
@@ -176,6 +181,25 @@ namespace BangBang.UI.Views
         {
             foreach (var card in _cards) Destroy(card);
             _cards.Clear();
+        }
+
+        private void ConfigureGrid(float cardWidth, float cardHeight, int columns)
+        {
+            if (candidatesContainer == null) return;
+            var grid = candidatesContainer.GetComponent<GridLayoutGroup>();
+            if (grid == null)
+            {
+                var oldHorizontal = candidatesContainer.GetComponent<HorizontalLayoutGroup>();
+                if (oldHorizontal != null) oldHorizontal.enabled = false;
+                grid = candidatesContainer.gameObject.AddComponent<GridLayoutGroup>();
+            }
+            var rect = candidatesContainer as RectTransform;
+            if (rect != null && rect.sizeDelta.y < 620f) rect.sizeDelta = new Vector2(rect.sizeDelta.x, 620f);
+            grid.cellSize = new Vector2(cardWidth, cardHeight);
+            grid.spacing = new Vector2(14f, 14f);
+            grid.childAlignment = TextAnchor.MiddleCenter;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = Mathf.Max(1, columns);
         }
 
         private static void CreateImage(Transform parent, string name, string resource, Vector2 position, Vector2 size)

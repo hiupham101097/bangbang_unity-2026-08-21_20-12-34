@@ -36,10 +36,19 @@ namespace BangBang.UI
 
         private void Awake()
         {
-            if (seatSelectButton != null)
-            {
-                seatSelectButton.onClick.AddListener(() => OnSeatClicked?.Invoke(playerId));
-            }
+            BindListeners();
+        }
+
+        public void BindListeners()
+        {
+            if (seatSelectButton == null) return;
+            seatSelectButton.onClick.RemoveListener(HandleSeatClicked);
+            seatSelectButton.onClick.AddListener(HandleSeatClicked);
+        }
+
+        private void HandleSeatClicked()
+        {
+            OnSeatClicked?.Invoke(playerId);
         }
 
         public void SetupSeat(PlayerModel player, int calculatedDistance = -1, bool isLocal = false)
@@ -48,6 +57,7 @@ namespace BangBang.UI
             playerId = player.id;
             seatIndex = player.seat;
             isLocalPlayer = isLocal;
+            BindListeners();
 
             // Name
             if (nameText != null)
@@ -118,6 +128,7 @@ namespace BangBang.UI
         public void SetTargetHighlight(bool highlight)
         {
             SetTargetCrosshair(highlight);
+            if (seatSelectButton != null) seatSelectButton.interactable = highlight;
         }
 
         public Vector2 GetScreenCenterPosition()
@@ -161,7 +172,8 @@ namespace BangBang.UI
                 rt.anchoredPosition = new Vector2(i * 12f, 0);
 
                 var img = backObj.GetComponent<Image>();
-                img.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+                img.sprite = CardCatalogDatabase.LoadCardBackSprite();
+                img.preserveAspect = true;
                 _handBackObjects.Add(backObj);
             }
         }

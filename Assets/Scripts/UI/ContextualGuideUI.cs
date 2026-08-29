@@ -36,50 +36,74 @@ namespace BangBang.UI
         private void Render(MatchStateSnapshotDTO snapshot)
         {
             if (root == null) return;
-            if (snapshot == null || snapshot.state == ServerGameState.LOBBY || snapshot.state == ServerGameState.GAME_OVER)
+            if (snapshot != null && snapshot.state == ServerGameState.GAME_OVER)
             {
                 root.SetActive(false);
                 return;
             }
 
             root.SetActive(true);
-            string eyebrow = "BƯỚC HIỆN TẠI";
+            string eyebrow = "BƯỚC 1/4  •  CHỌN PHÒNG";
             string instruction;
+            if (snapshot == null || snapshot.state == ServerGameState.LOBBY)
+            {
+                instruction = "Chọn một phòng đang mở, nhập mã mời, hoặc tạo bàn mới.";
+                if (eyebrowText != null) eyebrowText.text = eyebrow;
+                if (instructionText != null) instructionText.text = instruction;
+                return;
+            }
+
             switch (snapshot.state)
             {
                 case ServerGameState.WAITING:
-                    instruction = "Sẵn sàng khi bạn đã ổn. Chủ phòng bắt đầu khi đủ người.";
+                    eyebrow = "BƯỚC 2/4  •  SẴN SÀNG";
+                    instruction = "Kiểm tra người chơi, bật SẴN SÀNG; chủ phòng bắt đầu khi mọi người đã sẵn sàng.";
                     break;
                 case ServerGameState.ROLE_DRAFT:
-                    instruction = "Chọn một lá úp. Vai trò chỉ được tiết lộ riêng cho bạn.";
+                    eyebrow = "BƯỚC 3/4  •  VAI TRÒ";
+                    instruction = "Vai trò đang được chia. Đọc mục tiêu phe của bạn trước khi tiếp tục.";
                     break;
                 case ServerGameState.ROLE_LOCK_WAIT:
+                    eyebrow = "BƯỚC 3/4  •  VAI TRÒ";
                     instruction = "Đã khóa vai trò. Cảnh sát trưởng sẽ được công khai.";
                     break;
                 case ServerGameState.CHARACTER_DRAFT:
-                    instruction = "Chọn hai lá nhân vật, đọc kỹ HP và kỹ năng rồi xác nhận một lá.";
+                    eyebrow = "BƯỚC 3/4  •  CHỌN NHÂN VẬT";
+                    instruction = "So sánh 2 nhân vật, chọn 1 lá rồi nhấn XÁC NHẬN CHỌN TƯỚNG.";
                     break;
                 case ServerGameState.CHARACTER_REVEAL:
                 case ServerGameState.INITIAL_DEAL:
+                    eyebrow = "BƯỚC 4/4  •  VÀO TRẬN";
                     instruction = "Đang công khai nhân vật và phát bài. Cảnh sát trưởng đi trước.";
                     break;
                 case ServerGameState.JUDGEMENT:
+                    eyebrow = "LƯỢT " + Mathf.Max(1, snapshot.turnNumber) + "  •  PHÁN XÉT";
                     instruction = "Đang xử lý Dynamite rồi Jail. Chờ kết quả phán xét.";
                     break;
                 case ServerGameState.DRAW:
+                    eyebrow = "LƯỢT " + Mathf.Max(1, snapshot.turnNumber) + "  •  1/3 RÚT BÀI";
                     instruction = snapshot.currentTurnPlayerId == GameStateStore.Instance.LocalPlayerId
                         ? "Đến lượt bạn: rút bài theo chỉ dẫn." : "Đối thủ đang rút bài.";
                     break;
                 case ServerGameState.PLAY:
-                    instruction = snapshot.currentTurnPlayerId == GameStateStore.Instance.LocalPlayerId
-                        ? "Chọn một lá sáng, chọn mục tiêu hợp lệ, rồi xác nhận. Hoặc kết thúc lượt."
-                        : "Đang chờ đối thủ. Bạn vẫn có thể được yêu cầu phản ứng.";
+                    bool drawPhase = string.Equals(snapshot.currentPhase, "DRAW", System.StringComparison.OrdinalIgnoreCase);
+                    bool discardPhase = string.Equals(snapshot.currentPhase, "DISCARD", System.StringComparison.OrdinalIgnoreCase);
+                    eyebrow = "LƯỢT " + Mathf.Max(1, snapshot.turnNumber) + (drawPhase ? "  •  1/3 RÚT BÀI" : discardPhase ? "  •  3/3 BỎ BÀI" : "  •  2/3 ĐÁNH BÀI");
+                    if (snapshot.currentTurnPlayerId != GameStateStore.Instance.LocalPlayerId)
+                        instruction = "Đang chờ đối thủ. Bạn vẫn có thể được yêu cầu phản ứng.";
+                    else if (drawPhase)
+                        instruction = "Nhấn RÚT 2 LÁ để mở bước đánh bài.";
+                    else if (discardPhase)
+                        instruction = "Chọn số lá dư cần bỏ để hoàn tất lượt.";
+                    else
+                        instruction = "Chọn một lá sáng, chọn mục tiêu hợp lệ nếu cần, rồi xác nhận; hoặc kết thúc lượt.";
                     break;
                 case ServerGameState.RESPONSE:
-                    eyebrow = "PHẢN ỨNG";
+                    eyebrow = "PHẢN ỨNG  •  CẦN TRẢ LỜI";
                     instruction = "Chọn phản ứng hợp lệ trước khi hết giờ; nếu bỏ qua, server sẽ PASS.";
                     break;
                 case ServerGameState.DISCARD:
+                    eyebrow = "LƯỢT " + Mathf.Max(1, snapshot.turnNumber) + "  •  3/3 BỎ BÀI";
                     instruction = "Bỏ số lá dư được yêu cầu để kết thúc lượt.";
                     break;
                 default:

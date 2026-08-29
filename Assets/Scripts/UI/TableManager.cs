@@ -89,7 +89,8 @@ namespace BangBang.UI
             // Draw Pile
             if (drawPileImage != null)
             {
-                drawPileImage.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+                drawPileImage.sprite = CardCatalogDatabase.LoadCardBackSprite();
+                drawPileImage.preserveAspect = true;
             }
             if (drawPileCountText != null)
             {

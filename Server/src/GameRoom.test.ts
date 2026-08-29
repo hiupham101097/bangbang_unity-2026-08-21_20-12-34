@@ -180,6 +180,60 @@ test('Duel alternates BANG responses and damages the first player who passes', (
     assert.equal(players[0].currentHealth, 3);
 });
 
+test('Slab the Killer still requires one Dodge after a successful Barrel judgement', () => {
+    const { room, players } = createRoom();
+    players[0].characterId = 'slab_the_killer';
+    players[0].hand = ['bang__slab__clubs__8'];
+    players[1].equipment = ['barrel__target__spades__Q'];
+    players[1].hand = ['dodge__target__clubs__2'];
+    (room as any).deck = ['beer__barrel__hearts__6'];
+    (room as any).state = ServerGameState.PLAY;
+    (room as any).currentPhase = 'PLAY';
+    (room as any).currentTurnPlayerId = players[0].id;
+
+    (room as any).handlePlayCard(players[0].id, { cardId: players[0].hand[0], targetPlayerIds: [players[1].id] });
+    clearTimeout((room as any).timerHandle);
+
+    const prompt = room.getSnapshotFor(players[1].id).activeInteraction;
+    assert.equal(prompt?.requiredCardType, 'dodge');
+    assert.equal(prompt?.requiredCount, 1);
+});
+
+test('Panico and Cat Balou reject targets with no cards without consuming the action card', () => {
+    for (const type of ['panico', 'cat_balou']) {
+        const { room, players } = createRoom();
+        const card = `${type}__empty__hearts__9`;
+        players[0].hand = [card];
+        players[1].hand = [];
+        players[1].equipment = [];
+        (room as any).state = ServerGameState.PLAY;
+        (room as any).currentPhase = 'PLAY';
+        (room as any).currentTurnPlayerId = players[0].id;
+
+        (room as any).handlePlayCard(players[0].id, { cardId: card, targetPlayerIds: [players[1].id] });
+
+        assert.deepEqual(players[0].hand, [card]);
+        assert.equal(room.getSnapshotFor(players[0].id).topDiscardCardId, undefined);
+    }
+});
+
+test('Sid Ketchum cannot activate his ability outside his own play phase', () => {
+    const { room, players } = createRoom();
+    const sid = players[0];
+    sid.characterId = 'sid_ketchum';
+    sid.currentHealth = 2;
+    sid.maxHealth = 4;
+    sid.hand = ['bang__sid__clubs__2', 'beer__sid__hearts__6'];
+    (room as any).state = ServerGameState.PLAY;
+    (room as any).currentPhase = 'PLAY';
+    (room as any).currentTurnPlayerId = players[1].id;
+
+    (room as any).handleActivateAbility(sid.id, { cardIds: [...sid.hand] });
+
+    assert.equal(sid.currentHealth, 2);
+    assert.equal(sid.hand.length, 2);
+});
+
 test('Indians resolves targets in deterministic seat order', () => {
     const { room, players } = createRoom();
     players.forEach((p, i) => { p.roleId = ['sheriff','outlaw','deputy','renegade'][i]; p.currentHealth = 4; });

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BangBang.Core.Data;
+using BangBang.Core.Logic;
 using UnityEngine;
 
 namespace BangBang.Core.Network
@@ -277,6 +279,11 @@ namespace BangBang.Core.Network
 
         public Task<bool> SelectCharacterAsync(string characterId)
         {
+            if (_currentSnapshot == null || _currentSnapshot.state != ServerGameState.CHARACTER_DRAFT ||
+                _currentSnapshot.privateState?.draftCharacterOptions == null ||
+                !_currentSnapshot.privateState.draftCharacterOptions.Contains(characterId))
+                return Reject("SELECT_CHARACTER", "Nhân vật này không còn nằm trong lựa chọn hợp lệ.");
+
             ApplyCharacterSelectionInternal(characterId);
             if (_mockGameLoopCoroutine != null) StopCoroutine(_mockGameLoopCoroutine);
             _mockGameLoopCoroutine = StartCoroutine(StartBattleAfterSelectionCoroutine());
@@ -341,8 +348,10 @@ namespace BangBang.Core.Network
         public Task<bool> RequestDrawAsync()
         {
             var local = _currentSnapshot?.players.Find(p => p.id == LocalPlayerId);
-            if (local == null || _currentSnapshot.currentTurnPlayerId != LocalPlayerId)
-                return Task.FromResult(false);
+            if (local == null || _currentSnapshot.state != ServerGameState.PLAY ||
+                _currentSnapshot.currentTurnPlayerId != LocalPlayerId ||
+                !string.Equals(_currentSnapshot.currentPhase, "DRAW", StringComparison.OrdinalIgnoreCase))
+                return Reject("DRAW", "Chỉ được rút bài ở bước RÚT trong lượt của bạn.");
 
             // Draw 2 random cards from pool
             _mockHands[local.id].Add(_cardPool[UnityEngine.Random.Range(0, _cardPool.Length)]);
@@ -360,14 +369,21 @@ namespace BangBang.Core.Network
         public Task<bool> PlayCardAsync(string cardId, List<string> targetPlayerIds = null, List<string> selectedCardIds = null)
         {
             var local = _currentSnapshot?.players.Find(p => p.id == LocalPlayerId);
-            if (local == null) return Task.FromResult(false);
+            if (local == null || !MatchActionRules.CanSelectCard(_currentSnapshot, LocalPlayerId, cardId, out string blockedReason))
+                return Reject("PLAY_CARD", string.IsNullOrEmpty(blockedReason) ? "Không thể đánh lá bài này." : blockedReason);
 
-            _mockHands[local.id].Remove(cardId);
+            bool requiresTarget = MatchActionRules.RequiresTarget(_currentSnapshot, LocalPlayerId, cardId);
+            string firstTarget = targetPlayerIds != null && targetPlayerIds.Count > 0 ? targetPlayerIds[0] : string.Empty;
+            if (requiresTarget && !MatchActionRules.IsValidTarget(_currentSnapshot, LocalPlayerId, firstTarget, cardId))
+                return Reject("PLAY_CARD", "Mục tiêu đã chọn không hợp lệ với lá bài này.");
+
+            if (!_mockHands.TryGetValue(local.id, out var localHand) || !localHand.Remove(cardId))
+                return Reject("PLAY_CARD", "Lá bài này không còn trên tay.");
             local.handCount = _mockHands[local.id].Count;
             _currentSnapshot.topDiscardCardId = cardId;
             _currentSnapshot.discardPileCount++;
 
-            string type = cardId.Split('_')[0].ToLower();
+            string type = CardCatalogDatabase.GetTypeOf(cardId).ToLowerInvariant();
 
             if (type == "beer")
             {
@@ -390,7 +406,7 @@ namespace BangBang.Core.Network
                     else _currentSnapshot.combatLogs.Add("  🛡️ " + p.name + " né được!");
                 }
             }
-            else if (type == "mustang" || type == "gun" || type == "barrel" || type == "volcanic")
+            else if (type == "mustang" || type.StartsWith("gun_range_", StringComparison.Ordinal) || type == "barrel" || type == "volcanic")
             {
                 local.equipment.Add(cardId);
                 _currentSnapshot.combatLogs.Add("🔧 Bạn trang bị " + cardId.Replace("_", " ").ToUpper() + ".");
@@ -430,6 +446,7 @@ namespace BangBang.Core.Network
 
         public Task<bool> SubmitInteractionAsync(string interactionId, string action, List<string> selectedPlayers = null, List<string> selectedCards = null, int optionIndex = 0)
         {
+            if (_currentSnapshot == null) return Reject("INTERACTION", "Trận đấu chưa sẵn sàng.");
             _currentSnapshot.activeInteraction = null;
             BroadcastSnapshot();
             return Task.FromResult(true);
@@ -438,6 +455,8 @@ namespace BangBang.Core.Network
         public Task<bool> EndTurnAsync(List<string> discardCardIds = null)
         {
             var local = _currentSnapshot?.players.Find(p => p.id == LocalPlayerId);
+            if (local == null || !MatchActionRules.IsLocalPlayPhase(_currentSnapshot, LocalPlayerId))
+                return Reject("END_TURN", "Chỉ được kết thúc ở bước ĐÁNH BÀI trong lượt của bạn.");
             if (local != null && discardCardIds != null)
             {
                 foreach (var c in discardCardIds) { _mockHands[local.id].Remove(c); _currentSnapshot.discardPileCount++; }
@@ -667,6 +686,12 @@ namespace BangBang.Core.Network
                 _currentSnapshot.sequence++;
                 OnSnapshotReceived?.Invoke(_currentSnapshot);
             }
+        }
+
+        private Task<bool> Reject(string requestId, string reason)
+        {
+            OnActionRejected?.Invoke(requestId, reason);
+            return Task.FromResult(false);
         }
     }
 }

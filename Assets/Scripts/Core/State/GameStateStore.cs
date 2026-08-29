@@ -40,6 +40,7 @@ namespace BangBang.Core.State
         public event Action<string> OnGatewayErrorMessage;
 
         private int _lastLogCount;
+        private string _lastRoomId;
 
         private void Awake()
         {
@@ -84,6 +85,16 @@ namespace BangBang.Core.State
         private void HandleSnapshotReceived(MatchStateSnapshotDTO snapshot)
         {
             SetRequestPending(false);
+            if (snapshot == null) return;
+
+            // A rematch or room switch can legitimately replace the combat log
+            // with a shorter list. Reset the cursor so new-table messages are not
+            // suppressed by the previous match's log count.
+            if (_lastRoomId != snapshot.roomId || snapshot.combatLogs == null || snapshot.combatLogs.Count < _lastLogCount)
+            {
+                _lastRoomId = snapshot.roomId;
+                _lastLogCount = 0;
+            }
             CurrentSnapshot = snapshot;
 
             // Check new combat logs
