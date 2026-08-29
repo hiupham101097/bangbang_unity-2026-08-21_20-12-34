@@ -29,7 +29,7 @@ namespace BangBang.UI
 
         public void ShowGameOver(string winner, List<PlayerModel> players)
         {
-            if (panel != null) panel.SetActive(true);
+            if (panel != null) UIAnimator.Instance.ShowModal(panel, 0.5f);
 
             if (winner == "sheriff")
             {

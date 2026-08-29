@@ -51,7 +51,10 @@ namespace BangBang.UI
                 respondActionButton.interactable = hasRequiredCard;
             }
 
-            if (modalPanel != null) modalPanel.SetActive(true);
+            if (modalPanel != null) 
+            {
+                UIAnimator.Instance.ShowModal(modalPanel);
+            }
         }
 
         private void Update()
@@ -75,7 +78,12 @@ namespace BangBang.UI
         {
             if (!_isPromptActive) return;
             _isPromptActive = false;
-            if (modalPanel != null) modalPanel.SetActive(false);
+            
+            if (modalPanel != null && modalPanel.activeSelf) 
+            {
+                UIAnimator.Instance.HideModal(modalPanel);
+            }
+            
             _onResolvedCallback?.Invoke(useAction);
         }
     }

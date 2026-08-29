@@ -848,7 +848,7 @@ namespace BangBang.UI.Views
 
         private void ShowActionMessage(string message, bool isError)
         {
-            if (targetBannerObj != null) targetBannerObj.SetActive(true);
+            if (targetBannerObj != null) UIAnimator.Instance.ShowModal(targetBannerObj, 0.25f);
             if (targetBannerText != null)
             {
                 targetBannerText.text = message;

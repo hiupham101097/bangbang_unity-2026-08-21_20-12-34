@@ -133,7 +133,11 @@ namespace BangBang.UI.Views
 
         private void ShowDetailModal(bool show)
         {
-            if (detailModal != null) detailModal.SetActive(show);
+            if (detailModal != null) 
+            {
+                if (show) UIAnimator.Instance.ShowModal(detailModal);
+                else UIAnimator.Instance.HideModal(detailModal);
+            }
         }
     }
 }

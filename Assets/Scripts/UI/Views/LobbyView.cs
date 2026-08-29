@@ -144,8 +144,12 @@ namespace BangBang.UI.Views
 
         public void ShowCreateRoomPopup(bool show)
         {
-            if (createRoomPopup != null) createRoomPopup.SetActive(show);
-            AudioManager.Instance?.PlaySFX("button_tap");
+            if (createRoomPopup != null) 
+            {
+                if (show) UIAnimator.Instance.ShowModal(createRoomPopup);
+                else UIAnimator.Instance.HideModal(createRoomPopup);
+            }
+            if (show) AudioManager.Instance?.PlaySFX("button_tap");
         }
 
         private async void HandleCreateRoomConfirmed()

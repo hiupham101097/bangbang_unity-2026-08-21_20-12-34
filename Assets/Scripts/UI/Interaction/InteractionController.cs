@@ -130,7 +130,10 @@ namespace BangBang.UI.Interaction
             _selectedPlayerIds.Clear();
             _selectedOptionIndex = 0;
 
-            if (modalRootPanel != null) modalRootPanel.SetActive(true);
+            if (modalRootPanel != null) 
+            {
+                UIAnimator.Instance.ShowModal(modalRootPanel);
+            }
             if (titleText != null) titleText.text = prompt.title;
             if (messageText != null) messageText.text = prompt.message;
             if (cancelButton != null) cancelButton.gameObject.SetActive(prompt.canCancel);
@@ -141,8 +144,11 @@ namespace BangBang.UI.Interaction
 
         public void HideModal()
         {
-            if (modalRootPanel != null) modalRootPanel.SetActive(false);
             _currentPrompt = null;
+            if (modalRootPanel != null && modalRootPanel.activeSelf) 
+            {
+                UIAnimator.Instance.HideModal(modalRootPanel);
+            }
         }
 
         private void PopulateOptions(InteractionPromptDTO prompt)
