@@ -639,11 +639,14 @@ namespace BangBang.Core.Network
             int gunRange = 1;
             foreach (var eq in local.equipment)
             {
-                if (eq.StartsWith("gun_range_3")) gunRange = 3;
-                else if (eq.StartsWith("gun_range_2")) gunRange = 2;
+                string type = CardCatalogDatabase.GetTypeOf(eq);
+                if (type == "gun_range_2") gunRange = Mathf.Max(gunRange, 2);
+                else if (type == "gun_range_3") gunRange = Mathf.Max(gunRange, 3);
+                else if (type == "gun_range_4") gunRange = Mathf.Max(gunRange, 4);
+                else if (type == "gun_range_5") gunRange = Mathf.Max(gunRange, 5);
             }
 
-            var alive = _currentSnapshot.players.Where(p => p.isAlive).ToList();
+            var alive = _currentSnapshot.players.Where(p => p.isAlive).OrderBy(p => p.seat).ToList();
             int localAliveIdx = alive.FindIndex(p => p.id == LocalPlayerId);
             if (localAliveIdx < 0) return;
 

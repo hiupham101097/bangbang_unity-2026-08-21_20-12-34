@@ -404,7 +404,13 @@ namespace BangBang.UI.Views
 
         private void RenderOpponentSeats(MatchStateSnapshotDTO snapshot, string localPlayerId)
         {
-            var opponents = snapshot.players.Where(p => p.id != localPlayerId).ToList();
+            var localPlayer = snapshot.players.Find(p => p.id == localPlayerId);
+            int tableCapacity = Mathf.Max(4, snapshot.rules != null ? snapshot.rules.maxPlayers : snapshot.players.Count);
+            int localSeat = localPlayer != null ? localPlayer.seat : 0;
+            var opponents = snapshot.players
+                .Where(p => p.id != localPlayerId)
+                .OrderBy(p => (p.seat - localSeat + tableCapacity) % tableCapacity)
+                .ToList();
 
             // Remove excess seats
             while (_seatUIs.Count > opponents.Count)
@@ -452,13 +458,13 @@ namespace BangBang.UI.Views
                 _seatUIs[i].SetTurnActive(snapshot.currentTurnPlayerId == p.id);
                 bool isChoosingTarget = _selectedCardUI != null &&
                                         MatchActionRules.IsValidTarget(snapshot, localPlayerId, p.id, _selectedCardUI.cardId);
-                _seatUIs[i].SetTargetHighlight(isChoosingTarget);
+                _seatUIs[i].SetTargetHighlight(isChoosingTarget, isChoosingTarget && _selectedTargetId == p.id);
 
                 _seatUIs[i].OnSeatClicked -= HandleOpponentSeatClicked;
                 _seatUIs[i].OnSeatClicked += HandleOpponentSeatClicked;
 
                 var rt = _seatUIs[i].GetComponent<RectTransform>();
-                rt.anchoredPosition = GetOpponentSeatPosition(snapshot.rules != null ? snapshot.rules.maxPlayers : opponents.Count + 1, i);
+                rt.anchoredPosition = GetOpponentSeatPosition(tableCapacity, i);
             }
         }
 
@@ -478,16 +484,12 @@ namespace BangBang.UI.Views
 
             Vector2[][] layouts =
             {
-                // 4 players (3 opponents): Top-Left, Top-Mid, Top-Right
+                // Clockwise from the local seat: nearest left -> far side -> nearest right.
                 new[] { topLeft, topMiddle, topRight },
-                // 5 players (4 opponents): Mid-Left, Top-Left, Top-Right, Mid-Right
-                new[] { topLeftWide, topRightWide, middleLeft, middleRight },
-                // 6 players (5 opponents): Mid-Left, Top-Left, Top-Mid, Top-Right, Mid-Right
-                new[] { topLeft, topMiddle, topRight, middleLeft, middleRight },
-                // 7 players (6 opponents): All 6 boxes
-                new[] { topLeftWide, topRightWide, middleLeft, middleRight, bottomLeft, bottomRight },
-                // 8 players (7 opponents): squeeze top row
-                new[] { topLeft, topMiddle, topRight, middleLeft, middleRight, bottomLeft, bottomRight }
+                new[] { middleLeft, topLeftWide, topRightWide, middleRight },
+                new[] { middleLeft, topLeft, topMiddle, topRight, middleRight },
+                new[] { bottomLeft, middleLeft, topLeftWide, topRightWide, middleRight, bottomRight },
+                new[] { bottomLeft, middleLeft, topLeft, topMiddle, topRight, middleRight, bottomRight }
             };
 
             int capacityIndex = Mathf.Clamp(totalPlayers, 4, 8) - 4;
@@ -609,7 +611,23 @@ namespace BangBang.UI.Views
             var crossRt = crossObj.GetComponent<RectTransform>();
             crossRt.sizeDelta = new Vector2(180, 82);
             crossRt.anchoredPosition = Vector2.zero;
-            crossObj.GetComponent<Image>().color = new Color(1f, 0.2f, 0.2f, 0.5f);
+            var crossHitArea = crossObj.GetComponent<Image>();
+            crossHitArea.color = new Color(0f, 0f, 0f, 0.01f);
+            crossHitArea.raycastTarget = true;
+
+            var targetIconObj = new GameObject("TargetIcon", typeof(RectTransform), typeof(Text));
+            targetIconObj.transform.SetParent(crossObj.transform, false);
+            var targetIconRt = targetIconObj.GetComponent<RectTransform>();
+            targetIconRt.anchoredPosition = new Vector2(-52f, 0f);
+            targetIconRt.sizeDelta = new Vector2(52f, 52f);
+            var targetIconText = targetIconObj.GetComponent<Text>();
+            targetIconText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            targetIconText.fontSize = 38;
+            targetIconText.fontStyle = FontStyle.Bold;
+            targetIconText.alignment = TextAnchor.MiddleCenter;
+            targetIconText.color = BangUITheme.Brass;
+            targetIconText.text = "⊕";
+            targetIconText.raycastTarget = false;
             crossObj.SetActive(false);
 
             // ── Turn Glow ──
@@ -635,6 +653,7 @@ namespace BangBang.UI.Views
             seatUI.equipmentRowTransform = eqObj.transform;
             seatUI.crosshairTargetObj = crossObj;
             seatUI.seatSelectButton = crossObj.GetComponent<Button>();
+            seatUI.targetIconText = targetIconText;
             seatUI.turnActiveGlow = glowImg;
 
             return seatUI;
@@ -689,7 +708,8 @@ namespace BangBang.UI.Views
                     if (targetBannerText != null)
                     {
                         targetBannerText.color = BangUITheme.Ivory;
-                        targetBannerText.text = "CHỌN MỤC TIÊU HỢP LỆ TRÊN BÀN ĐẤU";
+                        var local = snapshot.players.Find(player => player.id == GameStateStore.Instance.LocalPlayerId);
+                        targetBannerText.text = "⊕ CHỌN MỤC TIÊU TRONG TẦM " + MatchActionRules.GetWeaponRange(local);
                     }
                 }
 
@@ -739,6 +759,11 @@ namespace BangBang.UI.Views
 
             AudioManager.Instance?.PlaySFX("button_tap");
             _selectedTargetId = targetPlayerId;
+            foreach (var seat in _seatUIs)
+            {
+                bool available = MatchActionRules.IsValidTarget(snapshot, GameStateStore.Instance.LocalPlayerId, seat.playerId, _selectedCardUI.cardId);
+                seat.SetTargetHighlight(available, seat.playerId == targetPlayerId);
+            }
 
             // Show targeting tracer line
             if (FXManager.Instance != null)
@@ -753,7 +778,8 @@ namespace BangBang.UI.Views
 
             if (targetBannerText != null)
             {
-                targetBannerText.text = "🎯 ĐÃ CHỌN: <b>" + targetPlayer.name + "</b>";
+                targetBannerText.text = "⊕ " + targetPlayer.name.ToUpperInvariant() +
+                                        "  •  KHOẢNG CÁCH " + targetPlayer.effectiveDistanceToLocal;
             }
 
             if (playCardButton != null)

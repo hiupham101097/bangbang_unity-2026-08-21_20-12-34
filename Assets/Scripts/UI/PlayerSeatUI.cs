@@ -24,6 +24,7 @@ namespace BangBang.UI
         public Image turnActiveGlow;
         public GameObject crosshairTargetObj;
         public Button seatSelectButton;
+        public Text targetIconText;
 
         [Header("Hand Cards Back & Equipment Shelf")]
         public Transform equipmentRowTransform;
@@ -125,10 +126,15 @@ namespace BangBang.UI
             if (crosshairTargetObj != null) crosshairTargetObj.SetActive(show);
         }
 
-        public void SetTargetHighlight(bool highlight)
+        public void SetTargetHighlight(bool highlight, bool selected = false)
         {
             SetTargetCrosshair(highlight);
             if (seatSelectButton != null) seatSelectButton.interactable = highlight;
+            if (targetIconText != null)
+            {
+                targetIconText.color = selected ? Color.white : BangUITheme.Brass;
+                targetIconText.fontSize = selected ? 44 : 34;
+            }
         }
 
         public Vector2 GetScreenCenterPosition()

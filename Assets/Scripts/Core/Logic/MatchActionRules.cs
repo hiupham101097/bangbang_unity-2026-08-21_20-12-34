@@ -106,7 +106,8 @@ namespace BangBang.Core.Logic
             string type = CardCatalogDatabase.GetTypeOf(cardId);
             var info = CardCatalogDatabase.GetCardInfo(cardId);
 
-            if (type == "bang" || ActsAsBang(local, type)) return target.isTargetable;
+            if (type == "bang" || ActsAsBang(local, type))
+                return target.isTargetable && target.effectiveDistanceToLocal <= GetWeaponRange(local);
             if (type == "panico")
                 return target.effectiveDistanceToLocal <= 1 &&
                        (target.handCount > 0 || (target.equipment != null && target.equipment.Count > 0));
@@ -123,6 +124,23 @@ namespace BangBang.Core.Logic
         private static bool ActsAsBang(PlayerSnapshotDTO local, string cardType)
         {
             return cardType == "dodge" && local.characterId == "calamity_janet";
+        }
+
+        public static int GetWeaponRange(PlayerSnapshotDTO player)
+        {
+            int range = 1;
+            if (player?.equipment == null) return range;
+            foreach (string card in player.equipment)
+            {
+                switch (CardCatalogDatabase.GetTypeOf(card))
+                {
+                    case "gun_range_2": range = Math.Max(range, 2); break;
+                    case "gun_range_3": range = Math.Max(range, 3); break;
+                    case "gun_range_4": range = Math.Max(range, 4); break;
+                    case "gun_range_5": range = Math.Max(range, 5); break;
+                }
+            }
+            return range;
         }
     }
 }

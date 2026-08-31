@@ -571,9 +571,9 @@ var BangBangMatch = class extends DurableObject {
     state.lastActionActorId = actor.id;
     state.lastActionTargetId = targetId || void 0;
     if (type === "bang" || type === "dodge" && actor.characterId === "calamity_janet") {
-      if (state.bangUsedThisTurn > 0 && actor.characterId !== "willy_the_kid" && !actor.equipment.some((card) => card.startsWith("volcanic"))) throw Error("M\u1ED7i l\u01B0\u1EE3t ch\u1EC9 d\xF9ng 1 BANG.");
+      if (state.bangUsedThisTurn > 0 && actor.characterId !== "willy_the_kid" && !actor.equipment.some((card) => typeOf(card) === "volcanic")) throw Error("M\u1ED7i l\u01B0\u1EE3t ch\u1EC9 d\xF9ng 1 BANG.");
       const target = this.player(state, targetId);
-      if (!target.alive || target.id === actor.id || this.distance(state, actor, target) > actor.attackRange) throw Error("M\u1EE5c ti\xEAu ngo\xE0i t\u1EA7m b\u1EAFn.");
+      if (!target.alive || target.id === actor.id || this.distance(state, actor, target) > this.weaponRange(actor)) throw Error("M\u1EE5c ti\xEAu ngo\xE0i t\u1EA7m b\u1EAFn.");
       actor.hand.splice(at, 1);
       actor.cardCount = actor.hand.length;
       state.discard.push(cardId);
@@ -682,9 +682,11 @@ var BangBangMatch = class extends DurableObject {
       void this.ctx.storage.setAlarm(state.pendingBang.deadline);
       this.runBotResponse(state);
     } else if (this.isWeapon(cardId)) {
-      if (actor.equipment.some((card) => typeOf(card) === type)) throw Error("B\u1EA1n \u0111\xE3 \u0111\u1EB7t m\u1ED9t kh\u1EA9u s\xFAng c\xF9ng lo\u1EA1i.");
       actor.hand.splice(at, 1);
       actor.cardCount = actor.hand.length;
+      const previousWeapons = actor.equipment.filter((card) => this.isWeapon(card));
+      actor.equipment = actor.equipment.filter((card) => !this.isWeapon(card));
+      state.discard.push(...previousWeapons);
       actor.equipment.push(cardId);
       this.refreshAttackRange(actor);
       state.publicLog.push(`${actor.name} trang b\u1ECB s\xFAng t\u1EA7m ${actor.attackRange}.`);
@@ -1098,7 +1100,7 @@ var BangBangMatch = class extends DurableObject {
     await this.draw(state, bot.id);
     if (String(state.phase) !== "play_phase" || !bot.alive) return;
     const opponents = shuffle(state.players.filter((player) => player.alive && player.id !== bot.id));
-    const targetsInRange = opponents.filter((player) => this.distance(state, bot, player) <= bot.attackRange);
+    const targetsInRange = opponents.filter((player) => this.distance(state, bot, player) <= this.weaponRange(bot));
     const adjacentTargets = opponents.filter((player) => this.distance(state, bot, player) <= 1);
     const beer = bot.hand.find((card) => typeOf(card) === "beer");
     const bang = bot.hand.find((card) => typeOf(card) === "bang");
@@ -1317,9 +1319,12 @@ var BangBangMatch = class extends DurableObject {
     const type = typeOf(cardId);
     return type === "volcanic" || type.startsWith("gun_range");
   }
+  weaponRange(player) {
+    const ranges = (player.equipment ?? []).filter((card) => typeOf(card).startsWith("gun_range")).map((card) => Number(typeOf(card).at(-1) || 1)).filter((range) => Number.isFinite(range));
+    return Math.max(1, ...ranges);
+  }
   refreshAttackRange(player) {
-    const ranges = player.equipment.filter((card) => typeOf(card).startsWith("gun_range")).map((card) => Number(typeOf(card).at(-1) || 1));
-    player.attackRange = Math.max(1, ...ranges);
+    player.attackRange = this.weaponRange(player);
   }
   nextAlivePlayerWithout(state, currentId, equipmentType) {
     const alive = state.players.filter((player) => player.alive).sort((a, b) => a.seat - b.seat);
@@ -1331,7 +1336,7 @@ var BangBangMatch = class extends DurableObject {
     return void 0;
   }
   distance(state, actor, target) {
-    const alive = state.players.filter((player) => player.alive);
+    const alive = state.players.filter((player) => player.alive).sort((left, right) => left.seat - right.seat);
     const a = alive.indexOf(actor), b = alive.indexOf(target);
     const base = Math.min((b - a + alive.length) % alive.length, (a - b + alive.length) % alive.length);
     const modifier = (actor.characterId === "rose_doolan" ? -1 : 0) + (target.characterId === "paul_regret" ? 1 : 0) + (actor.equipment.some((card) => typeOf(card) === "appaloosa") ? -1 : 0) + (target.equipment.some((card) => typeOf(card) === "mustang") ? 1 : 0);
@@ -1408,6 +1413,7 @@ var BangBangMatch = class extends DurableObject {
       characterDeck: this.setupDeckFor(state.characterDeck, userId),
       players: state.players.map(({ hand, role, characterOptions, characterChosen, ...player }) => ({
         ...player,
+        attackRange: this.weaponRange(player),
         revealedRole: role === "sheriff" && (state.phase === "match_intro" || state.status === "playing" || state.status === "finished") || !player.alive ? role : void 0,
         role: player.id === userId ? role : void 0,
         hand: player.id === userId ? hand : void 0,

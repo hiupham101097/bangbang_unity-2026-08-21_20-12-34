@@ -335,6 +335,20 @@ namespace BangBang.Core.Network
             if (snapshot?.players == null) return;
             var alive = (room.players ?? new List<WorkerPlayer>()).Where(player => player.alive).OrderBy(player => player.seat).ToList();
             int localIndex = local != null ? alive.FindIndex(player => player.id == local.id) : -1;
+            int weaponRange = 1;
+            if (local?.equipment != null)
+            {
+                foreach (string card in local.equipment)
+                {
+                    switch (CardCatalogDatabase.GetTypeOf(card))
+                    {
+                        case "gun_range_2": weaponRange = Mathf.Max(weaponRange, 2); break;
+                        case "gun_range_3": weaponRange = Mathf.Max(weaponRange, 3); break;
+                        case "gun_range_4": weaponRange = Mathf.Max(weaponRange, 4); break;
+                        case "gun_range_5": weaponRange = Mathf.Max(weaponRange, 5); break;
+                    }
+                }
+            }
             foreach (var projected in snapshot.players)
             {
                 projected.effectiveDistanceToLocal = projected.id == local?.id ? 0 : 99;
@@ -350,7 +364,7 @@ namespace BangBang.Core.Network
                 if ((local.equipment ?? new List<string>()).Any(card => CardCatalogDatabase.GetTypeOf(card) == "appaloosa") || local.characterId == "rose_oolan" || local.characterId == "rose_doolan") distance--;
                 projected.effectiveDistanceToLocal = Mathf.Max(1, distance);
                 projected.isTargetable = snapshot.currentTurnPlayerId == local.id && snapshot.currentPhase == "PLAY" &&
-                                         projected.effectiveDistanceToLocal <= Mathf.Max(1, local.attackRange);
+                                         projected.effectiveDistanceToLocal <= weaponRange;
             }
         }
 
