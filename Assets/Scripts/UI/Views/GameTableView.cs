@@ -151,6 +151,34 @@ namespace BangBang.UI.Views
         private void HandleCombatLogAdded(string message)
         {
             if (combatLogText != null) combatLogText.text = message;
+
+            if (message.Contains("phản ứng") || message.Contains("Né") || message.Contains("né tránh"))
+            {
+                TriggerDodgeEffect(message);
+            }
+        }
+
+        private void TriggerDodgeEffect(string message)
+        {
+            if (GameStateStore.Instance?.CurrentSnapshot?.players == null) return;
+            foreach (var p in GameStateStore.Instance.CurrentSnapshot.players)
+            {
+                // Check if the log is about this player
+                if (message.StartsWith(p.name) || message.Contains(" " + p.name + " "))
+                {
+                    AudioManager.Instance?.PlaySFX("dodge");
+                    var seat = _seatUIs.Find(s => s.playerId == p.id);
+                    if (seat != null)
+                    {
+                        UIAnimator.Instance.PlayNegateAnimation(GetComponentInParent<Canvas>(), seat.GetScreenCenterPosition(), null);
+                    }
+                    else if (p.id == GameStateStore.Instance.LocalPlayerId)
+                    {
+                        UIAnimator.Instance.PlayNegateAnimation(GetComponentInParent<Canvas>(), new Vector2(Screen.width * 0.5f, Screen.height * 0.25f), null);
+                    }
+                    break;
+                }
+            }
         }
 
         private void HandleRequestPendingChanged(bool pending)
