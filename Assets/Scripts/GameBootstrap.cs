@@ -163,7 +163,6 @@ namespace BangBang.UI
                 var canvasObj = new GameObject("GameCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
                 canvas = canvasObj.GetComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
                 var scaler = canvasObj.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = new Vector2(1280, 720);
@@ -176,6 +175,8 @@ namespace BangBang.UI
 
                 EnsureEventSystem();
             }
+
+            canvas.pixelPerfect = true;
 
             var responsiveLayout = canvas.GetComponent<BangResponsiveLayout>();
             if (responsiveLayout == null) responsiveLayout = canvas.gameObject.AddComponent<BangResponsiveLayout>();
@@ -616,6 +617,12 @@ namespace BangBang.UI
                 var tableObj = CreateFullScreenPanel("GameTableView", canvas.transform);
                 gameTableView = tableObj.AddComponent<GameTableView>();
                 gameTableView.tableBackgroundImage = tableObj.GetComponent<Image>();
+                gameTableView.tableBackgroundImage.raycastTarget = false;
+
+                // Keep the painted table and all gameplay coordinates in one 16:9 space.
+                var tableAspect = tableObj.AddComponent<AspectRatioFitter>();
+                tableAspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                tableAspect.aspectRatio = 16f / 9f;
 
                 // Opponent Seats Container (full canvas, opponents placed by arc positions)
                 var opponentsContainer = new GameObject("OpponentSeatsContainer", typeof(RectTransform));
@@ -630,52 +637,52 @@ namespace BangBang.UI
                 var centerZone = new GameObject("CenterZone", typeof(RectTransform), typeof(Image), typeof(Outline));
                 centerZone.transform.SetParent(tableObj.transform, false);
                 var czRt = centerZone.GetComponent<RectTransform>();
-                czRt.anchoredPosition = new Vector2(0, 60f);
-                czRt.sizeDelta = new Vector2(560, 250);
-                centerZone.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
-                centerZone.GetComponent<Image>().type = Image.Type.Sliced;
-                centerZone.GetComponent<Image>().color = new Color(0.055f, 0.035f, 0.022f, 0.78f);
-                centerZone.GetComponent<Outline>().effectColor = new Color(BangUITheme.Brass.r, BangUITheme.Brass.g, BangUITheme.Brass.b, 0.55f);
-                centerZone.GetComponent<Outline>().effectDistance = new Vector2(2f, -2f);
+                czRt.anchoredPosition = new Vector2(0, 10f);
+                czRt.sizeDelta = new Vector2(440, 180);
+                centerZone.GetComponent<Image>().color = Color.clear;
+                centerZone.GetComponent<Image>().raycastTarget = false;
+                centerZone.GetComponent<Outline>().enabled = false;
 
                 var drawObj = new GameObject("DrawPile", typeof(RectTransform), typeof(Image));
                 drawObj.transform.SetParent(centerZone.transform, false);
                 var drawRt = drawObj.GetComponent<RectTransform>();
-                drawRt.anchoredPosition = new Vector2(-165f, 0);
-                drawRt.sizeDelta = new Vector2(120, 176);
+                drawRt.anchoredPosition = new Vector2(-160f, 0);
+                drawRt.sizeDelta = new Vector2(96, 144);
                 var drawImg = drawObj.GetComponent<Image>();
                 drawImg.sprite = CardCatalogDatabase.LoadSprite("card_back");
                 drawImg.color = Color.white;
+                drawImg.preserveAspect = true;
                 gameTableView.drawPileImage = drawImg;
 
-                var drawTxtObj = CreateText("Count", "65", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, drawObj.transform);
+                var drawTxtObj = CreateText("Count", "65", new Vector2(0, -58f), new Vector2(72, 22), 14, Color.white, drawObj.transform);
                 gameTableView.drawPileCountText = drawTxtObj.GetComponent<Text>();
 
                 var discObj = new GameObject("DiscardPile", typeof(RectTransform), typeof(Image));
                 discObj.transform.SetParent(centerZone.transform, false);
                 var discRt = discObj.GetComponent<RectTransform>();
-                discRt.anchoredPosition = new Vector2(165f, 0);
-                discRt.sizeDelta = new Vector2(120, 176);
+                discRt.anchoredPosition = new Vector2(160f, 0);
+                discRt.sizeDelta = new Vector2(96, 144);
                 gameTableView.discardPileImage = discObj.GetComponent<Image>();
+                gameTableView.discardPileImage.preserveAspect = true;
 
-                var discTxtObj = CreateText("Count", "0", new Vector2(0, -75f), new Vector2(80, 24), 15, Color.white, discObj.transform);
+                var discTxtObj = CreateText("Count", "0", new Vector2(0, -58f), new Vector2(72, 22), 14, Color.white, discObj.transform);
                 gameTableView.discardPileCountText = discTxtObj.GetComponent<Text>();
 
                 // Turn phase status (top-left)
-                var phaseObj = CreateText("TurnPhase", "ĐANG CHỜ LƯỢT", new Vector2(-370f, 310f), new Vector2(430, 42), 20, BangUITheme.Ivory, tableObj.transform);
+                var phaseObj = CreateText("TurnPhase", "ĐANG CHỜ LƯỢT", new Vector2(0, 324f), new Vector2(270, 42), 18, BangUITheme.Ivory, tableObj.transform);
                 gameTableView.turnPhaseStatusText = phaseObj.GetComponent<Text>();
-                gameTableView.turnPhaseStatusText.alignment = TextAnchor.MiddleLeft;
+                gameTableView.turnPhaseStatusText.alignment = TextAnchor.MiddleCenter;
 
                 // Combat log (center bottom, above hand)
-                var logObj = CreateText("LogText", "Bàn đấu đang sẵn sàng…", new Vector2(0, -88f), new Vector2(720, 34), 15, BangUITheme.Muted, tableObj.transform);
+                var logObj = CreateText("LogText", "Bàn đấu đang sẵn sàng…", new Vector2(0, -92f), new Vector2(520, 30), 14, BangUITheme.Muted, tableObj.transform);
                 gameTableView.combatLogText = logObj.GetComponent<Text>();
 
                 // Local Player Dashboard (bottom-left, anchored within 1280x720)
                 var localDashObj = new GameObject("LocalPlayerDash", typeof(RectTransform), typeof(Image), typeof(Outline));
                 localDashObj.transform.SetParent(tableObj.transform, false);
                 var ldRt = localDashObj.GetComponent<RectTransform>();
-                ldRt.anchoredPosition = new Vector2(-430f, -270f);
-                ldRt.sizeDelta = new Vector2(300, 175);
+                ldRt.anchoredPosition = new Vector2(-235f, -258f);
+                ldRt.sizeDelta = new Vector2(150, 122);
                 localDashObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
                 localDashObj.GetComponent<Image>().type = Image.Type.Sliced;
                 localDashObj.GetComponent<Image>().color = new Color(0.055f, 0.035f, 0.022f, 0.92f);
@@ -686,24 +693,24 @@ namespace BangBang.UI
                 var localAvatarObj = new GameObject("LocalAvatar", typeof(RectTransform), typeof(Image));
                 localAvatarObj.transform.SetParent(localDashObj.transform, false);
                 var laRt = localAvatarObj.GetComponent<RectTransform>();
-                laRt.anchoredPosition = new Vector2(-100f, 20f);
-                laRt.sizeDelta = new Vector2(90, 90);
+                laRt.anchoredPosition = new Vector2(-45f, 20f);
+                laRt.sizeDelta = new Vector2(62, 62);
                 var laImg = localAvatarObj.GetComponent<Image>();
                 laImg.preserveAspect = true;
                 gameTableView.localAvatarImage = laImg;
 
-                var localNameObj = CreateText("LocalName", "Người chơi", new Vector2(20f, 60f), new Vector2(200, 28), 14, new Color(1f, 0.9f, 0.4f), localDashObj.transform);
+                var localNameObj = CreateText("LocalName", "Người chơi", new Vector2(32f, 42f), new Vector2(86, 22), 13, new Color(1f, 0.9f, 0.4f), localDashObj.transform);
                 gameTableView.localNameText = localNameObj.GetComponent<Text>();
 
-                var localRoleObj = CreateText("LocalRole", "⭐ CẢNH SÁT TRƯỞNG", new Vector2(20f, 30f), new Vector2(220, 24), 12, Color.white, localDashObj.transform);
+                var localRoleObj = CreateText("LocalRole", "⭐ CẢNH SÁT TRƯỞNG", new Vector2(32f, 18f), new Vector2(88, 32), 10, Color.white, localDashObj.transform);
                 gameTableView.localRoleText = localRoleObj.GetComponent<Text>();
 
                 // Bullet/health tokens row
                 var bulletContainer = new GameObject("BulletContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
                 bulletContainer.transform.SetParent(localDashObj.transform, false);
                 var bcRt = bulletContainer.GetComponent<RectTransform>();
-                bcRt.anchoredPosition = new Vector2(20f, -10f);
-                bcRt.sizeDelta = new Vector2(220, 40);
+                bcRt.anchoredPosition = new Vector2(5f, -18f);
+                bcRt.sizeDelta = new Vector2(128, 28);
                 var bhlg = bulletContainer.GetComponent<HorizontalLayoutGroup>();
                 bhlg.childAlignment = TextAnchor.MiddleLeft;
                 bhlg.spacing = 4f;
@@ -713,8 +720,8 @@ namespace BangBang.UI
                 var equipTray = new GameObject("EquipmentTray", typeof(RectTransform), typeof(HorizontalLayoutGroup));
                 equipTray.transform.SetParent(localDashObj.transform, false);
                 var etRt = equipTray.GetComponent<RectTransform>();
-                etRt.anchoredPosition = new Vector2(20f, -55f);
-                etRt.sizeDelta = new Vector2(240, 65);
+                etRt.anchoredPosition = new Vector2(5f, -48f);
+                etRt.sizeDelta = new Vector2(128, 28);
                 var ehlg = equipTray.GetComponent<HorizontalLayoutGroup>();
                 ehlg.childAlignment = TextAnchor.MiddleLeft;
                 ehlg.spacing = 6f;
@@ -728,22 +735,26 @@ namespace BangBang.UI
                 handRt.anchorMax = new Vector2(1f, 0f);
                 handRt.pivot = new Vector2(0.5f, 0f);
                 handRt.anchoredPosition = new Vector2(0, 4f);
-                handRt.sizeDelta = new Vector2(0, 360f);
+                handRt.sizeDelta = new Vector2(0, 205f);
                 gameTableView.handCardLayout = handObj.GetComponent<HandCardFanLayout>();
-                gameTableView.handCardLayout.cardSize = new Vector2(205f, 300f);
-                gameTableView.handCardLayout.cardSpacing = 150f;
-                gameTableView.handCardLayout.horizontalPadding = 480f;
+                gameTableView.handCardLayout.cardSize = new Vector2(118f, 177f);
+                gameTableView.handCardLayout.cardSpacing = 64f;
+                gameTableView.handCardLayout.maxFanAngle = 3f;
+                gameTableView.handCardLayout.arcHeight = 10f;
+                gameTableView.handCardLayout.horizontalPadding = 610f;
+                gameTableView.handCardLayout.baseCenterX = 60f;
+                gameTableView.handCardLayout.baseCenterY = 91f;
 
                 // Target Banner (below center zone)
                 var tBannerObj = new GameObject("TargetBanner", typeof(RectTransform), typeof(Image));
                 tBannerObj.transform.SetParent(tableObj.transform, false);
                 var tbRt = tBannerObj.GetComponent<RectTransform>();
-                tbRt.anchoredPosition = new Vector2(0, 185f);
-                tbRt.sizeDelta = new Vector2(620, 52);
+                tbRt.anchoredPosition = new Vector2(0, 112f);
+                tbRt.sizeDelta = new Vector2(360, 44);
                 tBannerObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
                 tBannerObj.GetComponent<Image>().type = Image.Type.Sliced;
                 tBannerObj.GetComponent<Image>().color = new Color(0.36f, 0.16f, 0.08f, 0.96f);
-                var tbTxtObj = CreateText("Text", "CHỌN MỤC TIÊU HỢP LỆ", Vector2.zero, new Vector2(640, 48), 17, BangUITheme.Ivory, tBannerObj.transform);
+                var tbTxtObj = CreateText("Text", "CHỌN MỤC TIÊU HỢP LỆ", Vector2.zero, new Vector2(340, 40), 15, BangUITheme.Ivory, tBannerObj.transform);
                 gameTableView.targetBannerObj = tBannerObj;
                 gameTableView.targetBannerText = tbTxtObj.GetComponent<Text>();
 
@@ -751,25 +762,25 @@ namespace BangBang.UI
                 var ttObj = new GameObject("CardPreviewTooltip", typeof(RectTransform), typeof(Image));
                 ttObj.transform.SetParent(tableObj.transform, false);
                 var ttRt = ttObj.GetComponent<RectTransform>();
-                ttRt.anchoredPosition = new Vector2(0, -60f);
-                ttRt.sizeDelta = new Vector2(760, 50);
+                ttRt.anchoredPosition = new Vector2(70f, -112f);
+                ttRt.sizeDelta = new Vector2(500, 38);
                 ttObj.GetComponent<Image>().color = new Color(0.12f, 0.08f, 0.05f, 0.9f);
-                var ttTxtObj = CreateText("Text", "Chọn một lá bài để xem công dụng", Vector2.zero, new Vector2(720, 44), 15, new Color(1f, 0.9f, 0.6f), ttObj.transform);
+                var ttTxtObj = CreateText("Text", "Chọn một lá bài để xem công dụng", Vector2.zero, new Vector2(480, 34), 13, new Color(1f, 0.9f, 0.6f), ttObj.transform);
                 gameTableView.cardPreviewTooltipObj = ttObj;
                 gameTableView.cardPreviewTooltipText = ttTxtObj.GetComponent<Text>();
 
                 // Action Buttons — right column, all within x ≤ 560 (half of 1280/canvas)
                 // DrawCard shown during DRAW phase (step 1)
-                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "1  •  RÚT 2 LÁ", new Vector2(480f, 180f), BangUITheme.Brass, tableObj.transform, new Vector2(220, 64));
+                gameTableView.drawCardButton = CreateButton("DrawCardBtn", "1  •  RÚT 2 LÁ", new Vector2(412f, -252f), BangUITheme.Brass, tableObj.transform, new Vector2(170, 50));
                 // PlayCard shown after selecting a card (step 2)
-                gameTableView.playCardButton = CreateButton("PlayCardBtn", "2  •  ĐÁNH BÀI", new Vector2(480f, 105f), BangUITheme.Brass, tableObj.transform, new Vector2(220, 64));
+                gameTableView.playCardButton = CreateButton("PlayCardBtn", "2  •  ĐÁNH BÀI", new Vector2(412f, -252f), BangUITheme.Brass, tableObj.transform, new Vector2(170, 50));
                 gameTableView.playCardButtonText = gameTableView.playCardButton.GetComponentInChildren<Text>();
                 // Cancel shown alongside PlayCard
-                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "HỦY CHỌN", new Vector2(480f, 28f), BangUITheme.Danger, tableObj.transform, new Vector2(210, 56));
+                gameTableView.cancelTargetButton = CreateButton("CancelTargetBtn", "HỦY CHỌN", new Vector2(412f, -194f), BangUITheme.Danger, tableObj.transform, new Vector2(160, 46));
                 // EndTurn always visible during PLAY phase (step 3)
-                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "3  •  KẾT THÚC LƯỢT", new Vector2(480f, -260f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(240, 64));
+                gameTableView.endTurnButton = CreateButton("EndTurnBtn", "3  •  KẾT THÚC LƯỢT", new Vector2(412f, -252f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(170, 50));
                 // Ability button (Sid Ketchum only)
-                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(480f, -188f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(210, 56));
+                gameTableView.abilityButton = CreateButton("AbilityBtn", "KỸ NĂNG", new Vector2(412f, -136f), new Color(0.42f, 0.24f, 0.62f), tableObj.transform, new Vector2(160, 46));
                 gameTableView.abilityButton.gameObject.SetActive(false);
 
                 var micButton = CreateButton("VoiceMicBtn", "MIC: TẮT", new Vector2(-490f, 310f), BangUITheme.SurfaceRaised, tableObj.transform, new Vector2(160, 50));

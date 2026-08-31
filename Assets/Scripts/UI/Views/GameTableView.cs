@@ -364,7 +364,7 @@ namespace BangBang.UI.Views
                 var bulletObj = new GameObject("Bullet_" + i, typeof(RectTransform), typeof(Image));
                 bulletObj.transform.SetParent(localBulletHealthContainer, false);
                 var rt = bulletObj.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(22, 38);
+                rt.sizeDelta = new Vector2(12, 22);
 
                 var img = bulletObj.GetComponent<Image>();
                 img.sprite = CardCatalogDatabase.LoadSprite("health_bullet");
@@ -391,11 +391,12 @@ namespace BangBang.UI.Views
                 var eqCard = new GameObject("Eq_" + cardInfo.id, typeof(RectTransform), typeof(Image));
                 eqCard.transform.SetParent(localEquipmentTray, false);
                 var rt = eqCard.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(75, 110);
+                rt.sizeDelta = new Vector2(24, 34);
 
                 var img = eqCard.GetComponent<Image>();
                 img.sprite = CardCatalogDatabase.LoadSprite(cardInfo.resourcePath);
                 img.color = Color.white;
+                img.preserveAspect = true;
 
                 _localEquipCards.Add(eqCard);
             }
@@ -463,35 +464,30 @@ namespace BangBang.UI.Views
 
         private Vector2 GetOpponentSeatPosition(int totalPlayers, int index)
         {
-            // Normalized positions: x in [-1..1], y in [-0.5..0.5] of usable play area
-            float w = 0.76f;   // Mid-Left / Mid-Right X
-            float tw = 0.42f;  // Top-Left / Top-Right X
-            float th = 0.28f;  // Top row Y
-            float mh = 0.06f;  // Mid row Y
-            float bh = -0.22f; // Bottom row Y (for 7-8 player)
-
-            Vector2[] boxPositions = new Vector2[]
-            {
-                new Vector2(-w, mh),    // 0: Mid-Left
-                new Vector2(-tw, th),   // 1: Top-Left
-                new Vector2(0f, th),    // 2: Top-Mid
-                new Vector2(tw, th),    // 3: Top-Right
-                new Vector2(w, mh),     // 4: Mid-Right
-                new Vector2(tw, bh)     // 5: Bottom-Right
-            };
+            // These normalized centers match the actual painted frames shared by
+            // match_table_4 ... match_table_8 (x/y are relative to half the table).
+            var topLeft = new Vector2(-0.45f, 0.63f);
+            var topMiddle = new Vector2(0f, 0.63f);
+            var topRight = new Vector2(0.45f, 0.63f);
+            var topLeftWide = new Vector2(-0.40f, 0.63f);
+            var topRightWide = new Vector2(0.40f, 0.63f);
+            var middleLeft = new Vector2(-0.70f, 0.13f);
+            var middleRight = new Vector2(0.70f, 0.13f);
+            var bottomLeft = new Vector2(-0.70f, -0.30f);
+            var bottomRight = new Vector2(0.70f, -0.30f);
 
             Vector2[][] layouts =
             {
                 // 4 players (3 opponents): Top-Left, Top-Mid, Top-Right
-                new[] { boxPositions[1], boxPositions[2], boxPositions[3] },
+                new[] { topLeft, topMiddle, topRight },
                 // 5 players (4 opponents): Mid-Left, Top-Left, Top-Right, Mid-Right
-                new[] { boxPositions[0], boxPositions[1], boxPositions[3], boxPositions[4] },
+                new[] { topLeftWide, topRightWide, middleLeft, middleRight },
                 // 6 players (5 opponents): Mid-Left, Top-Left, Top-Mid, Top-Right, Mid-Right
-                new[] { boxPositions[0], boxPositions[1], boxPositions[2], boxPositions[3], boxPositions[4] },
+                new[] { topLeft, topMiddle, topRight, middleLeft, middleRight },
                 // 7 players (6 opponents): All 6 boxes
-                new[] { boxPositions[0], boxPositions[1], boxPositions[2], boxPositions[3], boxPositions[4], boxPositions[5] },
+                new[] { topLeftWide, topRightWide, middleLeft, middleRight, bottomLeft, bottomRight },
                 // 8 players (7 opponents): squeeze top row
-                new[] { boxPositions[0], new Vector2(-0.54f, th), new Vector2(-0.18f, th), new Vector2(0.18f, th), new Vector2(0.54f, th), boxPositions[4], boxPositions[5] }
+                new[] { topLeft, topMiddle, topRight, middleLeft, middleRight, bottomLeft, bottomRight }
             };
 
             int capacityIndex = Mathf.Clamp(totalPlayers, 4, 8) - 4;
@@ -504,11 +500,12 @@ namespace BangBang.UI.Views
                 ? opponentSeatsContainer.GetComponent<RectTransform>()
                 : (RectTransform)transform;
 
-            float refW = container.rect.width > 10f ? container.rect.width : Screen.width;
-            float refH = container.rect.height > 10f ? container.rect.height : Screen.height;
+            float refW = container.rect.width > 10f ? container.rect.width : 1280f;
+            float refH = container.rect.height > 10f ? container.rect.height : 720f;
 
-            // Use separate axes so the horizontal spread matches widescreen properly
-            return new Vector2(norm.x * refW * 0.5f, norm.y * refH * 0.72f);
+            return new Vector2(
+                Mathf.Round(norm.x * refW * 0.5f),
+                Mathf.Round(norm.y * refH * 0.5f));
         }
 
         /// <summary>Creates a fully-built PlayerSeatUI with all child components wired up.</summary>
@@ -519,22 +516,22 @@ namespace BangBang.UI.Views
             seatObj.transform.SetParent(parent, false);
 
             var rt = seatObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(154, 184);
+            rt.sizeDelta = new Vector2(184, 86);
 
             // ── Wooden Avatar Frame ──
             var frameObj = new GameObject("AvatarFrame", typeof(RectTransform), typeof(Image));
             frameObj.transform.SetParent(seatObj.transform, false);
             var frameRt = frameObj.GetComponent<RectTransform>();
-            frameRt.sizeDelta = new Vector2(104, 104);
-            frameRt.anchoredPosition = new Vector2(0, 15f);
+            frameRt.sizeDelta = new Vector2(68, 68);
+            frameRt.anchoredPosition = new Vector2(-52f, 0f);
             var frameImg = frameObj.GetComponent<Image>();
-            frameImg.color = new Color(0.4f, 0.25f, 0.12f);
+            frameImg.color = new Color(0.4f, 0.25f, 0.12f, 0.78f);
 
             // ── Avatar Image (inside frame) ──
             var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
             avatarObj.transform.SetParent(frameObj.transform, false);
             var avatarRt = avatarObj.GetComponent<RectTransform>();
-            avatarRt.sizeDelta = new Vector2(96, 96);
+            avatarRt.sizeDelta = new Vector2(62, 62);
             var avatarImg = avatarObj.GetComponent<Image>();
             avatarImg.preserveAspect = true;
             avatarImg.color = Color.white;
@@ -543,8 +540,8 @@ namespace BangBang.UI.Views
             var starObj = new GameObject("SheriffStar", typeof(RectTransform), typeof(Image));
             starObj.transform.SetParent(frameObj.transform, false);
             var starRt = starObj.GetComponent<RectTransform>();
-            starRt.anchoredPosition = new Vector2(-36f, -32f);
-            starRt.sizeDelta = new Vector2(32, 32);
+            starRt.anchoredPosition = new Vector2(-24f, -22f);
+            starRt.sizeDelta = new Vector2(22, 22);
             var starImg = starObj.GetComponent<Image>();
             starImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
             starObj.SetActive(false);
@@ -553,8 +550,8 @@ namespace BangBang.UI.Views
             var heartObj = new GameObject("HeartHp", typeof(RectTransform), typeof(Image));
             heartObj.transform.SetParent(frameObj.transform, false);
             var heartRt = heartObj.GetComponent<RectTransform>();
-            heartRt.anchoredPosition = new Vector2(36f, -32f);
-            heartRt.sizeDelta = new Vector2(32, 32);
+            heartRt.anchoredPosition = new Vector2(24f, -22f);
+            heartRt.sizeDelta = new Vector2(24, 24);
             heartObj.GetComponent<Image>().color = new Color(0.85f, 0.15f, 0.15f);
 
             var hpTxtObj = new GameObject("HpText", typeof(RectTransform), typeof(Text));
@@ -565,7 +562,7 @@ namespace BangBang.UI.Views
             hpTxtRt.sizeDelta = Vector2.zero;
             var hpTxt = hpTxtObj.GetComponent<Text>();
             hpTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            hpTxt.fontSize = 18;
+            hpTxt.fontSize = 14;
             hpTxt.fontStyle = FontStyle.Bold;
             hpTxt.alignment = TextAnchor.MiddleCenter;
             hpTxt.color = Color.white;
@@ -575,11 +572,11 @@ namespace BangBang.UI.Views
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
             nameObj.transform.SetParent(seatObj.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
-            nameRt.anchoredPosition = new Vector2(0, 68f);
-            nameRt.sizeDelta = new Vector2(160, 22);
+            nameRt.anchoredPosition = new Vector2(28f, 24f);
+            nameRt.sizeDelta = new Vector2(102, 20);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            nameTxt.fontSize = 16;
+            nameTxt.fontSize = 14;
             nameTxt.fontStyle = FontStyle.Bold;
             nameTxt.alignment = TextAnchor.MiddleCenter;
             nameTxt.color = Color.white;
@@ -588,11 +585,11 @@ namespace BangBang.UI.Views
             var roleObj = new GameObject("Role", typeof(RectTransform), typeof(Text));
             roleObj.transform.SetParent(seatObj.transform, false);
             var roleRt = roleObj.GetComponent<RectTransform>();
-            roleRt.anchoredPosition = new Vector2(0, -45f);
-            roleRt.sizeDelta = new Vector2(140, 20);
+            roleRt.anchoredPosition = new Vector2(28f, 3f);
+            roleRt.sizeDelta = new Vector2(102, 18);
             var roleTxt = roleObj.GetComponent<Text>();
             roleTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            roleTxt.fontSize = 15;
+            roleTxt.fontSize = 12;
             roleTxt.alignment = TextAnchor.MiddleCenter;
             roleTxt.color = new Color(0.9f, 0.8f, 0.4f);
 
@@ -600,8 +597,8 @@ namespace BangBang.UI.Views
             var eqObj = new GameObject("EquipmentShelf", typeof(RectTransform), typeof(HorizontalLayoutGroup));
             eqObj.transform.SetParent(seatObj.transform, false);
             var eqRt = eqObj.GetComponent<RectTransform>();
-            eqRt.anchoredPosition = new Vector2(0, -65f);
-            eqRt.sizeDelta = new Vector2(130, 40);
+            eqRt.anchoredPosition = new Vector2(28f, -24f);
+            eqRt.sizeDelta = new Vector2(102, 30);
             var hlg = eqObj.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.spacing = 4f;
@@ -610,8 +607,8 @@ namespace BangBang.UI.Views
             var crossObj = new GameObject("Crosshair", typeof(RectTransform), typeof(Image), typeof(Button));
             crossObj.transform.SetParent(seatObj.transform, false);
             var crossRt = crossObj.GetComponent<RectTransform>();
-            crossRt.sizeDelta = new Vector2(100, 100);
-            crossRt.anchoredPosition = new Vector2(0, 15f);
+            crossRt.sizeDelta = new Vector2(180, 82);
+            crossRt.anchoredPosition = Vector2.zero;
             crossObj.GetComponent<Image>().color = new Color(1f, 0.2f, 0.2f, 0.5f);
             crossObj.SetActive(false);
 
@@ -619,8 +616,8 @@ namespace BangBang.UI.Views
             var glowObj = new GameObject("TurnGlow", typeof(RectTransform), typeof(Image));
             glowObj.transform.SetParent(seatObj.transform, false);
             var glowRt = glowObj.GetComponent<RectTransform>();
-            glowRt.sizeDelta = new Vector2(110, 110);
-            glowRt.anchoredPosition = new Vector2(0, 15f);
+            glowRt.sizeDelta = new Vector2(72, 72);
+            glowRt.anchoredPosition = new Vector2(-52f, 0f);
             var glowImg = glowObj.GetComponent<Image>();
             glowImg.color = new Color(1f, 0.85f, 0.2f, 0.35f);
             glowObj.SetActive(false);

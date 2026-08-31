@@ -70,6 +70,7 @@ namespace BangBang.UI
 
             if (cardArtwork != null)
             {
+                cardArtwork.preserveAspect = true;
                 var sprite = CardCatalogDatabase.LoadSprite(info.resourcePath);
                 if (sprite != null)
                 {
@@ -161,7 +162,7 @@ namespace BangBang.UI
         {
             _isSelected = selected;
             if (!selected) _isHovered = false;
-            targetScale = selected ? Vector3.one * 1.12f : _isHovered ? Vector3.one * 1.07f : Vector3.one;
+            targetScale = selected ? Vector3.one * 1.08f : _isHovered ? Vector3.one * 1.04f : Vector3.one;
             SetHighlight(selected || _isHovered);
         }
 
@@ -169,7 +170,9 @@ namespace BangBang.UI
         {
             _isPlayable = playable;
             if (_canvasGroup == null) return;
-            _canvasGroup.alpha = playable || _isSelected ? 1f : 0.58f;
+            // Keep unavailable cards readable. The old alpha made high-resolution
+            // artwork look blurry/washed out even though the source texture is sharp.
+            _canvasGroup.alpha = playable || _isSelected ? 1f : 0.82f;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
@@ -178,7 +181,7 @@ namespace BangBang.UI
             {
                 _isHovered = true;
                 _originalSiblingIndex = transform.GetSiblingIndex();
-                targetScale = _isSelected ? Vector3.one * 1.12f : Vector3.one * 1.07f;
+                targetScale = _isSelected ? Vector3.one * 1.08f : Vector3.one * 1.04f;
                 SetHighlight(true);
                 transform.SetAsLastSibling();
             }
@@ -189,7 +192,7 @@ namespace BangBang.UI
             if (!_isDragging)
             {
                 _isHovered = false;
-                targetScale = _isSelected ? Vector3.one * 1.12f : Vector3.one;
+                targetScale = _isSelected ? Vector3.one * 1.08f : Vector3.one;
                 SetHighlight(_isSelected);
                 transform.SetSiblingIndex(_originalSiblingIndex);
             }
@@ -242,8 +245,8 @@ namespace BangBang.UI
         {
             _isDragging = false;
             _canvasGroup.blocksRaycasts = true;
-            _canvasGroup.alpha = 1.0f;
-            targetScale = _isSelected ? Vector3.one * 1.12f : Vector3.one;
+            _canvasGroup.alpha = _isPlayable || _isSelected ? 1f : 0.82f;
+            targetScale = _isSelected ? Vector3.one * 1.08f : Vector3.one;
             SetHighlight(_isSelected);
             transform.SetSiblingIndex(_originalSiblingIndex);
             OnCardDropped?.Invoke(this, eventData.position);

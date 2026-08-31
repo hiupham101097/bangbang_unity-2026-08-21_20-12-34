@@ -182,11 +182,12 @@ namespace BangBang.UI
         {
             var cardObj = new GameObject("MiniCard_" + info.id, typeof(RectTransform), typeof(Image));
             var rt = cardObj.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(60, 84);
+            rt.sizeDelta = new Vector2(24, 34);
 
             var img = cardObj.GetComponent<Image>();
             img.sprite = CardCatalogDatabase.LoadSprite(info.resourcePath);
             img.color = Color.white;
+            img.preserveAspect = true;
 
             return cardObj;
         }

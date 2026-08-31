@@ -13,8 +13,10 @@ internal sealed class LandscapeV2TextureImporter : AssetPostprocessor
         importer.mipmapEnabled = false;
         importer.alphaIsTransparency = true;
         importer.sRGBTexture = true;
-        importer.maxTextureSize = 2048;
-        importer.textureCompression = TextureImporterCompression.CompressedHQ;
+        importer.filterMode = UnityEngine.FilterMode.Bilinear;
+        importer.wrapMode = UnityEngine.TextureWrapMode.Clamp;
+        importer.maxTextureSize = 4096;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
     }
 }
 #endif

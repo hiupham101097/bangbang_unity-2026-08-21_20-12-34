@@ -79,8 +79,9 @@ namespace BangBang.UI
                 float normalizedOffset = (t - 0.5f) * 2f;
                 float archY = (1f - normalizedOffset * normalizedOffset) * arcHeight;
 
-                float posX = startX + (i * effectiveSpacing);
-                float posY = baseCenterY + archY;
+                // Whole-pixel placement avoids soft sampling on Screen Space canvases.
+                float posX = Mathf.Round(startX + (i * effectiveSpacing));
+                float posY = Mathf.Round(baseCenterY + archY);
                 float rotZ = startAngle - (i * angleStep);
 
                 _cardUIs[i].targetAnchoredPosition = new Vector2(posX, posY);
