@@ -1099,9 +1099,20 @@ var BangBangMatch = class extends DurableObject {
     if (!bot?.bot || state.status !== "playing" || state.phase !== "turn_start") return;
     await this.draw(state, bot.id);
     if (String(state.phase) !== "play_phase" || !bot.alive) return;
-    const opponents = shuffle(state.players.filter((player) => player.alive && player.id !== bot.id));
-    const targetsInRange = opponents.filter((player) => this.distance(state, bot, player) <= this.weaponRange(bot));
-    const adjacentTargets = opponents.filter((player) => this.distance(state, bot, player) <= 1);
+    const aliveCount = state.players.filter(p => p.alive).length;
+    const scoreTarget = (target) => {
+      let score = Math.random() * 10;
+      if (target.role === "sheriff") {
+        if (bot.role === "deputy") return -1000;
+        if (bot.role === "outlaw") score += 100;
+        if (bot.role === "renegade") return aliveCount > 2 ? -1000 : 100;
+      }
+      return score;
+    };
+    const opponents = state.players.filter((player) => player.alive && player.id !== bot.id).sort((a, b) => scoreTarget(b) - scoreTarget(a));
+    const validTargets = opponents.filter(p => scoreTarget(p) > -500);
+    const targetsInRange = validTargets.filter((player) => this.distance(state, bot, player) <= this.weaponRange(bot));
+    const adjacentTargets = validTargets.filter((player) => this.distance(state, bot, player) <= 1);
     const beer = bot.hand.find((card) => typeOf(card) === "beer");
     const bang = bot.hand.find((card) => typeOf(card) === "bang");
     const areaAttack = bot.hand.find((card) => typeOf(card) === "gatling" || typeOf(card) === "indiani");
@@ -1118,11 +1129,11 @@ var BangBangMatch = class extends DurableObject {
       this.play(state, bot.id, bang, targetsInRange[0].id);
     } else if (areaAttack && opponents.length > 1) {
       this.play(state, bot.id, areaAttack, "");
-    } else if (duel && opponents[0]) {
-      this.play(state, bot.id, duel, opponents[0].id);
+    } else if (duel && validTargets[0]) {
+      this.play(state, bot.id, duel, validTargets[0].id);
     } else if (targetCard) {
       const type = typeOf(targetCard);
-      const candidates = (type === "panico" ? adjacentTargets : opponents).filter((player) => player.hand.length > 0 || player.equipment.length > 0);
+      const candidates = (type === "panico" ? adjacentTargets : validTargets).filter((player) => player.hand.length > 0 || player.equipment.length > 0);
       if (candidates[0]) this.play(state, bot.id, targetCard, candidates[0].id);
     } else if (equipment) {
       this.play(state, bot.id, equipment, "");
