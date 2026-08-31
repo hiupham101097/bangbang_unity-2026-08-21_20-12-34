@@ -266,8 +266,8 @@ namespace BangBang.UI.Views
             var nameObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
             nameObj.transform.SetParent(itemObj.transform, false);
             var nameRt = nameObj.GetComponent<RectTransform>();
-            nameRt.anchoredPosition = new Vector2(-375f, 16f);
-            nameRt.sizeDelta = new Vector2(390, 34);
+            nameRt.anchoredPosition = new Vector2(-285f, 16f);
+            nameRt.sizeDelta = new Vector2(280, 34);
             var nameTxt = nameObj.GetComponent<Text>();
             nameTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             nameTxt.fontSize = 18;
@@ -279,8 +279,8 @@ namespace BangBang.UI.Views
             var codeObj = new GameObject("Code", typeof(RectTransform), typeof(Text));
             codeObj.transform.SetParent(itemObj.transform, false);
             var codeRt = codeObj.GetComponent<RectTransform>();
-            codeRt.anchoredPosition = new Vector2(-375f, -20f);
-            codeRt.sizeDelta = new Vector2(380, 24);
+            codeRt.anchoredPosition = new Vector2(-285f, -20f);
+            codeRt.sizeDelta = new Vector2(280, 24);
             var codeTxt = codeObj.GetComponent<Text>();
             codeTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             codeTxt.fontSize = 16;
@@ -292,8 +292,8 @@ namespace BangBang.UI.Views
             var infoObj = new GameObject("Info", typeof(RectTransform), typeof(Text));
             infoObj.transform.SetParent(itemObj.transform, false);
             var infoRt = infoObj.GetComponent<RectTransform>();
-            infoRt.anchoredPosition = new Vector2(80f, 16f);
-            infoRt.sizeDelta = new Vector2(300, 32);
+            infoRt.anchoredPosition = new Vector2(55f, 16f);
+            infoRt.sizeDelta = new Vector2(260, 32);
             var infoTxt = infoObj.GetComponent<Text>();
             infoTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             infoTxt.fontSize = 15;
@@ -304,8 +304,8 @@ namespace BangBang.UI.Views
             var statusObj = new GameObject("Status", typeof(RectTransform), typeof(Text));
             statusObj.transform.SetParent(itemObj.transform, false);
             var statusRt = statusObj.GetComponent<RectTransform>();
-            statusRt.anchoredPosition = new Vector2(80f, -20f);
-            statusRt.sizeDelta = new Vector2(300, 26);
+            statusRt.anchoredPosition = new Vector2(55f, -20f);
+            statusRt.sizeDelta = new Vector2(260, 26);
             var statusTxt = statusObj.GetComponent<Text>();
             statusTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             statusTxt.fontSize = 16;
@@ -318,8 +318,8 @@ namespace BangBang.UI.Views
             var joinObj = new GameObject("JoinBtn", typeof(RectTransform), typeof(Image), typeof(Button));
             joinObj.transform.SetParent(itemObj.transform, false);
             var joinRt = joinObj.GetComponent<RectTransform>();
-            joinRt.anchoredPosition = new Vector2(490f, 0);
-            joinRt.sizeDelta = new Vector2(170, 54);
+            joinRt.anchoredPosition = new Vector2(350f, 0);
+            joinRt.sizeDelta = new Vector2(150, 50);
             var jImg = joinObj.GetComponent<Image>();
             jImg.color = BangUITheme.Brass;
             jImg.sprite = BangUITheme.RoundedSprite;

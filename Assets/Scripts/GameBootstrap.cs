@@ -222,7 +222,7 @@ namespace BangBang.UI
                 scrimRt.anchorMin = new Vector2(1, 0);
                 scrimRt.anchorMax = new Vector2(1, 1);
                 scrimRt.pivot = new Vector2(1, 0.5f);
-                scrimRt.sizeDelta = new Vector2(690, 0);
+                scrimRt.sizeDelta = new Vector2(470, 0);
                 rightScrim.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.04f, 0.62f);
                 rightScrim.GetComponent<Image>().raycastTarget = false;
 
@@ -230,42 +230,42 @@ namespace BangBang.UI
                 var logoObj = new GameObject("LogoBanner", typeof(RectTransform), typeof(Image));
                 logoObj.transform.SetParent(homeObj.transform, false);
                 var logoRt = logoObj.GetComponent<RectTransform>();
-                logoRt.anchoredPosition = new Vector2(-475f, 175f);
-                logoRt.sizeDelta = new Vector2(780, 440);
+                logoRt.anchoredPosition = new Vector2(-285f, 70f);
+                logoRt.sizeDelta = new Vector2(650, 370);
                 homeScreen.logoImage = logoObj.GetComponent<Image>();
                 homeScreen.logoImage.raycastTarget = false;
 
-                var profile = CreateSurface("ProfileSurface", new Vector2(-705f, 470f), new Vector2(430, 76), homeObj.transform);
+                var profile = CreateSurface("ProfileSurface", new Vector2(-480f, 295f), new Vector2(340, 62), homeObj.transform);
                 homeScreen.profileButton = profile.AddComponent<Button>();
                 var avatarObj = new GameObject("Avatar", typeof(RectTransform), typeof(Image));
                 avatarObj.transform.SetParent(profile.transform, false);
-                avatarObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(-164, 0);
-                avatarObj.GetComponent<RectTransform>().sizeDelta = new Vector2(54, 54);
+                avatarObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(-135, 0);
+                avatarObj.GetComponent<RectTransform>().sizeDelta = new Vector2(46, 46);
                 avatarObj.GetComponent<Image>().sprite = BangUITheme.RoundedSprite;
                 avatarObj.GetComponent<Image>().type = Image.Type.Sliced;
                 homeScreen.avatarImage = avatarObj.GetComponent<Image>();
-                homeScreen.playerNameText = CreateText("PlayerName", "Cao bồi", new Vector2(18, 12), new Vector2(290, 26), 17, BangUITheme.Ivory, profile.transform).GetComponent<Text>();
+                homeScreen.playerNameText = CreateText("PlayerName", "Cao bồi", new Vector2(22, 11), new Vector2(240, 24), 17, BangUITheme.Ivory, profile.transform).GetComponent<Text>();
                 homeScreen.playerNameText.alignment = TextAnchor.MiddleLeft;
-                homeScreen.playerBountyText = CreateText("PlayerBounty", "Tân binh • $0", new Vector2(18, -14), new Vector2(290, 22), 13, BangUITheme.Muted, profile.transform).GetComponent<Text>();
+                homeScreen.playerBountyText = CreateText("PlayerBounty", "Tân binh • $0", new Vector2(22, -13), new Vector2(240, 20), 13, BangUITheme.Muted, profile.transform).GetComponent<Text>();
                 homeScreen.playerBountyText.alignment = TextAnchor.MiddleLeft;
 
-                CreateText("HeroCaption", "MIỀN TÂY KHÔNG CÓ CHỖ CHO KẺ DO DỰ", new Vector2(-470f, -185f), new Vector2(760, 34), 15, BangUITheme.Ivory, homeObj.transform);
-                CreateText("HeroSubcaption", "Lập bàn, chọn vai trò và sống sót đến phát súng cuối cùng.", new Vector2(-470f, -225f), new Vector2(760, 30), 14, BangUITheme.Muted, homeObj.transform);
+                CreateText("HeroCaption", "MIỀN TÂY KHÔNG CÓ CHỖ CHO KẺ DO DỰ", new Vector2(-285f, -170f), new Vector2(620, 30), 15, BangUITheme.Ivory, homeObj.transform);
+                CreateText("HeroSubcaption", "Lập bàn, chọn vai trò và sống sót đến phát súng cuối cùng.", new Vector2(-285f, -200f), new Vector2(620, 26), 14, BangUITheme.Muted, homeObj.transform);
 
-                var homeMenu = CreateSurface("MainMenuSurface", new Vector2(655f, -10f), new Vector2(520, 760), homeObj.transform);
-                var menuTitle = CreateText("MenuTitle", "SẴN SÀNG VÀO TRẬN?", new Vector2(0, 285f), new Vector2(430, 42), 24, BangUITheme.Ivory, homeMenu.transform).GetComponent<Text>();
+                var homeMenu = CreateSurface("MainMenuSurface", new Vector2(430f, -12f), new Vector2(400, 520), homeObj.transform);
+                var menuTitle = CreateText("MenuTitle", "SẴN SÀNG VÀO TRẬN?", new Vector2(0, 205f), new Vector2(340, 38), 23, BangUITheme.Ivory, homeMenu.transform).GetComponent<Text>();
                 menuTitle.alignment = TextAnchor.MiddleLeft;
-                var menuEyebrow = CreateText("MenuEyebrow", "MULTIPLAYER TRỰC TUYẾN  •  4–8 NGƯỜI", new Vector2(0, 245f), new Vector2(430, 28), 13, BangUITheme.Muted, homeMenu.transform).GetComponent<Text>();
+                var menuEyebrow = CreateText("MenuEyebrow", "MULTIPLAYER TRỰC TUYẾN  •  4–8 NGƯỜI", new Vector2(0, 168f), new Vector2(340, 24), 13, BangUITheme.Muted, homeMenu.transform).GetComponent<Text>();
                 menuEyebrow.alignment = TextAnchor.MiddleLeft;
-                homeScreen.startButton = CreateButton("StartBtn", "CHƠI ONLINE", new Vector2(0, 165f), BangUITheme.Brass, homeMenu.transform, new Vector2(430, 74));
-                homeScreen.galleryButton = CreateButton("GalleryBtn", "THƯ VIỆN THẺ", new Vector2(0, 78f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(430, 62));
-                homeScreen.questsButton = CreateButton("QuestsBtn", "NHIỆM VỤ", new Vector2(0, 5f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(430, 62));
-                homeScreen.guideButton = CreateButton("GuideBtn", "HƯỚNG DẪN CHƠI", new Vector2(0, -68f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(430, 62));
+                homeScreen.startButton = CreateButton("StartBtn", "CHƠI ONLINE", new Vector2(0, 110f), BangUITheme.Brass, homeMenu.transform, new Vector2(340, 58));
+                homeScreen.galleryButton = CreateButton("GalleryBtn", "THƯ VIỆN THẺ", new Vector2(0, 43f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(340, 52));
+                homeScreen.questsButton = CreateButton("QuestsBtn", "NHIỆM VỤ", new Vector2(0, -18f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(340, 52));
+                homeScreen.guideButton = CreateButton("GuideBtn", "HƯỚNG DẪN CHƠI", new Vector2(0, -79f), BangUITheme.SurfaceRaised, homeMenu.transform, new Vector2(340, 52));
 
                 // Audio Toggle Top Right
-                homeScreen.audioToggleButton = CreateButton("AudioBtn", "ÂM THANH: BẬT", new Vector2(0, -165f), BangUITheme.Ink, homeMenu.transform, new Vector2(430, 54));
+                homeScreen.audioToggleButton = CreateButton("AudioBtn", "ÂM THANH: BẬT", new Vector2(0, -148f), BangUITheme.Ink, homeMenu.transform, new Vector2(340, 48));
                 homeScreen.audioToggleText = homeScreen.audioToggleButton.GetComponentInChildren<Text>();
-                CreateText("BuildInfo", "ONLINE  •  BUILD " + Application.version, new Vector2(0, -320f), new Vector2(430, 26), 12, BangUITheme.Muted, homeMenu.transform);
+                CreateText("BuildInfo", "ONLINE  •  BUILD " + Application.version, new Vector2(0, -220f), new Vector2(340, 22), 12, BangUITheme.Muted, homeMenu.transform);
 
                 // Quests Popup
                 var qPopup = CreatePopupBox("QuestsPopup", "NHIỆM VỤ HẰNG NGÀY", "1. Bắn trúng 3 phát BANG! (Thưởng: 500 Vàng)\n2. Uống 2 chai BIA hồi máu (Thưởng: 300 Vàng)\n3. Thắng 1 trận với vai trò Cảnh Sát Trưởng (Thưởng: 1,000 Vàng)", homeObj.transform);
@@ -302,16 +302,16 @@ namespace BangBang.UI
                 cardGalleryView = galleryObj.AddComponent<CardGalleryView>();
 
                 // Header
-                var headObj = CreateText("Header", "🃏 BỘ SƯU TẬP THẺ BÀI", new Vector2(0, 440f), new Vector2(600, 50), 28, new Color(1f, 0.85f, 0.3f), galleryObj.transform);
+                var headObj = CreateText("Header", "🃏 BỘ SƯU TẬP THẺ BÀI", new Vector2(0, 300f), new Vector2(560, 46), 26, new Color(1f, 0.85f, 0.3f), galleryObj.transform);
                 cardGalleryView.titleText = headObj.GetComponent<Text>();
-                cardGalleryView.backButton = CreateButton("BackBtn", "⬅ QUAY LẠI", new Vector2(-680f, 440f), new Color(0.45f, 0.25f, 0.15f), galleryObj.transform, new Vector2(180, 50));
+                cardGalleryView.backButton = CreateButton("BackBtn", "⬅ QUAY LẠI", new Vector2(-560f, 300f), new Color(0.45f, 0.25f, 0.15f), galleryObj.transform, new Vector2(160, 46));
 
                 // Scroll View Container
                 var scrollObj = new GameObject("CardScrollView", typeof(RectTransform), typeof(ScrollRect), typeof(Image));
                 scrollObj.transform.SetParent(galleryObj.transform, false);
                 var scrollRt = scrollObj.GetComponent<RectTransform>();
                 scrollRt.anchoredPosition = new Vector2(0, -30f);
-                scrollRt.sizeDelta = new Vector2(1400, 780);
+                scrollRt.sizeDelta = new Vector2(1120, 550);
                 var scrollBg = scrollObj.GetComponent<Image>();
                 scrollBg.color = new Color(0, 0, 0, 0.35f);
 
@@ -401,30 +401,30 @@ namespace BangBang.UI
                 lobbyView.backgroundImage = lobbyObj.GetComponent<Image>();
 
                 // Back to Home Button
-                lobbyView.backToHomeButton = CreateButton("BackHomeBtn", "QUAY LẠI", new Vector2(-845f, 485f), BangUITheme.SurfaceRaised, lobbyObj.transform, new Vector2(180, 50));
+                lobbyView.backToHomeButton = CreateButton("BackHomeBtn", "QUAY LẠI", new Vector2(-570f, 250f), BangUITheme.SurfaceRaised, lobbyObj.transform, new Vector2(150, 44));
 
                 // Header Title
-                var headObj = CreateText("Header", "PHÒNG ĐANG HOẠT ĐỘNG", new Vector2(-280f, 470f), new Vector2(700, 54), 30, BangUITheme.Ivory, lobbyObj.transform);
+                var headObj = CreateText("Header", "PHÒNG ĐANG HOẠT ĐỘNG", new Vector2(-290f, 250f), new Vector2(360, 44), 24, BangUITheme.Ivory, lobbyObj.transform);
                 lobbyView.titleText = headObj.GetComponent<Text>();
                 lobbyView.titleText.alignment = TextAnchor.MiddleLeft;
-                lobbyView.connectionStatusText = CreateText("ConnectionStatus", "ĐANG ĐỒNG BỘ MÁY CHỦ", new Vector2(730f, 485f), new Vector2(360, 30), 13, BangUITheme.Muted, lobbyObj.transform).GetComponent<Text>();
+                lobbyView.connectionStatusText = CreateText("ConnectionStatus", "ĐANG ĐỒNG BỘ MÁY CHỦ", new Vector2(500f, 305f), new Vector2(260, 26), 13, BangUITheme.Muted, lobbyObj.transform).GetComponent<Text>();
 
                 // Actions Bottom
-                lobbyView.openCreateRoomPopupButton = CreateButton("CreateRoomBtn", "TẠO PHÒNG MỚI", new Vector2(720f, 425f), BangUITheme.Brass, lobbyObj.transform, new Vector2(300, 62));
+                lobbyView.openCreateRoomPopupButton = CreateButton("CreateRoomBtn", "TẠO PHÒNG MỚI", new Vector2(510f, 250f), BangUITheme.Brass, lobbyObj.transform, new Vector2(240, 46));
 
-                var finderSurface = CreateSurface("RoomFinderSurface", new Vector2(-755f, -25f), new Vector2(300, 790), lobbyObj.transform);
-                var finderTitle = CreateText("FinderTitle", "VÀO NHANH", new Vector2(0, 330f), new Vector2(240, 34), 20, BangUITheme.Ivory, finderSurface.transform).GetComponent<Text>();
+                var finderSurface = CreateSurface("RoomFinderSurface", new Vector2(-520f, -40f), new Vector2(260, 500), lobbyObj.transform);
+                var finderTitle = CreateText("FinderTitle", "VÀO NHANH", new Vector2(0, 205f), new Vector2(210, 32), 20, BangUITheme.Ivory, finderSurface.transform).GetComponent<Text>();
                 finderTitle.alignment = TextAnchor.MiddleLeft;
-                CreateText("FinderHint", "Nhập mã phòng được bạn bè chia sẻ", new Vector2(0, 282f), new Vector2(240, 52), 13, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.UpperLeft;
-                lobbyView.roomPinInput = CreateInputField("RoomPinInput", "MÃ PHÒNG", new Vector2(0, 220f), new Vector2(240, 56), finderSurface.transform);
-                lobbyView.joinByPinButton = CreateButton("JoinPinBtn", "THAM GIA", new Vector2(0, 150f), BangUITheme.Brass, finderSurface.transform, new Vector2(240, 56));
-                CreateText("FilterLabel", "BỘ LỌC", new Vector2(0, 65f), new Vector2(240, 28), 13, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
-                CreateText("FilterAll", "TẤT CẢ PHÒNG", new Vector2(0, 20f), new Vector2(240, 42), 15, BangUITheme.Ivory, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
-                CreateText("FilterWaiting", "CÒN CHỖ", new Vector2(0, -25f), new Vector2(240, 42), 15, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
-                CreateText("FilterPrivate", "PHÒNG RIÊNG", new Vector2(0, -70f), new Vector2(240, 42), 15, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FinderHint", "Nhập mã phòng được bạn bè chia sẻ", new Vector2(0, 165f), new Vector2(210, 44), 13, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.UpperLeft;
+                lobbyView.roomPinInput = CreateInputField("RoomPinInput", "MÃ PHÒNG", new Vector2(0, 108f), new Vector2(210, 50), finderSurface.transform);
+                lobbyView.joinByPinButton = CreateButton("JoinPinBtn", "THAM GIA", new Vector2(0, 48f), BangUITheme.Brass, finderSurface.transform, new Vector2(210, 48));
+                CreateText("FilterLabel", "BỘ LỌC", new Vector2(0, -18f), new Vector2(210, 26), 13, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FilterAll", "TẤT CẢ PHÒNG", new Vector2(0, -55f), new Vector2(210, 34), 15, BangUITheme.Ivory, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FilterWaiting", "CÒN CHỖ", new Vector2(0, -92f), new Vector2(210, 34), 15, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                CreateText("FilterPrivate", "PHÒNG RIÊNG", new Vector2(0, -129f), new Vector2(210, 34), 15, BangUITheme.Muted, finderSurface.transform).GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
 
                 // Room List Container
-                var listSurface = CreateSurface("RoomListSurface", new Vector2(205f, -25f), new Vector2(1240, 790), lobbyObj.transform);
+                var listSurface = CreateSurface("RoomListSurface", new Vector2(100f, -40f), new Vector2(930, 500), lobbyObj.transform);
                 var scrollView = new GameObject("RoomScrollView", typeof(RectTransform), typeof(UnityEngine.UI.ScrollRect));
                 scrollView.transform.SetParent(listSurface.transform, false);
                 var scrollRt = scrollView.GetComponent<RectTransform>();
@@ -490,28 +490,28 @@ namespace BangBang.UI
                 waitingObj.GetComponent<Image>().sprite = CardCatalogDatabase.LoadSprite("UI/LandscapeV2/waiting_room_v2");
                 waitingObj.GetComponent<Image>().color = Color.white;
 
-                var codeObj = CreateText("RoomCodeText", "MÃ PHÒNG: SALOON", new Vector2(0, 420f), new Vector2(600, 50), 26, Color.yellow, waitingObj.transform);
+                var codeObj = CreateText("RoomCodeText", "MÃ PHÒNG: SALOON", new Vector2(0, 290f), new Vector2(520, 46), 25, Color.yellow, waitingObj.transform);
                 waitingRoomView.roomCodeText = codeObj.GetComponent<Text>();
-                waitingRoomView.copyCodeButton = CreateButton("CopyCodeBtn", "SAO CHÉP MÃ", new Vector2(390f, 420f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(180, 48));
-                waitingRoomView.playerCountText = CreateText("PlayerCount", "0 / 8 Người", new Vector2(-390f, 420f), new Vector2(220, 40), 18, Color.white, waitingObj.transform).GetComponent<Text>();
+                waitingRoomView.copyCodeButton = CreateButton("CopyCodeBtn", "SAO CHÉP MÃ", new Vector2(430f, 290f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(170, 46));
+                waitingRoomView.playerCountText = CreateText("PlayerCount", "0 / 8 Người", new Vector2(-430f, 290f), new Vector2(210, 38), 18, Color.white, waitingObj.transform).GetComponent<Text>();
 
-                var reasonObj = CreateText("ReasonText", "Đang chờ người chơi sẵn sàng...", new Vector2(0, 360f), new Vector2(800, 30), 14, Color.white, waitingObj.transform);
+                var reasonObj = CreateText("ReasonText", "Đang chờ người chơi sẵn sàng...", new Vector2(0, 245f), new Vector2(720, 28), 14, Color.white, waitingObj.transform);
                 waitingRoomView.startDisabledReasonText = reasonObj.GetComponent<Text>();
 
                 var seatsContainer = new GameObject("SeatsContainer", typeof(RectTransform));
                 seatsContainer.transform.SetParent(waitingObj.transform, false);
                 var sRt = seatsContainer.GetComponent<RectTransform>();
                 sRt.anchoredPosition = new Vector2(0, 30f);
-                sRt.sizeDelta = new Vector2(1500, 260);
+                sRt.sizeDelta = new Vector2(1180, 260);
                 waitingRoomView.seatsContainer = seatsContainer.transform;
 
                 // Controls: Start, Add Bot, Ready, Leave
-                waitingRoomView.startGameButton = CreateButton("StartBtn", "BẮT ĐẦU TRẬN", new Vector2(430f, -450f), BangUITheme.Brass, waitingObj.transform, new Vector2(260, 65));
-                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "THÊM BOT", new Vector2(190f, -450f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.startGameButton = CreateButton("StartBtn", "BẮT ĐẦU TRẬN", new Vector2(430f, -300f), BangUITheme.Brass, waitingObj.transform, new Vector2(240, 58));
+                waitingRoomView.addBotButton = CreateButton("AddBotBtn", "THÊM BOT", new Vector2(190f, -300f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(170, 58));
                 waitingRoomView.removeBotButton = CreateButton("RemoveBotBtn", "BỚT BOT", new Vector2(0f, -380f), BangUITheme.Danger, waitingObj.transform, new Vector2(160, 65));
-                waitingRoomView.removeBotButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -450f);
-                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-190f, -450f), BangUITheme.Success, waitingObj.transform, new Vector2(180, 65));
-                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "RỜI PHÒNG", new Vector2(-430f, -450f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(180, 65));
+                waitingRoomView.removeBotButton.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -300f);
+                waitingRoomView.readyToggleButton = CreateButton("ReadyBtn", "SẴN SÀNG", new Vector2(-190f, -300f), BangUITheme.Success, waitingObj.transform, new Vector2(170, 58));
+                waitingRoomView.leaveRoomButton = CreateButton("LeaveBtn", "RỜI PHÒNG", new Vector2(-430f, -300f), BangUITheme.SurfaceRaised, waitingObj.transform, new Vector2(170, 58));
 
                 flowController.waitingRoomView = waitingRoomView;
             }
@@ -578,7 +578,7 @@ namespace BangBang.UI
                 var timerObj = CreateText("TimerCountdown", "", new Vector2(0, -285f), new Vector2(500, 30), 14, new Color(0.8f, 0.8f, 0.8f), roleObj.transform);
                 roleRevealView.timerCountdownText = timerObj.GetComponent<Text>();
 
-                roleRevealView.continueButton = CreateButton("ContinueBtn", "TIẾP TỤC", new Vector2(0, -365f), BangUITheme.Success, roleObj.transform, new Vector2(250, 60));
+                roleRevealView.continueButton = CreateButton("ContinueBtn", "TIẾP TỤC", new Vector2(0, -310f), BangUITheme.Success, roleObj.transform, new Vector2(250, 56));
 
                 flowController.roleRevealView = roleRevealView;
             }
@@ -589,13 +589,13 @@ namespace BangBang.UI
                 var charObj = CreateFullScreenPanel("CharacterSelectionView", canvas.transform);
                 characterSelectionView = charObj.AddComponent<CharacterSelectionView>();
 
-                CreateText("Header", "CHỌN TƯỚNG BẮT ĐẦU TRẬN ĐẤU", new Vector2(0, 420f), new Vector2(800, 50), 26, Color.yellow, charObj.transform);
+                CreateText("Header", "CHỌN TƯỚNG BẮT ĐẦU TRẬN ĐẤU", new Vector2(0, 300f), new Vector2(760, 46), 25, Color.yellow, charObj.transform);
 
                 var candidatesContainer = new GameObject("CandidatesContainer", typeof(RectTransform), typeof(GridLayoutGroup));
                 candidatesContainer.transform.SetParent(charObj.transform, false);
                 var cRt = candidatesContainer.GetComponent<RectTransform>();
                 cRt.anchoredPosition = new Vector2(0, 15f);
-                cRt.sizeDelta = new Vector2(1500, 620);
+                cRt.sizeDelta = new Vector2(1180, 500);
                 var grid = candidatesContainer.GetComponent<GridLayoutGroup>();
                 grid.childAlignment = TextAnchor.MiddleCenter;
                 grid.spacing = new Vector2(14f, 14f);
@@ -603,10 +603,10 @@ namespace BangBang.UI
                 grid.constraintCount = 8;
                 characterSelectionView.candidatesContainer = candidatesContainer.transform;
 
-                var timerObj = CreateText("CharacterTimer", "Còn 30 giây", new Vector2(0, 365f), new Vector2(300, 36), 18, Color.white, charObj.transform);
+                var timerObj = CreateText("CharacterTimer", "Còn 30 giây", new Vector2(0, 252f), new Vector2(300, 34), 18, Color.white, charObj.transform);
                 characterSelectionView.timerText = timerObj.GetComponent<Text>();
 
-                characterSelectionView.confirmSelectionButton = CreateButton("ConfirmCharBtn", "XÁC NHẬN CHỌN TƯỚNG", new Vector2(0, -380f), new Color(0.2f, 0.7f, 0.25f), charObj.transform, new Vector2(300, 65));
+                characterSelectionView.confirmSelectionButton = CreateButton("ConfirmCharBtn", "XÁC NHẬN CHỌN TƯỚNG", new Vector2(0, -305f), new Color(0.2f, 0.7f, 0.25f), charObj.transform, new Vector2(300, 58));
 
                 flowController.characterSelectionView = characterSelectionView;
             }
@@ -839,21 +839,21 @@ namespace BangBang.UI
                 var resultObj = CreateFullScreenPanel("ResultView", canvas.transform);
                 resultView = resultObj.AddComponent<ResultView>();
 
-                var winTitle = CreateText("WinnerTitle", "🏆 PHE CẢNH SÁT TRƯỞNG THẮNG!", new Vector2(0, 380f), new Vector2(800, 60), 28, Color.yellow, resultObj.transform);
+                var winTitle = CreateText("WinnerTitle", "🏆 PHE CẢNH SÁT TRƯỞNG THẮNG!", new Vector2(0, 290f), new Vector2(760, 54), 27, Color.yellow, resultObj.transform);
                 resultView.winnerTitleText = winTitle.GetComponent<Text>();
 
                 var resultsContainer = new GameObject("ResultsContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
                 resultsContainer.transform.SetParent(resultObj.transform, false);
                 var rRt = resultsContainer.GetComponent<RectTransform>();
                 rRt.anchoredPosition = new Vector2(0, 30f);
-                rRt.sizeDelta = new Vector2(1300, 280);
+                rRt.sizeDelta = new Vector2(1180, 280);
                 var hlg = resultsContainer.GetComponent<HorizontalLayoutGroup>();
                 hlg.childAlignment = TextAnchor.MiddleCenter;
                 hlg.spacing = 15f;
                 resultView.playerResultsContainer = resultsContainer.transform;
 
-                resultView.rematchButton = CreateButton("RematchBtn", "🔄 CHƠI LẠI (REMATCH)", new Vector2(160f, -380f), new Color(0.2f, 0.7f, 0.25f), resultObj.transform, new Vector2(260, 65));
-                resultView.returnToLobbyButton = CreateButton("LobbyBtn", "🚪 VỀ SẢNH CHÍNH", new Vector2(-160f, -380f), new Color(0.45f, 0.25f, 0.15f), resultObj.transform, new Vector2(220, 65));
+                resultView.rematchButton = CreateButton("RematchBtn", "🔄 CHƠI LẠI (REMATCH)", new Vector2(160f, -300f), new Color(0.2f, 0.7f, 0.25f), resultObj.transform, new Vector2(260, 58));
+                resultView.returnToLobbyButton = CreateButton("LobbyBtn", "🚪 VỀ SẢNH CHÍNH", new Vector2(-160f, -300f), new Color(0.45f, 0.25f, 0.15f), resultObj.transform, new Vector2(220, 58));
 
                 flowController.resultView = resultView;
             }
@@ -900,16 +900,6 @@ namespace BangBang.UI
                 interactionController.cancelButton = CreateButton("InteractionCancel", "PASS / BỎ QUA", new Vector2(-155f, -145f), BangUITheme.Danger, cardBox.transform, new Vector2(260, 56));
             }
 
-            // Older menu screens were placed in a sparse 1920x1080 coordinate space.
-            // Compact their spacing without shrinking buttons, cards or typography.
-            EnsureCompactScreenLayout(homeScreen != null ? homeScreen.gameObject : null);
-            EnsureCompactScreenLayout(cardGalleryView != null ? cardGalleryView.gameObject : null);
-            EnsureCompactScreenLayout(lobbyView != null ? lobbyView.gameObject : null);
-            EnsureCompactScreenLayout(waitingRoomView != null ? waitingRoomView.gameObject : null);
-            EnsureCompactScreenLayout(roleRevealView != null ? roleRevealView.gameObject : null);
-            EnsureCompactScreenLayout(characterSelectionView != null ? characterSelectionView.gameObject : null);
-            EnsureCompactScreenLayout(resultView != null ? resultView.gameObject : null);
-
             // Ensure all button listeners are bound
             EnsureContextualGuide(canvas.transform);
             EnsureNetworkOverlay(canvas.transform);
@@ -922,12 +912,6 @@ namespace BangBang.UI
             characterSelectionView?.BindListeners();
             gameTableView?.BindListeners();
             resultView?.BindListeners();
-        }
-
-        private static void EnsureCompactScreenLayout(GameObject screen)
-        {
-            if (screen == null || screen.GetComponent<BangCompactScreenLayout>() != null) return;
-            screen.AddComponent<BangCompactScreenLayout>();
         }
 
         private void EnsureContextualGuide(Transform canvasTransform)
@@ -949,14 +933,14 @@ namespace BangBang.UI
             guideRt.anchorMin = new Vector2(0.5f, 1f);
             guideRt.anchorMax = new Vector2(0.5f, 1f);
             guideRt.pivot = new Vector2(0.5f, 1f);
-            guideRt.anchoredPosition = new Vector2(0f, -18f);
-            guideRt.sizeDelta = new Vector2(760f, 76f);
+            guideRt.anchoredPosition = new Vector2(0f, -12f);
+            guideRt.sizeDelta = new Vector2(500f, 60f);
             var guideImage = guideRoot.GetComponent<Image>();
             guideImage.color = new Color(0.09f, 0.075f, 0.065f, 0.94f);
             guideImage.raycastTarget = false;
 
-            var eyebrowObj = CreateText("Eyebrow", "BƯỚC HIỆN TẠI", new Vector2(0f, 18f), new Vector2(700f, 22f), 12, BangUITheme.Brass, guideRoot.transform);
-            var instructionObj = CreateText("Instruction", "Đang đồng bộ trạng thái trận đấu…", new Vector2(0f, -12f), new Vector2(700f, 34f), 16, BangUITheme.Ivory, guideRoot.transform);
+            var eyebrowObj = CreateText("Eyebrow", "BƯỚC HIỆN TẠI", new Vector2(0f, 14f), new Vector2(460f, 18f), 11, BangUITheme.Brass, guideRoot.transform);
+            var instructionObj = CreateText("Instruction", "Đang đồng bộ trạng thái trận đấu…", new Vector2(0f, -10f), new Vector2(460f, 28f), 14, BangUITheme.Ivory, guideRoot.transform);
             eyebrowObj.GetComponent<Text>().raycastTarget = false;
             instructionObj.GetComponent<Text>().raycastTarget = false;
 
