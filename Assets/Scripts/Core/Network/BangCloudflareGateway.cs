@@ -363,7 +363,11 @@ namespace BangBang.Core.Network
                 if ((target.equipment ?? new List<string>()).Any(card => CardCatalogDatabase.GetTypeOf(card) == "mustang") || target.characterId == "paul_regret") distance++;
                 if ((local.equipment ?? new List<string>()).Any(card => CardCatalogDatabase.GetTypeOf(card) == "appaloosa") || local.characterId == "rose_oolan" || local.characterId == "rose_doolan") distance--;
                 projected.effectiveDistanceToLocal = Mathf.Max(1, distance);
-                projected.isTargetable = snapshot.currentTurnPlayerId == local.id && snapshot.currentPhase == "PLAY" &&
+                
+                bool isPlayPhase = string.Equals(snapshot.currentPhase, "PLAY", StringComparison.OrdinalIgnoreCase) || 
+                                   string.Equals(snapshot.currentPhase, "play_phase", StringComparison.OrdinalIgnoreCase);
+                                   
+                projected.isTargetable = snapshot.currentTurnPlayerId == local.id && isPlayPhase &&
                                          projected.effectiveDistanceToLocal <= weaponRange;
             }
         }

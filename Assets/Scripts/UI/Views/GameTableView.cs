@@ -398,6 +398,8 @@ namespace BangBang.UI.Views
                 eqNameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 eqNameText.fontSize = 14;
                 eqNameText.alignment = TextAnchor.MiddleCenter;
+                eqNameText.horizontalOverflow = HorizontalWrapMode.Overflow;
+                eqNameText.verticalOverflow = VerticalWrapMode.Overflow;
                 eqNameText.color = new Color(0.9f, 0.9f, 0.9f);
                 eqNameText.raycastTarget = false;
             }
@@ -660,6 +662,8 @@ namespace BangBang.UI.Views
             eqTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             eqTxt.fontSize = 11;
             eqTxt.alignment = TextAnchor.UpperCenter;
+            eqTxt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            eqTxt.verticalOverflow = VerticalWrapMode.Overflow;
             eqTxt.color = new Color(0.9f, 0.9f, 0.9f);
             eqTxt.raycastTarget = false;
 
