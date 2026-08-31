@@ -391,7 +391,7 @@ namespace BangBang.UI.Views
                 var eqCard = new GameObject("Eq_" + cardInfo.id, typeof(RectTransform), typeof(Image));
                 eqCard.transform.SetParent(localEquipmentTray, false);
                 var rt = eqCard.GetComponent<RectTransform>();
-                rt.sizeDelta = new Vector2(24, 34);
+                rt.sizeDelta = new Vector2(48, 68);
 
                 var img = eqCard.GetComponent<Image>();
                 img.sprite = CardCatalogDatabase.LoadSprite(cardInfo.resourcePath);
@@ -596,14 +596,19 @@ namespace BangBang.UI.Views
             roleTxt.color = new Color(0.9f, 0.8f, 0.4f);
 
             // ── Equipment Shelf ──
-            var eqObj = new GameObject("EquipmentShelf", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var eqObj = new GameObject("EquipmentShelf", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
             eqObj.transform.SetParent(seatObj.transform, false);
             var eqRt = eqObj.GetComponent<RectTransform>();
             eqRt.anchoredPosition = new Vector2(28f, -24f);
-            eqRt.sizeDelta = new Vector2(102, 30);
+            eqRt.sizeDelta = new Vector2(102, 34);
+            
+            var eqImg = eqObj.GetComponent<Image>();
+            eqImg.color = new Color(0.055f, 0.035f, 0.022f, 0.5f);
+            
             var hlg = eqObj.GetComponent<HorizontalLayoutGroup>();
             hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.spacing = 4f;
+            hlg.padding = new RectOffset(4, 4, 2, 2);
 
             // ── Crosshair (tap-to-target) ──
             var crossObj = new GameObject("Crosshair", typeof(RectTransform), typeof(Image), typeof(Button));
@@ -784,13 +789,11 @@ namespace BangBang.UI.Views
 
             if (playCardButton != null)
             {
-                playCardButton.gameObject.SetActive(true);
-                playCardButton.interactable = true;
-                if (playCardButtonText != null)
-                {
-                    playCardButtonText.text = "2  •  XÁC NHẬN: " + targetPlayer.name;
-                }
+                playCardButton.gameObject.SetActive(false);
             }
+
+            // Fire immediately — no second confirm button needed.
+            HandlePlayCardButtonClicked();
         }
 
         private async void HandlePlayCardButtonClicked()
@@ -910,12 +913,29 @@ namespace BangBang.UI.Views
 
         private async void HandleHandCardPlayed(CardUI card, Vector2 screenPos)
         {
-            // Dragging is only a quick way to select. Every play still requires an
-            // explicit confirmation so a small pointer movement cannot spend a card.
             if (GameStateStore.Instance == null || GameStateStore.Instance.IsRequestPending) return;
-
             var snapshot = GameStateStore.Instance.CurrentSnapshot;
             if (!MatchActionRules.IsLocalPlayPhase(snapshot, GameStateStore.Instance.LocalPlayerId)) return;
+
+            // If card was dragged to the upper 65% of the screen AND doesn't need a target,
+            // play it immediately without requiring a separate confirm tap.
+            bool draggedHigh = screenPos.y > Screen.height * 0.35f;
+            bool needsTarget = MatchActionRules.RequiresTarget(snapshot, GameStateStore.Instance.LocalPlayerId, card.cardId);
+            bool canPlay = MatchActionRules.CanSelectCard(snapshot, GameStateStore.Instance.LocalPlayerId, card.cardId, out _);
+
+            if (draggedHigh && !needsTarget && canPlay)
+            {
+                // Select and immediately play
+                if (_selectedCardUI != null && _selectedCardUI != card) CancelCardSelection();
+                _selectedCardUI = card;
+                _selectedTargetId = null;
+                card.SetSelected(true);
+                await System.Threading.Tasks.Task.Yield();
+                HandlePlayCardButtonClicked();
+                return;
+            }
+
+            // Default: select the card (player still needs to confirm)
             HandleCardSelected(card);
             await System.Threading.Tasks.Task.CompletedTask;
         }

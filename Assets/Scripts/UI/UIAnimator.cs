@@ -393,6 +393,156 @@ namespace BangBang.UI
         }
 
         // ─────────────────────────────────────────────────────────────────
+        // FLOATING RESPONSE CARDS (Replaces popup dialog for RESPOND/DUEL)
+        // ─────────────────────────────────────────────────────────────────
+
+        private GameObject _reactOverlayRoot;
+
+        /// <summary>
+        /// Hiển thị lá bài phản ứng (Né, Duel…) dưới dạng lá bài nổi lên từ dưới
+        /// thay cho popup dialog.
+        /// </summary>
+        public void ShowFloatingResponseCards(
+            Canvas canvas,
+            List<string> cardIds,
+            List<string> cardDisplayNames,
+            string passLabel,
+            Action<string> onCardPicked,
+            Action onPass)
+        {
+            HideFloatingResponseCards();
+            if (canvas != null)
+                StartCoroutine(FloatingResponseCardsRoutine(canvas, cardIds, cardDisplayNames, passLabel, onCardPicked, onPass));
+        }
+
+        public void HideFloatingResponseCards()
+        {
+            if (_reactOverlayRoot != null)
+            {
+                Destroy(_reactOverlayRoot);
+                _reactOverlayRoot = null;
+            }
+        }
+
+        private IEnumerator FloatingResponseCardsRoutine(
+            Canvas canvas, List<string> cardIds, List<string> displayNames,
+            string passLabel, Action<string> onCardPicked, Action onPass)
+        {
+            var overlayObj = new GameObject("ReactOverlay", typeof(RectTransform), typeof(Image));
+            overlayObj.transform.SetParent(canvas.transform, false);
+            var overlayRt = overlayObj.GetComponent<RectTransform>();
+            overlayRt.anchorMin = Vector2.zero; overlayRt.anchorMax = Vector2.one; overlayRt.sizeDelta = Vector2.zero;
+            var overlayImg = overlayObj.GetComponent<Image>();
+            overlayImg.color = new Color(0f, 0f, 0f, 0f);
+            overlayImg.raycastTarget = false;
+            overlayObj.transform.SetAsLastSibling();
+            _reactOverlayRoot = overlayObj;
+
+            // Instruction label
+            var lblObj = new GameObject("ReactLabel", typeof(RectTransform), typeof(Text));
+            lblObj.transform.SetParent(overlayObj.transform, false);
+            lblObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 148f);
+            lblObj.GetComponent<RectTransform>().sizeDelta = new Vector2(780, 52);
+            var lbl = lblObj.GetComponent<Text>();
+            lbl.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            lbl.fontSize = 22; lbl.fontStyle = FontStyle.Bold;
+            lbl.alignment = TextAnchor.MiddleCenter;
+            lbl.color = new Color(1f, 0.92f, 0.5f, 0f);
+            lbl.text = "\u26a0 B\u1ea0N B\u1eca T\u1ea4N C\u00d4NG \u2014 Ch\u1ecdn l\u00e1 N\u00c9 ho\u1eb7c PASS \u0111\u1ec3 ch\u1ecbu \u0111\u00f2n";
+            lbl.raycastTarget = false;
+            var lblOutline = lblObj.AddComponent<Outline>();
+            lblOutline.effectColor = new Color(0.3f, 0.1f, 0f, 0.9f);
+            lblOutline.effectDistance = new Vector2(2, -2);
+
+            // Card buttons
+            int count = cardIds != null ? cardIds.Count : 0;
+            float spacing = 180f;
+            float totalW = count * spacing;
+            float startX = -(totalW - spacing) * 0.5f;
+            var cardRects = new List<RectTransform>();
+
+            for (int i = 0; i < count; i++)
+            {
+                string capturedId = cardIds[i];
+                string capturedName = (displayNames != null && i < displayNames.Count) ? displayNames[i] : capturedId;
+
+                var cObj = new GameObject("ReactCard_" + i, typeof(RectTransform), typeof(Image), typeof(Button));
+                cObj.transform.SetParent(overlayObj.transform, false);
+                var cRt = cObj.GetComponent<RectTransform>();
+                cRt.sizeDelta = new Vector2(130f, 185f);
+                cRt.anchoredPosition = new Vector2(startX + i * spacing, -420f);
+                cObj.GetComponent<Image>().color = new Color(0.72f, 0.48f, 0.16f, 1f);
+
+                // Art
+                var artObj = new GameObject("Art", typeof(RectTransform), typeof(Image));
+                artObj.transform.SetParent(cObj.transform, false);
+                var artRt = artObj.GetComponent<RectTransform>();
+                artRt.anchorMin = new Vector2(0.05f, 0.22f); artRt.anchorMax = new Vector2(0.95f, 0.95f); artRt.sizeDelta = Vector2.zero;
+                var artImg = artObj.GetComponent<Image>();
+                artImg.preserveAspect = true; artImg.raycastTarget = false;
+                try
+                {
+                    var artInfo = BangBang.Core.Data.CardCatalogDatabase.GetCardInfo(capturedId);
+                    var spr = BangBang.Core.Data.CardCatalogDatabase.LoadSprite(artInfo.resourcePath);
+                    if (spr != null) { artImg.sprite = spr; artImg.color = Color.white; }
+                }
+                catch { }
+
+                // Name
+                var nObj = new GameObject("Name", typeof(RectTransform), typeof(Text));
+                nObj.transform.SetParent(cObj.transform, false);
+                var nRt = nObj.GetComponent<RectTransform>();
+                nRt.anchorMin = new Vector2(0f, 0f); nRt.anchorMax = new Vector2(1f, 0.22f); nRt.sizeDelta = Vector2.zero;
+                var nTxt = nObj.GetComponent<Text>();
+                nTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                nTxt.fontSize = 18; nTxt.fontStyle = FontStyle.Bold;
+                nTxt.alignment = TextAnchor.MiddleCenter; nTxt.color = Color.white;
+                nTxt.text = capturedName.ToUpperInvariant(); nTxt.raycastTarget = false;
+
+                var btn = cObj.GetComponent<Button>();
+                btn.onClick.AddListener(() => { HideFloatingResponseCards(); onCardPicked?.Invoke(capturedId); });
+                cardRects.Add(cRt);
+            }
+
+            // PASS button
+            var passObj = new GameObject("PassBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+            passObj.transform.SetParent(overlayObj.transform, false);
+            var passRt = passObj.GetComponent<RectTransform>();
+            passRt.sizeDelta = new Vector2(220f, 54f);
+            passRt.anchoredPosition = new Vector2(0f, -450f);
+            passObj.GetComponent<Image>().color = new Color(0.48f, 0.12f, 0.1f, 1f);
+            var pTxtObj = new GameObject("Txt", typeof(RectTransform), typeof(Text));
+            pTxtObj.transform.SetParent(passObj.transform, false);
+            var pTxtRt = pTxtObj.GetComponent<RectTransform>();
+            pTxtRt.anchorMin = Vector2.zero; pTxtRt.anchorMax = Vector2.one; pTxtRt.sizeDelta = Vector2.zero;
+            var pTxt = pTxtObj.GetComponent<Text>();
+            pTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            pTxt.fontSize = 17; pTxt.fontStyle = FontStyle.Bold;
+            pTxt.alignment = TextAnchor.MiddleCenter; pTxt.color = Color.white;
+            pTxt.text = passLabel ?? "PASS \u2014 CH\u1ecaU \u0110\u00d2N"; pTxt.raycastTarget = false;
+            passObj.GetComponent<Button>().onClick.AddListener(() => { HideFloatingResponseCards(); onPass?.Invoke(); });
+
+            // Animate in
+            float inDur = 0.38f, elapsed = 0f;
+            while (elapsed < inDur && _reactOverlayRoot != null)
+            {
+                elapsed += Time.deltaTime;
+                float p = Mathf.Clamp01(elapsed / inDur);
+                float ep = EaseOutBack(Mathf.Clamp01(p));
+                overlayImg.color = new Color(0f, 0f, 0f, Mathf.Lerp(0f, 0.72f, p));
+                lbl.color = new Color(1f, 0.92f, 0.5f, Mathf.Lerp(0f, 1f, p));
+                for (int i = 0; i < cardRects.Count; i++)
+                {
+                    if (cardRects[i] == null) continue;
+                    cardRects[i].anchoredPosition = new Vector2(startX + i * spacing, Mathf.Lerp(-420f, -10f, ep));
+                    cardRects[i].localScale = Vector3.Lerp(new Vector3(0.6f, 0.6f, 1f), Vector3.one, ep);
+                }
+                if (passRt != null) passRt.anchoredPosition = new Vector2(0f, Mathf.Lerp(-450f, -200f, ep));
+                yield return null;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
         // HELPERS
         // ─────────────────────────────────────────────────────────────────
 

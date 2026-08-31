@@ -86,22 +86,23 @@ namespace BangBang.UI
                     var txtObj = new GameObject("DynamicSuitRankText", typeof(RectTransform), typeof(Text));
                     txtObj.transform.SetParent(this.transform, false);
                     var rect = txtObj.GetComponent<RectTransform>();
-                    rect.anchorMin = new Vector2(0.05f, 0.05f);
-                    rect.anchorMax = new Vector2(0.95f, 0.2f);
+                    rect.anchorMin = new Vector2(0.08f, 0.05f);
+                    rect.anchorMax = new Vector2(0.50f, 0.20f);
                     rect.pivot = new Vector2(0, 0);
                     rect.anchoredPosition = Vector2.zero;
                     rect.sizeDelta = Vector2.zero;
 
                     suitRankText = txtObj.GetComponent<Text>();
-                    suitRankText.font = Resources.GetBuiltinResource<Font>("Arial.ttf") ?? Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(f => f.name == "Arial");
-                    suitRankText.fontSize = 24;
+                    suitRankText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    suitRankText.fontSize = 28;
+                    suitRankText.fontStyle = FontStyle.Bold;
                     suitRankText.alignment = TextAnchor.LowerLeft;
                     suitRankText.horizontalOverflow = HorizontalWrapMode.Overflow;
                     suitRankText.verticalOverflow = VerticalWrapMode.Overflow;
 
                     var outline = txtObj.AddComponent<Outline>();
-                    outline.effectColor = new Color(1, 1, 1, 0.8f);
-                    outline.effectDistance = new Vector2(1, -1);
+                    outline.effectColor = new Color(1, 1, 1, 0.9f);
+                    outline.effectDistance = new Vector2(2, -2);
                 }
 
                 string suitSymbol = suit == "hearts" ? "♥" : suit == "diamonds" ? "♦" : suit == "spades" ? "♠" : "♣";

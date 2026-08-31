@@ -153,16 +153,21 @@ namespace BangBang.UI
             var suitObj = new GameObject("SuitRank", typeof(RectTransform), typeof(Text));
             suitObj.transform.SetParent(cardObj.transform, false);
             var suitRt = suitObj.GetComponent<RectTransform>();
-            suitRt.anchorMin = new Vector2(0.05f, 0.02f);
-            suitRt.anchorMax = new Vector2(0.95f, 0.15f);
+            suitRt.anchorMin = new Vector2(0.08f, 0.05f);
+            suitRt.anchorMax = new Vector2(0.50f, 0.20f);
             suitRt.offsetMin = Vector2.zero;
             suitRt.offsetMax = Vector2.zero;
             var suitTxt = suitObj.GetComponent<Text>();
             suitTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            suitTxt.fontSize = 15;
-            suitTxt.alignment = TextAnchor.MiddleCenter;
+            suitTxt.fontSize = 28;
+            suitTxt.fontStyle = FontStyle.Bold;
+            suitTxt.alignment = TextAnchor.LowerLeft;
             suitTxt.color = Color.black;
             suitTxt.raycastTarget = false;
+            
+            var outline = suitObj.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 1f, 1f, 0.9f);
+            outline.effectDistance = new Vector2(2, -2);
 
             // Glowing Neon Green Outline
             var glowObj = new GameObject("NeonGlow", typeof(RectTransform), typeof(Image));

@@ -1266,7 +1266,7 @@ export class GameRoom {
             }
         }
 
-        const equipmentTypes = new Set(['volcanic', 'schofield', 'remington', 'rev_carabine', 'winchester', 'scope', 'mustang', 'barrel', 'dynamite']);
+        const equipmentTypes = new Set(['volcanic', 'gun_range_2', 'gun_range_3', 'gun_range_4', 'gun_range_5', 'appaloosa', 'mustang', 'barrel', 'dynamite']);
         let equipment = bot.hand
             .filter(c => equipmentTypes.has(this.cardType(c)))
             .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
@@ -1383,7 +1383,7 @@ export class GameRoom {
         if (type === 'mustang') return bot.roleId === 'sheriff' ? 90 : 65;
         if (type === 'volcanic') return bot.hand.filter(c => this.cardType(c) === 'bang').length * 25 + 45;
         if (type === 'dynamite') return bot.currentHealth <= 2 ? 5 : 30;
-        const ranges: Record<string, number> = { schofield: 52, remington: 58, rev_carabine: 64, winchester: 70, scope: 62 };
+        const ranges: Record<string, number> = { gun_range_2: 52, gun_range_3: 58, gun_range_4: 64, gun_range_5: 70, appaloosa: 62 };
         return ranges[type] || 25;
     }
 

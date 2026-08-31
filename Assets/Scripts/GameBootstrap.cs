@@ -727,14 +727,21 @@ namespace BangBang.UI
                 gameTableView.localBulletHealthContainer = bulletContainer.transform;
 
                 // Equipment tray
-                var equipTray = new GameObject("EquipmentTray", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-                equipTray.transform.SetParent(localDashObj.transform, false);
+                var equipTray = new GameObject("EquipmentTray", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+                equipTray.transform.SetParent(tableContent.transform, false);
                 var etRt = equipTray.GetComponent<RectTransform>();
-                etRt.anchoredPosition = new Vector2(5f, -48f);
-                etRt.sizeDelta = new Vector2(128, 28);
+                etRt.anchoredPosition = new Vector2(-20f, -258f);
+                etRt.sizeDelta = new Vector2(260, 80);
+                
+                var etImg = equipTray.GetComponent<Image>();
+                etImg.sprite = BangUITheme.RoundedSprite;
+                etImg.type = Image.Type.Sliced;
+                etImg.color = new Color(0.055f, 0.035f, 0.022f, 0.6f);
+                
                 var ehlg = equipTray.GetComponent<HorizontalLayoutGroup>();
                 ehlg.childAlignment = TextAnchor.MiddleLeft;
-                ehlg.spacing = 6f;
+                ehlg.spacing = 10f;
+                ehlg.padding = new RectOffset(10, 10, 5, 5);
                 gameTableView.localEquipmentTray = equipTray.transform;
 
                 // Hand layout (bottom center)

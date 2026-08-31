@@ -138,6 +138,14 @@ namespace BangBang.UI.Interaction
             _selectedOptionIndex = 0;
             _isLocalOnlyModal = isLocalOnly;
 
+            // RESPOND / DUEL: show animated floating cards instead of dialog
+            bool isReactType = prompt.type == "RESPOND" || prompt.type == "DUEL";
+            if (isReactType && !isLocalOnly)
+            {
+                ShowReactCardOverlay(prompt);
+                return;
+            }
+
             if (modalRootPanel != null)
             {
                 UIAnimator.Instance.ShowModal(modalRootPanel);
@@ -150,10 +158,53 @@ namespace BangBang.UI.Interaction
             UpdateConfirmButtonState();
         }
 
+        private void ShowReactCardOverlay(InteractionPromptDTO prompt)
+        {
+            _currentPrompt = prompt;
+
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+
+            var cardIds = prompt.validCardIds ?? new List<string>();
+            var displayNames = new List<string>();
+            foreach (var cid in cardIds)
+            {
+                var info = CardCatalogDatabase.GetCardInfo(cid);
+                displayNames.Add(!string.IsNullOrEmpty(info.vietnameseName) ? info.vietnameseName : info.name);
+            }
+
+            // Also offer text options as PASS (e.g., PASS option from server)
+            string passLabel = "PASS — CHỊU ĐÒN";
+            if (prompt.options != null)
+            {
+                var passOpt = prompt.options.Find(o => o.ToUpperInvariant() == "PASS");
+                if (passOpt != null) passLabel = "PASS — CHỊU ĐÒN";
+            }
+
+            UIAnimator.Instance.ShowFloatingResponseCards(
+                canvas,
+                cardIds,
+                displayNames,
+                passLabel,
+                (pickedCardId) =>
+                {
+                    // Player picked a response card
+                    _selectedCardIds.Clear();
+                    _selectedCardIds.Add(pickedCardId);
+                    SubmitCurrentInteraction();
+                },
+                () =>
+                {
+                    // Player chose PASS
+                    _selectedCardIds.Clear();
+                    SubmitCurrentInteraction();
+                });
+        }
+
         public void HideModal()
         {
             _currentPrompt = null;
             _isLocalOnlyModal = false;
+            UIAnimator.Instance?.HideFloatingResponseCards();
             if (modalRootPanel != null && modalRootPanel.activeSelf)
             {
                 UIAnimator.Instance.HideModal(modalRootPanel);
