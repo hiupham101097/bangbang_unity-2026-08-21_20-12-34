@@ -11,15 +11,17 @@ namespace BangBang.UI
     [RequireComponent(typeof(CanvasScaler))]
     public sealed class BangResponsiveLayout : MonoBehaviour
     {
+        public static readonly Vector2 ReferenceResolution = new Vector2(1920f, 1080f);
+
         private void Awake()
         {
             var scaler = GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280f, 720f);
+            scaler.referenceResolution = ReferenceResolution;
             
             // Expand mode automatically ensures the UI is never cropped.
-            // On ultrawide (e.g., 21:9), it scales to height (720) and expands width (e.g., 1680).
-            // On tablets (e.g., 4:3), it scales to width (1280) and expands height (e.g., 960).
+            // The runtime UI was authored in a 1920x1080 coordinate space. Expand keeps
+            // that entire design visible and only adds extra canvas on unusual aspects.
             // This is the native, mathematically correct way for landscape games.
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             scaler.referencePixelsPerUnit = 100f;
