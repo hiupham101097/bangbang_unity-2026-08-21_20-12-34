@@ -21,6 +21,7 @@ namespace BangBang.UI
         public Text hpText;
         public Text nameText;
         public Text roleText;
+        public Text distanceText;
         public Image turnActiveGlow;
         public GameObject crosshairTargetObj;
         public Button seatSelectButton;
@@ -112,6 +113,15 @@ namespace BangBang.UI
             // Build equipment cards shelf & hand back cards
             UpdateEquipmentShelf(player);
             UpdateOpponentHandBack(player);
+
+            if (distanceText != null)
+            {
+                distanceText.gameObject.SetActive(!isLocalPlayer);
+                if (!isLocalPlayer && calculatedDistance >= 0)
+                {
+                    distanceText.text = "Khoảng cách: " + calculatedDistance;
+                }
+            }
 
             SetTargetCrosshair(false);
         }

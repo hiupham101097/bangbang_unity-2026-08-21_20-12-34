@@ -610,6 +610,28 @@ namespace BangBang.UI.Views
             hlg.spacing = 4f;
             hlg.padding = new RectOffset(4, 4, 2, 2);
 
+            // ── Distance Text ──
+            var distObj = new GameObject("DistanceText", typeof(RectTransform), typeof(Text));
+            distObj.transform.SetParent(seatObj.transform, false);
+            var distRt = distObj.GetComponent<RectTransform>();
+            distRt.anchoredPosition = new Vector2(-28f, -24f);
+            distRt.sizeDelta = new Vector2(50, 20);
+            var distTxt = distObj.GetComponent<Text>();
+            distTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            distTxt.fontSize = 12;
+            distTxt.alignment = TextAnchor.MiddleCenter;
+            distTxt.color = new Color(0.7f, 0.7f, 0.7f);
+            distTxt.raycastTarget = false;
+            eqRt.sizeDelta = new Vector2(102, 34);
+            
+            var eqImg = eqObj.GetComponent<Image>();
+            eqImg.color = new Color(0.055f, 0.035f, 0.022f, 0.5f);
+            
+            var hlg = eqObj.GetComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 4f;
+            hlg.padding = new RectOffset(4, 4, 2, 2);
+
             // ── Crosshair (tap-to-target) ──
             var crossObj = new GameObject("Crosshair", typeof(RectTransform), typeof(Image), typeof(Button));
             crossObj.transform.SetParent(seatObj.transform, false);
@@ -660,6 +682,7 @@ namespace BangBang.UI.Views
             seatUI.seatSelectButton = crossObj.GetComponent<Button>();
             seatUI.targetIconText = targetIconText;
             seatUI.turnActiveGlow = glowImg;
+            seatUI.distanceText = distTxt;
 
             return seatUI;
         }
