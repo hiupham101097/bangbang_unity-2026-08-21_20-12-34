@@ -384,7 +384,25 @@ namespace BangBang.UI.Views
             _localEquipCards.Clear();
 
             if (equipment == null) return;
+            
+            // Check if we already created the local equipment text
+            Text eqNameText = localEquipmentTray.GetComponentInChildren<Text>();
+            if (eqNameText == null)
+            {
+                var txtObj = new GameObject("LocalEquipmentText", typeof(RectTransform), typeof(Text));
+                txtObj.transform.SetParent(localEquipmentTray.parent, false); // put it near the tray
+                var rt = txtObj.GetComponent<RectTransform>();
+                rt.anchoredPosition = new Vector2(0, 45f); // just above the tray
+                rt.sizeDelta = new Vector2(400, 24);
+                eqNameText = txtObj.GetComponent<Text>();
+                eqNameText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                eqNameText.fontSize = 14;
+                eqNameText.alignment = TextAnchor.MiddleCenter;
+                eqNameText.color = new Color(0.9f, 0.9f, 0.9f);
+                eqNameText.raycastTarget = false;
+            }
 
+            List<string> eqNames = new List<string>();
             foreach (var eqId in equipment)
             {
                 var cardInfo = CardCatalogDatabase.GetCardInfo(eqId);
@@ -399,6 +417,15 @@ namespace BangBang.UI.Views
                 img.preserveAspect = true;
 
                 _localEquipCards.Add(eqCard);
+                if (cardInfo != null && !string.IsNullOrEmpty(cardInfo.vietnameseName))
+                {
+                    eqNames.Add(cardInfo.vietnameseName);
+                }
+            }
+            
+            if (eqNameText != null)
+            {
+                eqNameText.text = eqNames.Count > 0 ? "Trang bị: " + string.Join(", ", eqNames) : "";
             }
         }
 
@@ -623,6 +650,19 @@ namespace BangBang.UI.Views
             distTxt.color = new Color(0.7f, 0.7f, 0.7f);
             distTxt.raycastTarget = false;
 
+            // ── Equipment Details Text ──
+            var eqTxtObj = new GameObject("EquipmentText", typeof(RectTransform), typeof(Text));
+            eqTxtObj.transform.SetParent(seatObj.transform, false);
+            var eqTxtRt = eqTxtObj.GetComponent<RectTransform>();
+            eqTxtRt.anchoredPosition = new Vector2(0f, -44f);
+            eqTxtRt.sizeDelta = new Vector2(120, 18);
+            var eqTxt = eqTxtObj.GetComponent<Text>();
+            eqTxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            eqTxt.fontSize = 11;
+            eqTxt.alignment = TextAnchor.UpperCenter;
+            eqTxt.color = new Color(0.9f, 0.9f, 0.9f);
+            eqTxt.raycastTarget = false;
+
             // ── Crosshair (tap-to-target) ──
             var crossObj = new GameObject("Crosshair", typeof(RectTransform), typeof(Image), typeof(Button));
             crossObj.transform.SetParent(seatObj.transform, false);
@@ -674,6 +714,7 @@ namespace BangBang.UI.Views
             seatUI.targetIconText = targetIconText;
             seatUI.turnActiveGlow = glowImg;
             seatUI.distanceText = distTxt;
+            seatUI.equipmentText = eqTxt;
 
             return seatUI;
         }

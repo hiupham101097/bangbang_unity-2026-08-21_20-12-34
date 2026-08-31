@@ -1414,7 +1414,7 @@ var BangBangMatch = class extends DurableObject {
       players: state.players.map(({ hand, role, characterOptions, characterChosen, ...player }) => ({
         ...player,
         attackRange: this.weaponRange(player),
-        revealedRole: role === "sheriff" && (state.phase === "match_intro" || state.status === "playing" || state.status === "finished") || !player.alive ? role : void 0,
+        publicRoleId: role === "sheriff" && (state.phase === "match_intro" || state.status === "playing" || state.status === "finished") || !player.alive ? role : void 0,
         role: player.id === userId ? role : void 0,
         hand: player.id === userId ? hand : void 0,
         characterOptions: player.id === userId ? characterOptions : void 0,

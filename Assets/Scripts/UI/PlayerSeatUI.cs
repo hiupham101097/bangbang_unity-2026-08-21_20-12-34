@@ -22,6 +22,7 @@ namespace BangBang.UI
         public Text nameText;
         public Text roleText;
         public Text distanceText;
+        public Text equipmentText;
         public Image turnActiveGlow;
         public GameObject crosshairTargetObj;
         public Button seatSelectButton;
@@ -161,12 +162,22 @@ namespace BangBang.UI
             _equippedCardObjects.Clear();
 
             // Recreate equipment cards in a tight horizontal row
+            List<string> eqNames = new List<string>();
             foreach (var eqId in p.equipment)
             {
                 var cardInfo = CardCatalogDatabase.GetCardInfo(eqId);
                 var cardObj = CreateMiniCard(cardInfo);
                 cardObj.transform.SetParent(equipmentRowTransform, false);
                 _equippedCardObjects.Add(cardObj);
+                if (cardInfo != null && !string.IsNullOrEmpty(cardInfo.vietnameseName))
+                {
+                    eqNames.Add(cardInfo.vietnameseName);
+                }
+            }
+            
+            if (equipmentText != null)
+            {
+                equipmentText.text = eqNames.Count > 0 ? string.Join(", ", eqNames) : "";
             }
         }
 
