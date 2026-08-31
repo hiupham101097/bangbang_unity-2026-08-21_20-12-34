@@ -581,6 +581,7 @@ var BangBangMatch = class extends DurableObject {
       state.phase = "waiting_response";
       state.pendingBang = { id: crypto.randomUUID(), actorId: actor.id, targetId: target.id, cardId, deadline: Date.now() + 1e4, requiredDodges: actor.characterId === "slab_the_killer" ? 2 : 1, actionType: "bang", requiredCardType: "dodge" };
       state.publicLog.push(`${actor.name} BANG ${target.name}.`);
+      if (actor.bot) this.generateBotChat(actor, `Bạn vừa bắn một phát đạn (Bang!) vào ${target.name}. Hãy nói một câu ngầu hoặc đe dọa ngắn gọn.`);
       void this.ctx.storage.setAlarm(state.pendingBang.deadline);
       this.runBotResponse(state);
     } else if (type === "beer") {
@@ -1246,7 +1247,9 @@ var BangBangMatch = class extends DurableObject {
     } else {
       state.discard.push(...loot);
     }
-    state.publicLog.push(`${target.name} b\u1ECB lo\u1EA1i v\xE0 l\u1EADt vai tr\xF2 ${target.role}.`);
+    state.publicLog.push(`${target.name} bị loại và lật vai trò ${target.role}.`);
+    if (target.bot) this.generateBotChat(target, `Bạn vừa bị bắn chết. Hãy nói một câu trăn trối cuối cùng (đậm chất viễn tây).`);
+    else if (actor && actor.bot) this.generateBotChat(actor, `Bạn vừa bắn chết ${target.name}. Hãy nói một câu đắc thắng.`);
     if (causedByPlayer && actor) {
       if (target.role === "outlaw") {
         this.drawFor(state, actor, 3);
@@ -1399,6 +1402,20 @@ var BangBangMatch = class extends DurableObject {
     this.ctx.acceptWebSocket(server);
     void this.load().then((state) => server.send(JSON.stringify({ type: "state", room: this.snapshot(state, user.id) })));
     return new Response(null, { status: 101, webSocket: client });
+  }
+  generateBotChat(bot, eventDescription) {
+    if (!this.env.AI) return;
+    const messages = [
+      { role: "system", content: "Bạn là nhân vật cao bồi viễn tây tên " + bot.name + " trong game thẻ bài Bang!. Tính cách của bạn máu chiến, cộc cằn hoặc bựa. Hãy phản ứng lại sự kiện bằng 1 câu thoại cực ngắn (tối đa 1-2 câu). Chỉ trả về lời thoại, không giải thích gì thêm." },
+      { role: "user", content: `Sự kiện: ${eventDescription}` }
+    ];
+    this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", { messages }).then((response) => {
+      if (response && response.response) {
+        const chatMsg = response.response.replace(/^["']|["']$/g, "").trim();
+        const frame = JSON.stringify({ type: "chat_message", playerId: bot.id, playerName: bot.name, message: chatMsg, sentAt: Date.now() });
+        for (const peer of this.ctx.getWebSockets()) peer.send(frame);
+      }
+    }).catch(err => console.error("AI Chat Error:", err));
   }
   broadcast(state) {
     for (const ws of this.ctx.getWebSockets()) {
