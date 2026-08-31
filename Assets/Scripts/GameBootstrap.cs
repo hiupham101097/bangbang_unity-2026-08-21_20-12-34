@@ -624,9 +624,7 @@ namespace BangBang.UI
                 tableAspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
                 tableAspect.aspectRatio = 16f / 9f;
 
-                // Match UI was intentionally tuned in a compact 1280x720 design space.
-                // Preserve its apparent size after the global Canvas is corrected to
-                // the 1920x1080 coordinate system used by every other screen.
+                // Match UI is authored directly in the compact 1280x720 space.
                 var tableContent = new GameObject("TableContent", typeof(RectTransform));
                 tableContent.transform.SetParent(tableObj.transform, false);
                 var tableContentRt = tableContent.GetComponent<RectTransform>();
@@ -634,7 +632,7 @@ namespace BangBang.UI
                 tableContentRt.anchorMax = new Vector2(0.5f, 0.5f);
                 tableContentRt.pivot = new Vector2(0.5f, 0.5f);
                 tableContentRt.sizeDelta = new Vector2(1280f, 720f);
-                tableContentRt.localScale = Vector3.one * 1.5f;
+                tableContentRt.localScale = Vector3.one;
 
                 // Opponent Seats Container (full canvas, opponents placed by arc positions)
                 var opponentsContainer = new GameObject("OpponentSeatsContainer", typeof(RectTransform));
@@ -902,6 +900,16 @@ namespace BangBang.UI
                 interactionController.cancelButton = CreateButton("InteractionCancel", "PASS / BỎ QUA", new Vector2(-155f, -145f), BangUITheme.Danger, cardBox.transform, new Vector2(260, 56));
             }
 
+            // Older menu screens were placed in a sparse 1920x1080 coordinate space.
+            // Compact their spacing without shrinking buttons, cards or typography.
+            EnsureCompactScreenLayout(homeScreen != null ? homeScreen.gameObject : null);
+            EnsureCompactScreenLayout(cardGalleryView != null ? cardGalleryView.gameObject : null);
+            EnsureCompactScreenLayout(lobbyView != null ? lobbyView.gameObject : null);
+            EnsureCompactScreenLayout(waitingRoomView != null ? waitingRoomView.gameObject : null);
+            EnsureCompactScreenLayout(roleRevealView != null ? roleRevealView.gameObject : null);
+            EnsureCompactScreenLayout(characterSelectionView != null ? characterSelectionView.gameObject : null);
+            EnsureCompactScreenLayout(resultView != null ? resultView.gameObject : null);
+
             // Ensure all button listeners are bound
             EnsureContextualGuide(canvas.transform);
             EnsureNetworkOverlay(canvas.transform);
@@ -914,6 +922,12 @@ namespace BangBang.UI
             characterSelectionView?.BindListeners();
             gameTableView?.BindListeners();
             resultView?.BindListeners();
+        }
+
+        private static void EnsureCompactScreenLayout(GameObject screen)
+        {
+            if (screen == null || screen.GetComponent<BangCompactScreenLayout>() != null) return;
+            screen.AddComponent<BangCompactScreenLayout>();
         }
 
         private void EnsureContextualGuide(Transform canvasTransform)
