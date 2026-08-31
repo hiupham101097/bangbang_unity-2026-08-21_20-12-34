@@ -86,9 +86,18 @@ namespace BangBang.Core.Audio
                 if (micButtonText != null) micButtonText.text = "KHÔNG CÓ MIC";
                 yield break;
             }
-            _micClip = Microphone.Start(null, true, 1, SampleRate);
-            _readPosition = 0;
-            _enabled = _micClip != null;
+            try
+            {
+                _micClip = Microphone.Start(null, true, 1, SampleRate);
+                _readPosition = 0;
+                _enabled = _micClip != null;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogWarning("[VoiceChat] Lỗi khi bật Mic: " + ex.Message);
+                if (micButtonText != null) micButtonText.text = "LỖI MIC";
+                _enabled = false;
+            }
             RefreshButton();
         }
 
