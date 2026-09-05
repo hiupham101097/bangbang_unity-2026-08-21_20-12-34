@@ -98,7 +98,8 @@ namespace BangBang.UI
                 if (player.role == RoleType.Sheriff || player.isRoleRevealed || !player.isAlive || isLocal)
                 {
                     var rInfo = CardCatalogDatabase.GetRoleInfo(player.role);
-                    roleText.text = rInfo.vietnameseName;
+                    roleText.text = player.role == RoleType.Sheriff ? "★ CẢNH TRƯỞNG" : rInfo.vietnameseName;
+                    roleText.fontStyle = player.role == RoleType.Sheriff ? FontStyle.Bold : FontStyle.Normal;
                     roleText.color = player.role == RoleType.Sheriff ? new Color(1f, 0.85f, 0.2f) :
                                      player.role == RoleType.Deputy ? new Color(0.35f, 0.75f, 1f) :
                                      player.role == RoleType.Outlaw ? new Color(1f, 0.35f, 0.35f) :
@@ -107,6 +108,7 @@ namespace BangBang.UI
                 else
                 {
                     roleText.text = "Ẩn danh";
+                    roleText.fontStyle = FontStyle.Normal;
                     roleText.color = new Color(0.7f, 0.7f, 0.7f);
                 }
             }

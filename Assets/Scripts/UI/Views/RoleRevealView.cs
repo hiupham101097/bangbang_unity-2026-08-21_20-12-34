@@ -27,6 +27,7 @@ namespace BangBang.UI.Views
         private MatchStateSnapshotDTO _snapshot;
         private string _animatedSheriffId;
         private Vector2 _draftCardSize = new Vector2(150f, 225f);
+        private Vector2 _selectedCardSize = new Vector2(300f, 450f);
 
         private void Start()
         {
@@ -61,7 +62,9 @@ namespace BangBang.UI.Views
             bool roleLocked = snapshot.state == ServerGameState.ROLE_LOCK_WAIT;
 
             if (roleTitleText != null)
-                roleTitleText.text = roleLocked ? "VAI TRÒ CỦA BẠN ĐÃ KHÓA" : (assigned ? "VAI TRÒ RIÊNG CỦA BẠN" : "BƯỚC 1/3 — CHỌN VAI TRÒ");
+                roleTitleText.text = assigned
+                    ? "VAI TRÒ CỦA BẠN: " + RoleDisplayName(privateState.roleId)
+                    : (roleLocked ? "VAI TRÒ CỦA BẠN ĐÃ KHÓA" : "BƯỚC 1/3 — CHỌN VAI TRÒ");
             if (roleGoalText != null)
                 roleGoalText.text = assigned
                     ? GoalFor(privateState.roleId) + "\nĐang chờ những người chơi còn lại…"
@@ -126,7 +129,7 @@ namespace BangBang.UI.Views
             var card = new GameObject("RoleSlot_" + slot, typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(roleCardsContainer, false);
             bool isMine = slot == ownSlot;
-            card.GetComponent<RectTransform>().sizeDelta = isMine && assigned ? new Vector2(230, 345) : _draftCardSize;
+            card.GetComponent<RectTransform>().sizeDelta = isMine && assigned ? _selectedCardSize : _draftCardSize;
             var image = card.GetComponent<Image>();
             image.sprite = isMine && assigned
                 ? CardCatalogDatabase.LoadSprite("role_cards/" + RoleSprite(GameStateStore.Instance.LocalPrivateState.roleId) + "_card")
@@ -168,6 +171,15 @@ namespace BangBang.UI.Views
             float baseH = Mathf.Clamp(screenH * 0.38f, 200f, 420f);
             float baseW = baseH / 1.5f;
 
+            // Once a role is assigned there is only one card on screen. Give it
+            // enough room for the portrait and embedded role text to stay legible.
+            var containerRect = roleCardsContainer as RectTransform;
+            float availableH = containerRect != null && containerRect.rect.height > 100f
+                ? containerRect.rect.height
+                : Mathf.Min(screenH * 0.68f, 540f);
+            float selectedH = Mathf.Clamp(availableH * 0.94f, 390f, 540f);
+            _selectedCardSize = new Vector2(selectedH / 1.5f, selectedH);
+
             // On wide screens with many cards, shrink to fit
             float containerW = (roleCardsContainer as RectTransform)?.rect.width ?? 900f;
             if (containerW > 100f)
@@ -198,6 +210,17 @@ namespace BangBang.UI.Views
                 case "deputy": return "PHÓ CẢNH SÁT — Bảo vệ Sheriff và loại phe đối địch.";
                 case "outlaw": return "OUTLAW — Hạ Sheriff để giành chiến thắng.";
                 default: return "RENEGADE — Trở thành người sống sót cuối cùng và hạ Sheriff sau cùng.";
+            }
+        }
+
+        private static string RoleDisplayName(string role)
+        {
+            switch (role)
+            {
+                case "sheriff": return "CẢNH SÁT TRƯỞNG";
+                case "deputy": return "PHÓ CẢNH SÁT";
+                case "outlaw": return "CƯỚP (OUTLAW)";
+                default: return "PHẢN BỘI (RENEGADE)";
             }
         }
     }

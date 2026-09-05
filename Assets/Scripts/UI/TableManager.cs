@@ -248,7 +248,26 @@ namespace BangBang.UI
             starRt.anchoredPosition = new Vector2(-50f, -46f);
             starRt.sizeDelta = new Vector2(44, 44);
             var starImg = starObj.GetComponent<Image>();
-            starImg.sprite = CardCatalogDatabase.LoadSprite("role_cards/sheriff_card");
+            starImg.sprite = null;
+            starImg.color = new Color(0.34f, 0.18f, 0.035f, 0.98f);
+            var starOutline = starObj.AddComponent<Outline>();
+            starOutline.effectColor = new Color(1f, 0.78f, 0.16f, 1f);
+            starOutline.effectDistance = new Vector2(2f, -2f);
+
+            var starGlyphObj = new GameObject("SheriffStarGlyph", typeof(RectTransform), typeof(Text));
+            starGlyphObj.transform.SetParent(starObj.transform, false);
+            var starGlyphRt = starGlyphObj.GetComponent<RectTransform>();
+            starGlyphRt.anchorMin = Vector2.zero;
+            starGlyphRt.anchorMax = Vector2.one;
+            starGlyphRt.sizeDelta = Vector2.zero;
+            var starGlyph = starGlyphObj.GetComponent<Text>();
+            starGlyph.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            starGlyph.fontSize = 32;
+            starGlyph.fontStyle = FontStyle.Bold;
+            starGlyph.alignment = TextAnchor.MiddleCenter;
+            starGlyph.color = new Color(1f, 0.84f, 0.2f);
+            starGlyph.text = "★";
+            starGlyph.raycastTarget = false;
             starObj.SetActive(false);
 
             // Red Heart HP Badge

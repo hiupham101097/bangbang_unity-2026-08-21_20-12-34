@@ -8,6 +8,31 @@ namespace BangBang.Editor
 {
     public static class GameSetupMenu
     {
+        [MenuItem("Bang Bang/🤖 ▶ BẬT VÀ CHẠY AUTO-PLAY (BOT TỰ ĐÁNH TEST LOGIC)", false, 0)]
+        public static void SetupAndRunAutoPlay()
+        {
+            var bootstrap = EnsureBootstrap();
+            Undo.RecordObject(bootstrap, "Use Bang Bang Offline Gateway & AutoPlay");
+            bootstrap.useLiveCloudflareServer = false;
+            bootstrap.autoPlayTestBot = true;
+            EditorUtility.SetDirty(bootstrap);
+
+            var runner = Object.FindAnyObjectByType<BangBang.Core.Logic.AutoPlayBotRunner>();
+            if (runner == null)
+            {
+                var runnerGo = new GameObject("AutoPlayBotRunner", typeof(BangBang.Core.Logic.AutoPlayBotRunner));
+                Undo.RegisterCreatedObjectUndo(runnerGo, "Create AutoPlayBotRunner");
+            }
+            else
+            {
+                runner.isAutoPlayActive = true;
+            }
+
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("<color=cyan><b>[BangBang]</b> Chế độ Auto-Play đã bật! Unity sẽ tự vào trận, bot tự đánh và kiểm tra toàn bộ logic.</color>");
+            EditorApplication.isPlaying = true;
+        }
+
         [MenuItem("Bang Bang/▶ Chạy Game Theo Cấu Hình", false, 1)]
         public static void SetupAndPlayGame()
         {

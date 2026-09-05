@@ -22,7 +22,7 @@ namespace BangBang.Core.Network
         {
             public string id; public string name; public string avatarId; public int seat; public bool bot; public bool ready;
             public bool alive = true; public int health; public int maxHealth; public int cardCount;
-            public string characterId; public string revealedRole; public string role;
+            public string characterId; public string publicRoleId; public string revealedRole; public string role;
             public List<string> hand = new List<string>(); public List<string> equipment = new List<string>();
             public List<string> characterOptions = new List<string>(); public int attackRange = 1;
         }
@@ -309,8 +309,9 @@ namespace BangBang.Core.Network
                 id = player.id, name = player.name, avatarId = player.avatarId, seat = player.seat, isBot = player.bot,
                 isHost = player.id == room.hostId, isReady = player.ready || player.bot || player.id == room.hostId,
                 isConnected = true, isAlive = player.alive, currentHealth = player.health, maxHealth = player.maxHealth,
-                characterId = player.characterId, publicRoleId = player.revealedRole,
-                isRoleRevealed = !string.IsNullOrEmpty(player.revealedRole), handCount = player.cardCount,
+                characterId = player.characterId, publicRoleId = VisibleRole(player),
+                hiddenRole = string.IsNullOrEmpty(VisibleRole(player)) ? "hidden" : null,
+                isRoleRevealed = !string.IsNullOrEmpty(VisibleRole(player)), handCount = player.cardCount,
                 equipment = player.equipment ?? new List<string>()
             }).ToList();
             ApplyLocalTargeting(snapshot, room, me);
@@ -512,6 +513,7 @@ namespace BangBang.Core.Network
         private bool Fail(string error) { OnErrorMessage?.Invoke(error); return false; }
         private void SetConnection(ConnectionState state) { CurrentConnectionState = state; OnConnectionStateChanged?.Invoke(state); }
         private static string SlotCard(List<WorkerCard> cards, int index) => cards != null && index >= 0 && index < cards.Count ? cards[index].id : string.Empty;
+        private static string VisibleRole(WorkerPlayer player) => !string.IsNullOrEmpty(player?.publicRoleId) ? player.publicRoleId : player?.revealedRole;
         private static List<int> LockedSlots(List<WorkerCard> cards) { var result = new List<int>(); if (cards != null) for (int i = 0; i < cards.Count; i++) if (!string.IsNullOrEmpty(cards[i].pickedBy)) result.Add(i); return result; }
         private static int FindPickedSlot(List<WorkerCard> cards, string playerId)
         {

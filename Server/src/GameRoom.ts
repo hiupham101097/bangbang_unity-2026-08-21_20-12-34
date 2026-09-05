@@ -1332,16 +1332,25 @@ export class GameRoom {
     }
 
     private chooseBotTarget(bot: ServerPlayerState): ServerPlayerState | undefined {
-        const candidates = this.alivePlayers().filter(player => player.id !== bot.id && this.isTargetable(bot, player));
+        // Bots are server-authoritative and know their faction. Never spend an
+        // offensive card on a faction ally; hidden-role uncertainty is expressed
+        // through suspicion when choosing between actual opponents instead.
+        const candidates = this.alivePlayers().filter(player =>
+            player.id !== bot.id &&
+            this.isTargetable(bot, player) &&
+            !this.areBotAllies(bot, player));
         const score = (target: ServerPlayerState) => {
             let value = (target.maxHealth - target.currentHealth) * 3 + (target.hand.length * 0.35);
             const suspicion = this.botSuspicion.get(target.id) || 0;
-            if (bot.roleId === 'outlaw') value += target.roleId === 'sheriff' ? 100 : 0;
+            if (bot.roleId === 'outlaw') {
+                if (target.roleId === 'sheriff') value += 120;
+                else if (target.roleId === 'deputy') value += 45;
+                else value += 12;
+            }
             else if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') {
                 value += suspicion * 8;
-                if (target.isRoleRevealed && target.roleId === 'outlaw') value += 100;
-                if (target.isRoleRevealed && target.roleId === 'deputy') value -= 100;
-                if (target.roleId === 'sheriff') value -= 1000;
+                if (target.roleId === 'outlaw') value += 85;
+                else if (target.roleId === 'renegade') value += 55;
             } else if (bot.roleId === 'renegade') {
                 const alive = this.alivePlayers();
                 if (alive.length === 2 && target.roleId === 'sheriff') value += 100;
@@ -1352,7 +1361,18 @@ export class GameRoom {
             value += Math.random() * 2.5;
             return value;
         };
-        return candidates.sort((a, b) => score(b) - score(a))[0];
+        return candidates
+            .map(target => ({ target, value: score(target) }))
+            .sort((a, b) => b.value - a.value)[0]?.target;
+    }
+
+    private areBotAllies(bot: ServerPlayerState, target: ServerPlayerState): boolean {
+        const lawBot = bot.roleId === 'sheriff' || bot.roleId === 'deputy';
+        const lawTarget = target.roleId === 'sheriff' || target.roleId === 'deputy';
+        if (lawBot) return lawTarget;
+        if (bot.roleId === 'outlaw') return target.roleId === 'outlaw';
+        // A Renegade has no team-mate, including another Renegade in 8-player games.
+        return false;
     }
 
     private chooseBotCharacter(bot: ServerPlayerState, options: string[]): string {
@@ -1391,9 +1411,16 @@ export class GameRoom {
         if (type === 'general_store') return true;
         if (type === 'saloon') return bot.currentHealth < bot.maxHealth && this.alivePlayers().filter(p => p.currentHealth < p.maxHealth).length <= 2;
         if (!['indiani', 'gatling'].includes(type)) return false;
-        const sheriff = this.alivePlayers().find(p => p.roleId === 'sheriff');
-        if (bot.roleId === 'outlaw') return !!sheriff && sheriff.currentHealth <= 2;
-        if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') return this.alivePlayers().some(p => p.id !== bot.id && (this.botSuspicion.get(p.id) || 0) >= 2);
+        const affected = this.alivePlayers().filter(player => player.id !== bot.id);
+        const allies = affected.filter(player => this.areBotAllies(bot, player));
+        const enemies = affected.filter(player => !this.areBotAllies(bot, player));
+        const sheriff = affected.find(player => player.roleId === 'sheriff');
+        if (bot.roleId === 'outlaw') {
+            return enemies.length > allies.length && (!!sheriff && sheriff.currentHealth <= 2 || enemies.length >= allies.length + 2);
+        }
+        if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') {
+            return enemies.length >= allies.length + 2 && enemies.some(player => (this.botSuspicion.get(player.id) || 0) >= 2);
+        }
         return this.alivePlayers().length <= 3;
     }
 

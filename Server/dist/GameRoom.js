@@ -277,12 +277,19 @@ class GameRoom {
         }
         else if (type === 'game.start') {
             if (socketId === this.hostId && this.state === GameState_1.ServerGameState.WAITING) {
+                const count = this.players.size;
                 const allReady = Array.from(this.players.values()).every(p => p.isReady);
-                if (allReady && this.players.size >= 4) {
-                    this.startGame();
+                if (!allReady) {
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Tất cả người chơi phải sẵn sàng trước khi bắt đầu.') }));
+                }
+                else if (count < 4) {
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Cần ít nhất 4 người chơi để bắt đầu trận.') }));
+                }
+                else if (count > 8) {
+                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Tối đa 8 người chơi mỗi trận.') }));
                 }
                 else {
-                    ws.send(JSON.stringify({ type: 'game.error', data: JSON.stringify('Not all players ready or not enough players (min 4).') }));
+                    this.startGame();
                 }
             }
         }
@@ -316,6 +323,9 @@ class GameRoom {
         }
         else if (type === 'game.action.endTurn') {
             this.handleEndTurn(socketId);
+        }
+        else if (type === 'game.action.draw') {
+            this.handleRequestDraw(socketId);
         }
         else if (type === 'discard.submit') {
             this.handleDiscardSubmit(socketId, data.cardIds || []);
@@ -419,6 +429,12 @@ class GameRoom {
     getSnapshotFor(targetSocketId) {
         const targetPlayer = this.players.get(targetSocketId);
         const publicPlayers = Array.from(this.players.values()).map(p => {
+            // Role sanitization: a player can only see:
+            //   - their own role (via privateState, not here)
+            //   - SHERIFF (always revealed)
+            //   - any role that was explicitly revealed (e.g. on death)
+            // All others must be hidden from the snapshot to prevent client-side cheating.
+            const showRole = p.isRoleRevealed;
             return {
                 id: p.id,
                 name: p.name,
@@ -431,7 +447,8 @@ class GameRoom {
                 currentHealth: p.currentHealth,
                 maxHealth: p.maxHealth,
                 characterId: this.isCharacterPublic() ? p.characterId : undefined,
-                publicRoleId: p.isRoleRevealed ? p.roleId : undefined,
+                publicRoleId: showRole ? p.roleId : undefined,
+                hiddenRole: !showRole ? 'hidden' : undefined, // tells client to show 'VAI TRÒ BÍ MẬT'
                 isRoleRevealed: p.isRoleRevealed,
                 handCount: p.hand.length,
                 equipment: p.equipment,
@@ -442,7 +459,7 @@ class GameRoom {
         let privateState = undefined;
         if (targetPlayer) {
             privateState = {
-                roleId: targetPlayer.roleId,
+                roleId: targetPlayer.roleId, // only the owner receives their real role here
                 hand: targetPlayer.hand,
                 draftCharacterOptions: targetPlayer.draftCharacterOptions,
                 draftRoleSlot: targetPlayer.draftRoleSlot,
@@ -582,51 +599,59 @@ class GameRoom {
         this.currentTurnPlayerId = '';
         this.currentPhase = '';
         this.phaseId = (0, uuid_1.v4)();
-        this.state = GameState_1.ServerGameState.ROLE_DRAFT;
-        console.log(`[ROOM ${this.roomId}] Starting game, ROLE_DRAFT`);
-        this.addCombatLog('Trận đấu mới bắt đầu. Đang chọn vai trò.');
-        // Setup Role Pool
+        console.log(`[ROOM ${this.roomId}] Starting game — ${this.players.size} players`);
+        this.addCombatLog('Trận đấu mới bắt đầu. Đang phân vai trò.');
+        // ── ROLE POOL by player count ────────────────────────────────────
         const numPlayers = this.players.size;
-        this.rolePool = [];
-        if (numPlayers === 4)
-            this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw'];
-        else if (numPlayers === 5)
-            this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw', 'deputy'];
-        else if (numPlayers === 6)
-            this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy'];
-        else if (numPlayers === 7)
-            this.rolePool = ['sheriff', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy', 'deputy'];
-        else if (numPlayers >= 8)
-            this.rolePool = ['sheriff', 'renegade', 'renegade', 'outlaw', 'outlaw', 'outlaw', 'deputy', 'deputy'];
-        else
-            this.rolePool = ['sheriff', 'outlaw', 'renegade', 'deputy'].slice(0, numPlayers);
-        // Shuffle role pool
+        const clampedCount = Math.max(4, Math.min(8, numPlayers));
+        const rolePools = {
+            4: ['sheriff', 'outlaw', 'outlaw', 'renegade'],
+            5: ['sheriff', 'deputy', 'outlaw', 'outlaw', 'renegade'],
+            6: ['sheriff', 'deputy', 'outlaw', 'outlaw', 'outlaw', 'renegade'],
+            7: ['sheriff', 'deputy', 'deputy', 'outlaw', 'outlaw', 'outlaw', 'renegade'],
+            8: ['sheriff', 'deputy', 'deputy', 'outlaw', 'outlaw', 'outlaw', 'renegade', 'renegade']
+        };
+        this.rolePool = [...rolePools[clampedCount]];
+        // ── SHUFFLE role pool (Fisher-Yates) ─────────────────────────────
         for (let i = this.rolePool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [this.rolePool[i], this.rolePool[j]] = [this.rolePool[j], this.rolePool[i]];
         }
+        // ── ASSIGN roles — server decides, players do NOT choose ─────────
+        // Reset all players then distribute one role per player by seat order.
         this.roleSlotLocks.clear();
-        for (const player of this.players.values()) {
+        const playersBySeat = Array.from(this.players.values()).sort((a, b) => a.seat - b.seat);
+        for (const player of playersBySeat) {
             player.draftRoleSlot = undefined;
             player.draftCharacterSlot1 = undefined;
             player.draftCharacterSlot2 = undefined;
             player.draftCharacterOptions = undefined;
-            player.roleId = undefined;
             player.characterId = undefined;
             player.isRoleRevealed = false;
         }
-        const roleSlots = this.rolePool.map((_, index) => index);
-        for (const bot of Array.from(this.players.values()).filter(player => player.isBot)) {
-            const slot = roleSlots.splice(Math.floor(Math.random() * roleSlots.length), 1)[0];
-            this.roleSlotLocks.set(slot, bot.id);
-            bot.draftRoleSlot = slot;
-            bot.roleId = this.rolePool[slot];
+        for (let i = 0; i < playersBySeat.length; i++) {
+            const player = playersBySeat[i];
+            player.roleId = this.rolePool[i];
+            player.draftRoleSlot = i;
+            this.roleSlotLocks.set(i, player.id);
+            // Notify each player privately of their own role
+            if (!player.isBot) {
+                this.sendPrivateMessage(player.id, 'draft.role.assigned', { roleId: player.roleId });
+            }
         }
-        this.deadlineAt = Date.now() + this.rules.roleDraftSec * 1000;
+        // ── REVEAL SHERIFF publicly ───────────────────────────────────────
+        let sheriffId = '';
+        for (const player of this.players.values()) {
+            if (player.roleId === 'sheriff') {
+                player.isRoleRevealed = true;
+                sheriffId = player.id;
+            }
+        }
+        this.broadcastMessage('draft.role.complete', { sheriffPlayerId: sheriffId, transitionAt: Date.now() + 3000 });
+        this.state = GameState_1.ServerGameState.ROLE_LOCK_WAIT;
+        this.deadlineAt = Date.now() + 3000;
         this.broadcastSnapshot();
-        this.timerHandle = setTimeout(() => {
-            this.handleRoleDraftTimeout();
-        }, this.rules.roleDraftSec * 1000);
+        this.timerHandle = setTimeout(() => this.startCharacterDraft(), 3000);
     }
     handleRolePick(socketId, slotId) {
         if (this.state !== GameState_1.ServerGameState.ROLE_DRAFT)
@@ -1094,17 +1119,42 @@ class GameRoom {
                     this.deck.push(top[2]);
             }
             else {
-                const before = p.hand.length;
-                this.drawCards(p, 2);
-                if (p.characterId === 'black_jack') {
-                    const second = p.hand[before + 1];
-                    if (second && ['hearts', 'diamonds'].includes(this.cardSuit(second)))
-                        this.drawCards(p, 1);
+                if (p.isBot) {
+                    const before = p.hand.length;
+                    this.drawCards(p, 2);
+                    if (p.characterId === 'black_jack') {
+                        const second = p.hand[before + 1];
+                        if (second && ['hearts', 'diamonds'].includes(this.cardSuit(second)))
+                            this.drawCards(p, 1);
+                    }
                 }
             }
         }
         this.broadcastSnapshot();
-        this.timerHandle = setTimeout(() => this.startPlayPhase(), 450);
+        if (p?.isBot) {
+            this.timerHandle = setTimeout(() => this.startPlayPhase(), 5000);
+        }
+        else if (p && !['pedro_ramirez', 'jesse_jones', 'kit_carlson'].includes(p.characterId || '')) {
+            this.deadlineAt = Date.now() + this.rules.turnTimeSec * 1000;
+            this.timerHandle = setTimeout(() => this.handleEndTurn(this.currentTurnPlayerId), this.rules.turnTimeSec * 1000);
+        }
+    }
+    handleRequestDraw(socketId) {
+        if (this.state !== GameState_1.ServerGameState.DRAW || this.currentTurnPlayerId !== socketId || this.currentPhase !== 'DRAW')
+            return;
+        const p = this.players.get(socketId);
+        if (!p)
+            return;
+        if (this.timerHandle)
+            clearTimeout(this.timerHandle);
+        const before = p.hand.length;
+        this.drawCards(p, 2);
+        if (p.characterId === 'black_jack') {
+            const second = p.hand[before + 1];
+            if (second && ['hearts', 'diamonds'].includes(this.cardSuit(second)))
+                this.drawCards(p, 1);
+        }
+        this.startPlayPhase();
     }
     openDrawAbilityChoice(player) {
         this.state = GameState_1.ServerGameState.RESPONSE;
@@ -1185,7 +1235,7 @@ class GameRoom {
         this.deadlineAt = Date.now() + (this.rules.turnTimeSec * 1000);
         this.broadcastSnapshot();
         const player = this.players.get(this.currentTurnPlayerId);
-        this.timerHandle = setTimeout(() => player?.isBot ? this.runBotTurn(player) : this.finishOrDiscardCurrentTurn(), player?.isBot ? 450 : this.rules.turnTimeSec * 1000);
+        this.timerHandle = setTimeout(() => player?.isBot ? this.runBotTurn(player) : this.finishOrDiscardCurrentTurn(), player?.isBot ? 5000 : this.rules.turnTimeSec * 1000);
     }
     runBotTurn(bot) {
         if (this.state !== GameState_1.ServerGameState.PLAY || this.currentTurnPlayerId !== bot.id)
@@ -1195,72 +1245,109 @@ class GameRoom {
                 .sort((a, b) => this.botCardKeepValue(bot, a) - this.botCardKeepValue(bot, b))
                 .slice(0, 2);
             this.handleActivateAbility(bot.id, { cardIds: expendable });
-        }
-        if (this.state !== GameState_1.ServerGameState.PLAY)
+            if (this.state === GameState_1.ServerGameState.PLAY)
+                this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
             return;
+        }
         const beer = bot.hand.find(c => this.cardType(c) === 'beer');
         if (beer && bot.currentHealth < bot.maxHealth && this.alivePlayers().length > 2 && (bot.currentHealth <= 2 || bot.hand.length > bot.currentHealth)) {
+            const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: beer, targetPlayerIds: [] });
+            if (bot.hand.length < before) {
+                if (this.state === GameState_1.ServerGameState.PLAY)
+                    this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
         }
-        if (this.state !== GameState_1.ServerGameState.PLAY)
-            return;
-        const equipmentTypes = new Set(['volcanic', 'schofield', 'remington', 'rev_carabine', 'winchester', 'scope', 'mustang', 'barrel', 'dynamite']);
+        const equipmentTypes = new Set(['volcanic', 'gun_range_2', 'gun_range_3', 'gun_range_4', 'gun_range_5', 'appaloosa', 'mustang', 'barrel', 'dynamite']);
         let equipment = bot.hand
             .filter(c => equipmentTypes.has(this.cardType(c)))
             .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
-        while (equipment && this.state === GameState_1.ServerGameState.PLAY) {
+        if (equipment) {
             const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: equipment, targetPlayerIds: [] });
-            if (bot.hand.length >= before)
-                break;
-            equipment = bot.hand
-                .filter(c => equipmentTypes.has(this.cardType(c)))
-                .sort((a, b) => this.botEquipmentValue(bot, b) - this.botEquipmentValue(bot, a))[0];
+            if (bot.hand.length < before) {
+                if (this.state === GameState_1.ServerGameState.PLAY)
+                    this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
         }
-        if (this.state !== GameState_1.ServerGameState.PLAY)
-            return;
         const target = this.chooseBotTarget(bot);
         const disrupt = bot.hand.find(c => ['jail', 'panico', 'cat_balou', 'duello'].includes(this.cardType(c)));
         if (disrupt && target) {
             const type = this.cardType(disrupt);
             const valid = type !== 'jail' || (target.roleId !== 'sheriff' && !target.equipment.some(c => this.cardType(c) === 'jail'));
             const inRange = type !== 'panico' || this.calculateDistance(bot, target) <= 1;
-            if (valid && inRange)
+            if (valid && inRange) {
+                const before = bot.hand.length;
                 this.handlePlayCard(bot.id, { cardId: disrupt, targetPlayerIds: [target.id] });
+                if (bot.hand.length < before) {
+                    if (this.state === GameState_1.ServerGameState.PLAY)
+                        this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                    return;
+                }
+            }
         }
-        if (this.state !== GameState_1.ServerGameState.PLAY)
-            return;
         const drawAction = bot.hand.find(c => ['dilizenza', 'wells_fargo'].includes(this.cardType(c)));
-        if (drawAction)
+        if (drawAction) {
+            const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: drawAction, targetPlayerIds: [] });
-        if (this.state !== GameState_1.ServerGameState.PLAY)
-            return;
+            if (bot.hand.length < before) {
+                if (this.state === GameState_1.ServerGameState.PLAY)
+                    this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
+        }
         const bang = bot.hand.find(c => this.cardType(c) === 'bang');
-        if (bang && target)
-            this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
-        if (this.state !== GameState_1.ServerGameState.PLAY)
-            return;
+        if (bang && target) {
+            const unlimited = bot.equipment.some(e => this.cardType(e) === 'volcanic') || bot.characterId === 'willy_the_kid';
+            if (unlimited || this.bangCardsPlayedThisTurn === 0) {
+                const before = bot.hand.length;
+                this.handlePlayCard(bot.id, { cardId: bang, targetPlayerIds: [target.id] });
+                if (bot.hand.length < before) {
+                    if (this.state === GameState_1.ServerGameState.PLAY)
+                        this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                    return;
+                }
+            }
+        }
         const globalAction = bot.hand.find(c => this.shouldBotPlayGlobal(bot, this.cardType(c)));
-        if (globalAction)
+        if (globalAction) {
+            const before = bot.hand.length;
             this.handlePlayCard(bot.id, { cardId: globalAction, targetPlayerIds: [] });
+            if (bot.hand.length < before) {
+                if (this.state === GameState_1.ServerGameState.PLAY)
+                    this.timerHandle = setTimeout(() => this.runBotTurn(bot), 5000);
+                return;
+            }
+        }
         if (this.state === GameState_1.ServerGameState.PLAY)
             this.finishOrDiscardCurrentTurn();
     }
     chooseBotTarget(bot) {
-        const candidates = this.alivePlayers().filter(player => player.id !== bot.id && this.isTargetable(bot, player));
+        // Bots are server-authoritative and know their faction. Never spend an
+        // offensive card on a faction ally; hidden-role uncertainty is expressed
+        // through suspicion when choosing between actual opponents instead.
+        const candidates = this.alivePlayers().filter(player => player.id !== bot.id &&
+            this.isTargetable(bot, player) &&
+            !this.areBotAllies(bot, player));
         const score = (target) => {
             let value = (target.maxHealth - target.currentHealth) * 3 + (target.hand.length * 0.35);
             const suspicion = this.botSuspicion.get(target.id) || 0;
-            if (bot.roleId === 'outlaw')
-                value += target.roleId === 'sheriff' ? 100 : 0;
+            if (bot.roleId === 'outlaw') {
+                if (target.roleId === 'sheriff')
+                    value += 120;
+                else if (target.roleId === 'deputy')
+                    value += 45;
+                else
+                    value += 12;
+            }
             else if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') {
                 value += suspicion * 8;
-                if (target.isRoleRevealed && target.roleId === 'outlaw')
-                    value += 100;
-                if (target.isRoleRevealed && target.roleId === 'deputy')
-                    value -= 100;
-                if (target.roleId === 'sheriff')
-                    value -= 1000;
+                if (target.roleId === 'outlaw')
+                    value += 85;
+                else if (target.roleId === 'renegade')
+                    value += 55;
             }
             else if (bot.roleId === 'renegade') {
                 const alive = this.alivePlayers();
@@ -1276,7 +1363,19 @@ class GameRoom {
             value += Math.random() * 2.5;
             return value;
         };
-        return candidates.sort((a, b) => score(b) - score(a))[0];
+        return candidates
+            .map(target => ({ target, value: score(target) }))
+            .sort((a, b) => b.value - a.value)[0]?.target;
+    }
+    areBotAllies(bot, target) {
+        const lawBot = bot.roleId === 'sheriff' || bot.roleId === 'deputy';
+        const lawTarget = target.roleId === 'sheriff' || target.roleId === 'deputy';
+        if (lawBot)
+            return lawTarget;
+        if (bot.roleId === 'outlaw')
+            return target.roleId === 'outlaw';
+        // A Renegade has no team-mate, including another Renegade in 8-player games.
+        return false;
     }
     chooseBotCharacter(bot, options) {
         const score = (id) => {
@@ -1317,7 +1416,7 @@ class GameRoom {
             return bot.hand.filter(c => this.cardType(c) === 'bang').length * 25 + 45;
         if (type === 'dynamite')
             return bot.currentHealth <= 2 ? 5 : 30;
-        const ranges = { schofield: 52, remington: 58, rev_carabine: 64, winchester: 70, scope: 62 };
+        const ranges = { gun_range_2: 52, gun_range_3: 58, gun_range_4: 64, gun_range_5: 70, appaloosa: 62 };
         return ranges[type] || 25;
     }
     shouldBotPlayGlobal(bot, type) {
@@ -1327,11 +1426,16 @@ class GameRoom {
             return bot.currentHealth < bot.maxHealth && this.alivePlayers().filter(p => p.currentHealth < p.maxHealth).length <= 2;
         if (!['indiani', 'gatling'].includes(type))
             return false;
-        const sheriff = this.alivePlayers().find(p => p.roleId === 'sheriff');
-        if (bot.roleId === 'outlaw')
-            return !!sheriff && sheriff.currentHealth <= 2;
-        if (bot.roleId === 'sheriff' || bot.roleId === 'deputy')
-            return this.alivePlayers().some(p => p.id !== bot.id && (this.botSuspicion.get(p.id) || 0) >= 2);
+        const affected = this.alivePlayers().filter(player => player.id !== bot.id);
+        const allies = affected.filter(player => this.areBotAllies(bot, player));
+        const enemies = affected.filter(player => !this.areBotAllies(bot, player));
+        const sheriff = affected.find(player => player.roleId === 'sheriff');
+        if (bot.roleId === 'outlaw') {
+            return enemies.length > allies.length && (!!sheriff && sheriff.currentHealth <= 2 || enemies.length >= allies.length + 2);
+        }
+        if (bot.roleId === 'sheriff' || bot.roleId === 'deputy') {
+            return enemies.length >= allies.length + 2 && enemies.some(player => (this.botSuspicion.get(player.id) || 0) >= 2);
+        }
         return this.alivePlayers().length <= 3;
     }
     drawCards(player, count) {
@@ -1572,7 +1676,7 @@ class GameRoom {
         this.deadlineAt = this.activeInteraction.expiresAt;
         this.broadcastSnapshot();
         if (target?.isBot)
-            this.timerHandle = setTimeout(() => this.resolveBotResponse(target), 350);
+            this.timerHandle = setTimeout(() => this.resolveBotResponse(target), 5000);
         else
             this.timerHandle = setTimeout(() => this.resolveResponseTimeout(), this.rules.responseTimeSec * 1000);
     }
@@ -1664,7 +1768,7 @@ class GameRoom {
         this.timerHandle = setTimeout(() => {
             const card = this.generalStoreCards[Math.floor(Math.random() * this.generalStoreCards.length)];
             this.handleGeneralStorePick(pickerId, card);
-        }, picker?.isBot ? 350 : this.rules.responseTimeSec * 1000);
+        }, picker?.isBot ? 5000 : this.rules.responseTimeSec * 1000);
     }
     handleGeneralStorePick(playerId, card) {
         if (this.currentPhase !== 'GENERAL_STORE' || this.generalStoreOrder[this.generalStoreIndex] !== playerId || !this.generalStoreCards.includes(card))
@@ -1794,7 +1898,7 @@ class GameRoom {
         if (this.timerHandle)
             clearTimeout(this.timerHandle);
         const actor = this.players.get(this.currentTurnPlayerId);
-        this.timerHandle = setTimeout(() => actor?.isBot ? this.runBotTurn(actor) : this.finishOrDiscardCurrentTurn(), actor?.isBot ? 350 : this.rules.turnTimeSec * 1000);
+        this.timerHandle = setTimeout(() => actor?.isBot ? this.runBotTurn(actor) : this.finishOrDiscardCurrentTurn(), actor?.isBot ? 5000 : this.rules.turnTimeSec * 1000);
     }
     handleEndTurn(socketId) {
         if (this.state === GameState_1.ServerGameState.PLAY && this.currentTurnPlayerId === socketId && this.currentPhase === 'PLAY') {
@@ -1945,21 +2049,29 @@ class GameRoom {
     checkWinCondition() {
         const alive = Array.from(this.players.values()).filter(p => p.isAlive);
         const sheriffAlive = alive.some(p => p.roleId === 'sheriff');
+        const outlawAlive = alive.some(p => p.roleId === 'outlaw');
+        const renegadeAlive = alive.some(p => p.roleId === 'renegade');
         let winnerTeam;
         let winnerRole;
-        if (!sheriffAlive) {
-            if (alive.length === 1 && alive[0].roleId === 'renegade') {
-                winnerRole = 'renegade';
-                winnerTeam = 'RENEGADE';
-            }
-            else {
-                winnerRole = 'outlaw';
-                winnerTeam = 'OUTLAWS';
-            }
+        let winnerPlayerId;
+        // CASE 1: Solo Renegade victory — must be the only surviving player.
+        // Works for both 1-renegade AND 2-renegade (8-player) games.
+        // In 8-player games the two Renegades compete individually;
+        // only the last one standing can claim victory — NOT as a shared team win.
+        if (alive.length === 1 && alive[0].roleId === 'renegade') {
+            winnerRole = 'renegade';
+            winnerTeam = 'RENEGADE';
+            winnerPlayerId = alive[0].id;
         }
-        else if (!alive.some(p => p.roleId === 'outlaw' || p.roleId === 'renegade')) {
+        // CASE 2: Sheriff + Deputies win — Sheriff alive and all threats eliminated.
+        else if (sheriffAlive && !outlawAlive && !renegadeAlive) {
             winnerRole = 'sheriff';
             winnerTeam = 'SHERIFF_DEPUTIES';
+        }
+        // CASE 3: Outlaw victory — Sheriff is dead and it is NOT a solo Renegade win.
+        else if (!sheriffAlive) {
+            winnerRole = 'outlaw';
+            winnerTeam = 'OUTLAWS';
         }
         if (!winnerTeam)
             return false;
@@ -1973,7 +2085,7 @@ class GameRoom {
         this.deadlineAt = 0;
         for (const p of this.players.values())
             p.isRoleRevealed = true;
-        this.broadcastMessage('game.ended', { winnerType: winnerTeam, winnerRole, reason: 'WIN_CONDITION' });
+        this.broadcastMessage('game.ended', { winnerType: winnerTeam, winnerRole, winnerPlayerId, reason: 'WIN_CONDITION' });
         this.onGameEnded?.(Array.from(this.players.values()), winnerTeam);
         this.broadcastSnapshot();
         return true;

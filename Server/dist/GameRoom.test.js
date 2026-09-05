@@ -44,6 +44,36 @@ function createRoom(playerCount = 4) {
     strict_1.default.equal(sheriffView.players.find(p => p.id === players[1].id)?.publicRoleId, undefined);
     strict_1.default.equal(sheriffView.players.find(p => p.id === players[1].id)?.handCount, 2);
 });
+(0, node_test_1.default)('law bots never choose Sheriff or Deputy allies as offensive targets', () => {
+    const { room, players } = createRoom();
+    players.forEach((player, index) => {
+        player.roleId = ['sheriff', 'deputy', 'outlaw', 'renegade'][index];
+        player.isAlive = true;
+        player.currentHealth = index === 0 ? 1 : 4;
+    });
+    room.state = GameState_1.ServerGameState.PLAY;
+    players[1].equipment = ['gun_range_5__bot__spades__K'];
+    room.currentTurnPlayerId = players[1].id;
+    const deputyTarget = room.chooseBotTarget(players[1]);
+    players[0].equipment = ['gun_range_5__bot__spades__Q'];
+    room.currentTurnPlayerId = players[0].id;
+    const sheriffTarget = room.chooseBotTarget(players[0]);
+    strict_1.default.ok(['outlaw', 'renegade'].includes(deputyTarget?.roleId));
+    strict_1.default.ok(['outlaw', 'renegade'].includes(sheriffTarget?.roleId));
+});
+(0, node_test_1.default)('outlaw bots prioritize Sheriff and never attack another Outlaw', () => {
+    const { room, players } = createRoom();
+    players.forEach((player, index) => {
+        player.roleId = ['sheriff', 'outlaw', 'outlaw', 'renegade'][index];
+        player.isAlive = true;
+        player.currentHealth = index === 2 ? 1 : 4;
+    });
+    room.state = GameState_1.ServerGameState.PLAY;
+    players[1].equipment = ['gun_range_5__bot__spades__K'];
+    room.currentTurnPlayerId = players[1].id;
+    const target = room.chooseBotTarget(players[1]);
+    strict_1.default.equal(target?.roleId, 'sheriff');
+});
 (0, node_test_1.default)('all recipients of one broadcast receive the same revision and sequence', () => {
     const { room, sockets } = createRoom();
     room.broadcastSnapshot();
@@ -100,10 +130,7 @@ for (const count of [4, 5, 6, 7, 8]) {
         players.forEach(p => p.isReady = true);
         room.startGame();
         clearTimeout(room.timerHandle);
-        strict_1.default.equal(room.getState(), GameState_1.ServerGameState.ROLE_DRAFT);
-        strict_1.default.equal(room.deadlineAt > Date.now() + 15_000, true);
-        room.handleRoleDraftTimeout();
-        clearTimeout(room.timerHandle);
+        strict_1.default.equal(room.getState(), GameState_1.ServerGameState.ROLE_LOCK_WAIT);
         strict_1.default.equal(players.filter(p => p.roleId === 'sheriff').length, 1);
         strict_1.default.equal(new Set(players.map(p => p.draftRoleSlot)).size, count);
         room.startCharacterDraft();
@@ -263,7 +290,7 @@ for (const count of [4, 5, 6, 7, 8]) {
     for (const player of players)
         room.handleRematchVote(player.id);
     clearTimeout(room.timerHandle);
-    strict_1.default.equal(room.getState(), GameState_1.ServerGameState.ROLE_DRAFT);
+    strict_1.default.equal(room.getState(), GameState_1.ServerGameState.ROLE_LOCK_WAIT);
     strict_1.default.equal(players.every(player => player.hand.length === 0 && player.isAlive), true);
 });
 (0, node_test_1.default)('Kit Carlson receives a private choose-two draw interaction', () => {

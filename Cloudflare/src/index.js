@@ -1101,17 +1101,33 @@ var BangBangMatch = class extends DurableObject {
     await this.draw(state, bot.id);
     if (String(state.phase) !== "play_phase" || !bot.alive) return;
     const aliveCount = state.players.filter(p => p.alive).length;
+    const areAllies = (target) => {
+      const botIsLaw = bot.role === "sheriff" || bot.role === "deputy";
+      const targetIsLaw = target.role === "sheriff" || target.role === "deputy";
+      if (botIsLaw) return targetIsLaw;
+      if (bot.role === "outlaw") return target.role === "outlaw";
+      return false;
+    };
     const scoreTarget = (target) => {
-      let score = Math.random() * 10;
-      if (target.role === "sheriff") {
-        if (bot.role === "deputy") return -1000;
-        if (bot.role === "outlaw") score += 100;
-        if (bot.role === "renegade") return aliveCount > 2 ? -1000 : 100;
+      let score = (target.maxHealth - target.health) * 3 + target.hand.length * 0.35 + Math.random() * 2.5;
+      if (bot.role === "outlaw") {
+        if (target.role === "sheriff") score += 120;
+        else if (target.role === "deputy") score += 45;
+        else score += 12;
+      } else if (bot.role === "sheriff" || bot.role === "deputy") {
+        if (target.role === "outlaw") score += 85;
+        else if (target.role === "renegade") score += 55;
+      } else if (bot.role === "renegade") {
+        if (target.role === "sheriff") score += aliveCount === 2 ? 100 : -80;
+        else score += 20;
       }
       return score;
     };
-    const opponents = state.players.filter((player) => player.alive && player.id !== bot.id).sort((a, b) => scoreTarget(b) - scoreTarget(a));
-    const validTargets = opponents.filter(p => scoreTarget(p) > -500);
+    const validTargets = state.players
+      .filter((player) => player.alive && player.id !== bot.id && !areAllies(player))
+      .map((player) => ({ player, score: scoreTarget(player) }))
+      .sort((a, b) => b.score - a.score)
+      .map((entry) => entry.player);
     const targetsInRange = validTargets.filter((player) => this.distance(state, bot, player) <= this.weaponRange(bot));
     const adjacentTargets = validTargets.filter((player) => this.distance(state, bot, player) <= 1);
     const beer = bot.hand.find((card) => typeOf(card) === "beer");
@@ -1128,7 +1144,7 @@ var BangBangMatch = class extends DurableObject {
       this.play(state, bot.id, beer, "");
     } else if (bang && targetsInRange[0]) {
       this.play(state, bot.id, bang, targetsInRange[0].id);
-    } else if (areaAttack && opponents.length > 1) {
+    } else if (areaAttack && validTargets.length >= state.players.filter((player) => player.alive && player.id !== bot.id && areAllies(player)).length + 2) {
       this.play(state, bot.id, areaAttack, "");
     } else if (duel && validTargets[0]) {
       this.play(state, bot.id, duel, validTargets[0].id);

@@ -17,6 +17,8 @@ namespace BangBang.UI
 
         [Header("Networking Mode")]
         public bool useLiveCloudflareServer = true;
+        [Tooltip("Bật chế độ Bot tự động chơi và giám sát toàn bộ logic trận đấu")]
+        public bool autoPlayTestBot = false;
         [Tooltip("REST Worker URL; không dùng URL này cho BangLiveGateway.")]
         public string cloudflareWorkerUrl = "https://blue-frog-fec8.hieupham101097.workers.dev";
         [Tooltip("Public Node.js WebSocket origin, ví dụ wss://bangbang-node-server.onrender.com. Để trống sẽ dùng localServerUrl.")]
@@ -44,8 +46,11 @@ namespace BangBang.UI
         private GameObject _splashOverlay;
         private Text _splashStatus;
         private Button _splashRetryButton;
+        private Button _splashOfflineButton;
         private IGameGateway _activeGateway;
         private string _deviceId;
+
+        public IGameGateway ActiveGateway => _activeGateway;
 
         private void Awake()
         {
@@ -90,10 +95,33 @@ namespace BangBang.UI
             // Re-bind FlowController after gateway is set up (timing fix)
             flowController?.BindToStore();
 
+            if (autoPlayTestBot)
+            {
+                var runner = FindAnyObjectByType<BangBang.Core.Logic.AutoPlayBotRunner>();
+                if (runner == null)
+                {
+                    gameObject.AddComponent<BangBang.Core.Logic.AutoPlayBotRunner>();
+                }
+            }
+
             // Start User Session
             _deviceId = PlayerPrefs.GetString("bang_device_id", Guid.NewGuid().ToString("N").Substring(0, 16));
             PlayerPrefs.SetString("bang_device_id", _deviceId);
             await ConnectSessionAsync();
+        }
+
+        public void SwitchToOfflineMode()
+        {
+            useLiveCloudflareServer = false;
+            _activeGateway = mockGateway;
+            if (gameStateStore != null)
+            {
+                gameStateStore.BindGateway(_activeGateway);
+            }
+            flowController?.BindToStore();
+            if (_splashOverlay != null) _splashOverlay.SetActive(false);
+            ShowHomeScreen();
+            Debug.Log("<color=green><b>[GameBootstrap]</b> Đã chuyển sang chế độ Offline Mock thành công!</color>");
         }
 
         private void HideViewsDuringBoot()
@@ -113,6 +141,7 @@ namespace BangBang.UI
         private async System.Threading.Tasks.Task ConnectSessionAsync()
         {
             if (_splashRetryButton != null) _splashRetryButton.gameObject.SetActive(false);
+            if (_splashOfflineButton != null) _splashOfflineButton.gameObject.SetActive(false);
             if (_splashStatus != null) _splashStatus.text = "Đang kết nối và đồng bộ phiên…";
             _deviceId = PlayerPrefs.GetString("bang_device_id", _deviceId);
             bool ready = _activeGateway != null && await _activeGateway.InitializeSessionAsync(_deviceId, "Cao bồi viễn tây");
@@ -123,8 +152,9 @@ namespace BangBang.UI
             }
             else
             {
-                if (_splashStatus != null) _splashStatus.text = "Không thể kết nối máy chủ. Kiểm tra mạng rồi thử lại.";
+                if (_splashStatus != null) _splashStatus.text = "Không thể kết nối máy chủ Cloudflare.";
                 if (_splashRetryButton != null) _splashRetryButton.gameObject.SetActive(true);
+                if (_splashOfflineButton != null) _splashOfflineButton.gameObject.SetActive(true);
             }
         }
 
@@ -137,9 +167,14 @@ namespace BangBang.UI
             _splashOverlay.GetComponent<Image>().color = new Color(0.035f, 0.025f, 0.02f, 1f);
             CreateText("SplashTitle", "BANG ONLINE", new Vector2(0, 80), new Vector2(700, 90), 46, BangUITheme.Brass, _splashOverlay.transform);
             _splashStatus = CreateText("SplashStatus", "Đang khởi tạo…", new Vector2(0, -20), new Vector2(760, 45), 18, Color.white, _splashOverlay.transform).GetComponent<Text>();
-            _splashRetryButton = CreateButton("SplashRetry", "THỬ LẠI", new Vector2(0, -110), BangUITheme.Brass, _splashOverlay.transform, new Vector2(220, 58));
+            _splashRetryButton = CreateButton("SplashRetry", "THỬ LẠI", new Vector2(0, -90), BangUITheme.Brass, _splashOverlay.transform, new Vector2(240, 52));
             _splashRetryButton.onClick.AddListener(async () => await ConnectSessionAsync());
             _splashRetryButton.gameObject.SetActive(false);
+
+            _splashOfflineButton = CreateButton("SplashOffline", "CHƠI OFFLINE / TEST BOT", new Vector2(0, -155), BangUITheme.BrassPressed, _splashOverlay.transform, new Vector2(300, 52));
+            _splashOfflineButton.onClick.AddListener(() => SwitchToOfflineMode());
+            _splashOfflineButton.gameObject.SetActive(false);
+
             _splashOverlay.transform.SetAsLastSibling();
         }
 

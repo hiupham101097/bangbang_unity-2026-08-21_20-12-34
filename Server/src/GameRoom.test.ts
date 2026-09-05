@@ -45,6 +45,42 @@ test('snapshot projection never leaks another player role or hand', () => {
     assert.equal(sheriffView.players.find(p => p.id === players[1].id)?.handCount, 2);
 });
 
+test('law bots never choose Sheriff or Deputy allies as offensive targets', () => {
+    const { room, players } = createRoom();
+    players.forEach((player, index) => {
+        player.roleId = ['sheriff', 'deputy', 'outlaw', 'renegade'][index];
+        player.isAlive = true;
+        player.currentHealth = index === 0 ? 1 : 4;
+    });
+    (room as any).state = ServerGameState.PLAY;
+    players[1].equipment = ['gun_range_5__bot__spades__K'];
+    (room as any).currentTurnPlayerId = players[1].id;
+
+    const deputyTarget = (room as any).chooseBotTarget(players[1]);
+    players[0].equipment = ['gun_range_5__bot__spades__Q'];
+    (room as any).currentTurnPlayerId = players[0].id;
+    const sheriffTarget = (room as any).chooseBotTarget(players[0]);
+
+    assert.ok(['outlaw', 'renegade'].includes(deputyTarget?.roleId));
+    assert.ok(['outlaw', 'renegade'].includes(sheriffTarget?.roleId));
+});
+
+test('outlaw bots prioritize Sheriff and never attack another Outlaw', () => {
+    const { room, players } = createRoom();
+    players.forEach((player, index) => {
+        player.roleId = ['sheriff', 'outlaw', 'outlaw', 'renegade'][index];
+        player.isAlive = true;
+        player.currentHealth = index === 2 ? 1 : 4;
+    });
+    (room as any).state = ServerGameState.PLAY;
+    players[1].equipment = ['gun_range_5__bot__spades__K'];
+    (room as any).currentTurnPlayerId = players[1].id;
+
+    const target = (room as any).chooseBotTarget(players[1]);
+
+    assert.equal(target?.roleId, 'sheriff');
+});
+
 test('all recipients of one broadcast receive the same revision and sequence', () => {
     const { room, sockets } = createRoom();
     (room as any).broadcastSnapshot();
@@ -106,11 +142,7 @@ for (const count of [4, 5, 6, 7, 8]) {
         players.forEach(p => p.isReady = true);
         (room as any).startGame();
         clearTimeout((room as any).timerHandle);
-        assert.equal(room.getState(), ServerGameState.ROLE_DRAFT);
-        assert.equal((room as any).deadlineAt > Date.now() + 15_000, true);
-
-        (room as any).handleRoleDraftTimeout();
-        clearTimeout((room as any).timerHandle);
+        assert.equal(room.getState(), ServerGameState.ROLE_LOCK_WAIT);
         assert.equal(players.filter(p => p.roleId === 'sheriff').length, 1);
         assert.equal(new Set(players.map(p => p.draftRoleSlot)).size, count);
 
@@ -287,7 +319,7 @@ test('all connected humans voting rematch starts a fresh role draft', () => {
     (room as any).state = ServerGameState.GAME_OVER;
     for (const player of players) (room as any).handleRematchVote(player.id);
     clearTimeout((room as any).timerHandle);
-    assert.equal(room.getState(), ServerGameState.ROLE_DRAFT);
+    assert.equal(room.getState(), ServerGameState.ROLE_LOCK_WAIT);
     assert.equal(players.every(player => player.hand.length === 0 && player.isAlive), true);
 });
 
