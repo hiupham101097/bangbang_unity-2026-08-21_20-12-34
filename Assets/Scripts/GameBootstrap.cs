@@ -1114,7 +1114,7 @@ namespace BangBang.UI
             CreateText("Arrow", "▼", new Vector2(size.x * 0.5f - 25f, 0), new Vector2(32, size.y), 16, BangUITheme.Brass, root.transform);
             var dropdown = root.GetComponent<Dropdown>();
             dropdown.captionText = label;
-            var template = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            var template = new GameObject("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect), typeof(CanvasGroup));
             template.transform.SetParent(root.transform, false);
             var templateRt = template.GetComponent<RectTransform>();
             templateRt.anchorMin = new Vector2(0, 0);
