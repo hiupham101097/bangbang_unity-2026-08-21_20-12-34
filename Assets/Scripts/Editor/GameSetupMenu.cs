@@ -12,44 +12,75 @@ namespace BangBang.Editor
         public static void SetupAndRunAutoPlay()
         {
             var bootstrap = EnsureBootstrap();
-            Undo.RecordObject(bootstrap, "Use Bang Bang Offline Gateway & AutoPlay");
-            bootstrap.useLiveCloudflareServer = false;
-            bootstrap.autoPlayTestBot = true;
-            EditorUtility.SetDirty(bootstrap);
+            if (bootstrap == null) return;
 
-            var runner = Object.FindAnyObjectByType<BangBang.Core.Logic.AutoPlayBotRunner>();
-            if (runner == null)
+            if (!EditorApplication.isPlaying)
             {
-                var runnerGo = new GameObject("AutoPlayBotRunner", typeof(BangBang.Core.Logic.AutoPlayBotRunner));
-                Undo.RegisterCreatedObjectUndo(runnerGo, "Create AutoPlayBotRunner");
+                Undo.RecordObject(bootstrap, "Use Bang Bang Offline Gateway & AutoPlay");
+                bootstrap.useLiveCloudflareServer = false;
+                bootstrap.autoPlayTestBot = true;
+                EditorUtility.SetDirty(bootstrap);
+
+                var runner = Object.FindAnyObjectByType<BangBang.Core.Logic.AutoPlayBotRunner>();
+                if (runner == null)
+                {
+                    var runnerGo = new GameObject("AutoPlayBotRunner", typeof(BangBang.Core.Logic.AutoPlayBotRunner));
+                    Undo.RegisterCreatedObjectUndo(runnerGo, "Create AutoPlayBotRunner");
+                }
+                else
+                {
+                    runner.isAutoPlayActive = true;
+                }
+
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+                Debug.Log("<color=cyan><b>[BangBang]</b> Chế độ Auto-Play đã bật! Bắt đầu PlayMode để Bot tự đánh và kiểm tra toàn bộ logic.</color>");
+                EditorApplication.isPlaying = true;
             }
             else
             {
-                runner.isAutoPlayActive = true;
+                bootstrap.useLiveCloudflareServer = false;
+                bootstrap.autoPlayTestBot = true;
+                bootstrap.SwitchToOfflineMode();
+                var runner = Object.FindAnyObjectByType<BangBang.Core.Logic.AutoPlayBotRunner>();
+                if (runner == null)
+                {
+                    bootstrap.gameObject.AddComponent<BangBang.Core.Logic.AutoPlayBotRunner>();
+                }
+                else
+                {
+                    runner.isAutoPlayActive = true;
+                    runner.StartRunner();
+                }
+                Debug.Log("<color=cyan><b>[BangBang]</b> Đã kích hoạt Auto-Play Bot ngay trong lượt chơi hiện tại!</color>");
             }
-
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            Debug.Log("<color=cyan><b>[BangBang]</b> Chế độ Auto-Play đã bật! Unity sẽ tự vào trận, bot tự đánh và kiểm tra toàn bộ logic.</color>");
-            EditorApplication.isPlaying = true;
         }
 
         [MenuItem("Bang Bang/▶ Chạy Game Theo Cấu Hình", false, 1)]
         public static void SetupAndPlayGame()
         {
             EnsureBootstrap();
-            EditorApplication.isPlaying = true;
+            if (!EditorApplication.isPlaying) EditorApplication.isPlaying = true;
         }
 
         [MenuItem("Bang Bang/▶ Chạy Toàn Bộ Flow Offline", false, 2)]
         public static void SetupAndPlayOffline()
         {
             var bootstrap = EnsureBootstrap();
-            Undo.RecordObject(bootstrap, "Use Bang Bang Offline Gateway");
-            bootstrap.useLiveCloudflareServer = false;
-            EditorUtility.SetDirty(bootstrap);
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            Debug.Log("[BangBang] Chế độ Offline đã bật: có thể test đầy đủ tạo phòng, chọn vai trò, chọn nhân vật và bàn đấu.");
-            EditorApplication.isPlaying = true;
+            if (bootstrap == null) return;
+
+            if (!EditorApplication.isPlaying)
+            {
+                Undo.RecordObject(bootstrap, "Use Bang Bang Offline Gateway");
+                bootstrap.useLiveCloudflareServer = false;
+                EditorUtility.SetDirty(bootstrap);
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+                Debug.Log("[BangBang] Chế độ Offline đã bật: có thể test đầy đủ tạo phòng, chọn vai trò, chọn nhân vật và bàn đấu.");
+                EditorApplication.isPlaying = true;
+            }
+            else
+            {
+                bootstrap.SwitchToOfflineMode();
+            }
         }
 
         [MenuItem("Bang Bang/🛠 Tạo GameBootstrap Trong Scene", false, 20)]
@@ -63,13 +94,15 @@ namespace BangBang.Editor
             var bootstrap = Object.FindAnyObjectByType<GameBootstrap>();
             if (bootstrap != null)
             {
-                Debug.Log("[BangBang] Scene đã có GameBootstrap và sẵn sàng chạy.");
                 return bootstrap;
             }
 
             var go = new GameObject("GameBootstrap", typeof(GameBootstrap));
-            Undo.RegisterCreatedObjectUndo(go, "Create GameBootstrap");
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            if (!EditorApplication.isPlaying)
+            {
+                Undo.RegisterCreatedObjectUndo(go, "Create GameBootstrap");
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            }
             Debug.Log("[BangBang] Đã tạo GameBootstrap trong scene.");
             return go.GetComponent<GameBootstrap>();
         }

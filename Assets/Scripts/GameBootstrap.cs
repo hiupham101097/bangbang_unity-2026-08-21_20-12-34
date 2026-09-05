@@ -16,9 +16,9 @@ namespace BangBang.UI
         public static GameBootstrap Instance { get; private set; }
 
         [Header("Networking Mode")]
-        public bool useLiveCloudflareServer = true;
+        public bool useLiveCloudflareServer = false;
         [Tooltip("Bật chế độ Bot tự động chơi và giám sát toàn bộ logic trận đấu")]
-        public bool autoPlayTestBot = false;
+        public bool autoPlayTestBot = true;
         [Tooltip("REST Worker URL; không dùng URL này cho BangLiveGateway.")]
         public string cloudflareWorkerUrl = "https://blue-frog-fec8.hieupham101097.workers.dev";
         [Tooltip("Public Node.js WebSocket origin, ví dụ wss://bangbang-node-server.onrender.com. Để trống sẽ dùng localServerUrl.")]
