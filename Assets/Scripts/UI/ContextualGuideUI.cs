@@ -11,12 +11,16 @@ namespace BangBang.UI
         [SerializeField] private GameObject root;
         [SerializeField] private Text eyebrowText;
         [SerializeField] private Text instructionText;
+        private CanvasGroup visibilityGroup;
 
         public void Initialize(GameObject guideRoot, Text eyebrow, Text instruction)
         {
             root = guideRoot;
             eyebrowText = eyebrow;
             instructionText = instruction;
+            visibilityGroup = guideRoot.GetComponent<CanvasGroup>();
+            if (visibilityGroup == null) visibilityGroup = guideRoot.AddComponent<CanvasGroup>();
+            visibilityGroup.blocksRaycasts = false;
         }
 
         private void Start()
@@ -31,6 +35,18 @@ namespace BangBang.UI
         private void OnDestroy()
         {
             if (GameStateStore.Instance != null) GameStateStore.Instance.OnStateSnapshotUpdated -= Render;
+        }
+
+        private void LateUpdate()
+        {
+            var bootstrap = GameBootstrap.Instance;
+            if (visibilityGroup == null || bootstrap == null) return;
+            bool visible = (bootstrap.lobbyView != null && bootstrap.lobbyView.gameObject.activeInHierarchy)
+                || (bootstrap.waitingRoomView != null && bootstrap.waitingRoomView.gameObject.activeInHierarchy)
+                || (bootstrap.roleRevealView != null && bootstrap.roleRevealView.gameObject.activeInHierarchy)
+                || (bootstrap.characterSelectionView != null && bootstrap.characterSelectionView.gameObject.activeInHierarchy)
+                || (bootstrap.gameTableView != null && bootstrap.gameTableView.gameObject.activeInHierarchy);
+            visibilityGroup.alpha = visible ? 1f : 0f;
         }
 
         private void Render(MatchStateSnapshotDTO snapshot)
